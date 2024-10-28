@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* * {
+  outline: gray solid 1px;
+} */
+
+body {
+  @apply bg-pri text-black;
+}
+
+.container {
+  @apply max-w-screen-xl mx-auto;
+}
+
+h3 {
+  @apply text-lg lg:text-2xl font-bold;
+}

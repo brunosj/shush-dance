@@ -1,0 +1,22 @@
+ .message {
+	 /* padding: 1rem; */
+	 line-height: 1.25;
+	 /* width: 100%; */
+}
+ .default {
+	 background-color: var(--theme-elevation-100);
+	 /* color: var(--theme-elevation-1000); */
+}
+ .warning {
+	 background-color: var(--theme-warning-500);
+	 color: red;
+}
+ .error {
+	 background-color: var(--theme-error-500);
+	 color: red;
+}
+ .success {
+	 background-color: var(--theme-success-500);
+	 color: blue;
+}
+
