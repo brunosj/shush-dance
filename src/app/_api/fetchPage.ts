@@ -9,6 +9,10 @@ export const fetchPage = async (
     `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/pages?where[slug][equals]=${slug}&depth=2`,
     {
       method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
+      },
     }
   ).then((res) => res.json());
 
