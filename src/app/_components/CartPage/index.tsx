@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
 import { BsTrash3 } from 'react-icons/bs';
 import Link from 'next/link';
@@ -27,6 +27,14 @@ const Cart: React.FC<CartPageProps> = ({ data }) => {
     redirectToCheckout,
   } = useShoppingCart();
 
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (cartCount !== undefined) {
+      setIsLoading(false);
+    }
+  }, [cartCount]);
+
   const handleCheckout = async () => {
     try {
       const result = await redirectToCheckout();
@@ -42,12 +50,20 @@ const Cart: React.FC<CartPageProps> = ({ data }) => {
     return <p>Loading...</p>;
   }
 
+  if (isLoading) {
+    return (
+      <p className='text-center mt-32 text-base lg:text-xl'>
+        Loading your cart...
+      </p>
+    );
+  }
+
   if (cartCount === 0) {
     return (
-      <div className='text-center mt-32 space-y-3 lg:space-y-6'>
-        <h1 className='text-xl'>your cart is empty</h1>
+      <div className='text-center mt-32 space-y-4 lg:space-y-6'>
+        <h1 className='text-base lg:text-xl'>Your cart is empty</h1>
         <div>
-          <Button href='/' label='return to home' />
+          <Button href='/' label='Return to home' />
         </div>
       </div>
     );
@@ -55,7 +71,6 @@ const Cart: React.FC<CartPageProps> = ({ data }) => {
 
   return (
     <div className='max-w-lg mx-2 lg:mx-auto mt-32'>
-      {/* <h1 className='text-2xl font-semibold mb-4'>Your Cart</h1> */}
       <ul className='space-y-4'>
         {Object.entries(cartDetails).map(([key, item]) => (
           <li
