@@ -19,30 +19,34 @@ export function Header() {
 
   return (
     <header>
-      {cartCount > 0 && (
-        <div className='fixed right-3 -top-3 z-50'>
-          <Link href='/cart' className='relative px-3'>
-            <IoTicketOutline className='w-8 h-8 textHover' />
-            <div className='rounded-full flex justify-center items-center bg-black text-xs text-white absolute w-5 h-5 -bottom-7 -left-2'>
-              {cartCount}
-            </div>
-          </Link>
-        </div>
-      )}
-      <div className='fixed top-0 w-full z-10 backdrop-blur-sm'>
-        <Link href='/' className=''>
-          <div
-            className={`${Carbon.className} py-2 px-3 text-lg lg:text-2xl tracking-[1.2rem]`}
-          >
-            SHUSH
+      <div className='fixed top-0 w-full z-10 filter-bottom'>
+        <div className='py-2 px-3 flex items-center  justify-between'>
+          <div className=''>
+            <Link href='/' className=''>
+              <div
+                className={`${Carbon.className} text-lg lg:text-2xl tracking-[1.2rem]`}
+              >
+                SHUSH
+              </div>
+            </Link>
           </div>
-        </Link>
+          {cartCount > 0 && (
+            <div className='z-50'>
+              <Link href='/cart' className='relative'>
+                <IoTicketOutline className='w-8 h-8 textHover' />
+                <div className='rounded-full flex justify-center items-center bg-black text-xs text-white absolute w-5 h-5 -bottom-7 -left-2 sm:-bottom-7 sm:-left-2 md:-bottom-7 md:-left-2 lg:-bottom-7 lg:-left-2'>
+                  {cartCount}
+                </div>
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className='fixed bottom-0 w-full text-right backdrop-blur-sm z-10'>
+      <div className='fixed bottom-0 w-full text-right filter-top z-10 py-2 px-3'>
         <Link href='/' className=''>
           <div
-            className={`${Carbon.className} text-lg lg:text-2xl p-2 tracking-[1.2rem]`}
+            className={`${Carbon.className} text-lg lg:text-2xl tracking-[1.2rem]`}
           >
             DANCE
           </div>

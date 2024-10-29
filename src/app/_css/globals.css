@@ -17,3 +17,25 @@ body {
 h3 {
   @apply text-lg lg:text-2xl font-bold;
 }
+
+.filter-bottom {
+  backdrop-filter: blur(2px); /* Apply a strong blur */
+  background: linear-gradient(
+    to bottom,
+    rgba(242, 242, 235, 1),
+    /* Stronger opacity at the top */ rgba(242, 242, 235, 0.1),
+    /* Mid-opacity in the center */ rgba(255, 255, 255, 0)
+      /* Fully transparent at the bottom */
+  );
+}
+
+.filter-top {
+  backdrop-filter: blur(2px); /* Apply a strong blur */
+  background: linear-gradient(
+    to top,
+    rgba(242, 242, 235, 1),
+    /* Stronger opacity at the top */ rgba(242, 242, 235, 0.1),
+    /* Mid-opacity in the center */ rgba(255, 255, 255, 0)
+      /* Fully transparent at the bottom */
+  );
+}

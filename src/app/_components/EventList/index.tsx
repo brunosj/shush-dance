@@ -98,7 +98,7 @@ const EventList: React.FC<EventListProps> = ({ events }) => {
             {/* Image on Hover */}
             {event.image && typeof event.image !== 'string' && (
               <div
-                className='h-64 w-full absolute opacity-0 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none z-10'
+                className='h-32 lg:h-64 w-full absolute opacity-0 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none z-10'
                 style={{
                   top: imagePosition.top,
                   left: imagePosition.left,
