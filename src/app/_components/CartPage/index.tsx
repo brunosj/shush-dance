@@ -2,10 +2,20 @@
 
 import React from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
-import { formatCurrencyString } from 'use-shopping-cart';
 import { BsTrash3 } from 'react-icons/bs';
 import Link from 'next/link';
-const Cart: React.FC = () => {
+import Button from '../Button';
+import type { Page } from '../../../payload/payload-types';
+import { RichText } from '../RichText';
+
+interface CartPageProps {
+  data: {
+    page: { data: Page | null | undefined };
+  };
+}
+
+const Cart: React.FC<CartPageProps> = ({ data }) => {
+  const { page } = data;
   const {
     cartCount,
     cartDetails,
@@ -15,7 +25,7 @@ const Cart: React.FC = () => {
     removeItem,
     clearCart,
     redirectToCheckout,
-  } = useShoppingCart(); // Access cart state and functions
+  } = useShoppingCart();
 
   const handleCheckout = async () => {
     try {
@@ -28,13 +38,17 @@ const Cart: React.FC = () => {
     }
   };
 
+  if (!page) {
+    return <p>Loading...</p>;
+  }
+
   if (cartCount === 0) {
     return (
-      <div className='text-center mt-32 space-y-4'>
-        <h1 className='text-2xl font-semibold'>Your Cart is Empty</h1>
-        <Link href='/' className='pt-4'>
-          back to homepage
-        </Link>
+      <div className='text-center mt-32 space-y-3 lg:space-y-6'>
+        <h1 className='text-xl'>your cart is empty</h1>
+        <div>
+          <Button href='/' label='return to home' />
+        </div>
       </div>
     );
   }
@@ -46,12 +60,12 @@ const Cart: React.FC = () => {
         {Object.entries(cartDetails).map(([key, item]) => (
           <li
             key={key}
-            className='flex justify-between items-center border-b pb-2'
+            className='flex justify-between items-center border-b pb-2 '
           >
             <div className='flex flex-col'>
-              <p className='font-bold text-lg'>{item.name}</p>
-              <p className='text-gray-500'>Price: {item.formattedValue}</p>
-              <p className='text-gray-500'>Quantity: {item.quantity}</p>
+              <p className='font-bold '>{item.name}</p>
+              <p className='opacity-60'>Price: {item.formattedValue}</p>
+              <p className='opacity-60'>Quantity: {item.quantity}</p>
             </div>
             <div className='flex items-center gap-2'>
               <button
@@ -79,21 +93,15 @@ const Cart: React.FC = () => {
         ))}
       </ul>
       <div className='mt-4'>
-        <h2 className='text-xl font-semibold'>Total: {formattedTotalPrice}</h2>
+        <h2 className='text-lg lg:text-xl font-semibold'>
+          Total: {formattedTotalPrice}
+        </h2>
       </div>
-      <div className='mt-6'>
-        <button
-          className='bg-black text-white px-4 py-2 rounded mr-2'
-          onClick={clearCart}
-        >
-          Clear Cart
-        </button>
-        <button
-          className='bg-black text-white px-4 py-2 rounded'
-          onClick={handleCheckout}
-        >
-          Checkout
-        </button>
+      <div className='mt-6 space-x-3'>
+        <Button label='Checkout' onClick={handleCheckout} />
+      </div>
+      <div className='my-12 lg:my-24'>
+        <RichText content={page.data.content} className='text-xs lg:text-sm' />
       </div>
     </div>
   );

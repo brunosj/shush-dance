@@ -2,7 +2,7 @@
 
 ## Description
 
-This repo contains the website of [sketchy house](https://sketchy.house).
+This repo contains the website of [SHUSH](https://shush.dance).
 
 ## Technologies
 
@@ -13,7 +13,7 @@ This is a [Next.js](https://nextjs.org) app using the [App Router](https://nextj
 1. Use the git CLI to close the repo
 
 ```
-gh repo clone brunosj/sketchy
+gh repo clone brunosj/shush-dance
 ```
 
 2. Install dependencies
@@ -32,7 +32,7 @@ pnpm dev
 yarn dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the frontend, and [http://localhost:3000/admin](http://localhost:3000/admin) for the backend.
 
 ## Structure
 

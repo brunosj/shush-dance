@@ -16,6 +16,9 @@ export const Releases: CollectionConfig = {
       'updatedAt',
     ],
   },
+  versions: {
+    drafts: true,
+  },
   access: {
     read: adminsOrPublished,
     update: admins,

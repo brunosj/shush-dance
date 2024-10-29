@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 const SuccessPage: React.FC = () => {
   return (
-    <div className='flex flex-col items-center justify-center min-h-screen text-center bg-green-100'>
+    <article className=' flex flex-col items-center justify-center min-h-screen text-center bg-green-100'>
       <h1 className='text-3xl font-bold text-green-600'>
         Thank You for Your Purchase!
       </h1>
@@ -16,7 +16,7 @@ const SuccessPage: React.FC = () => {
           Return to Home
         </Link>
       </div>
-    </div>
+    </article>
   );
 };
 
