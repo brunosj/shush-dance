@@ -1,4 +1,4 @@
-<!-- ![SHUSH Logo](https://res.cloudinary.com/e30/image/upload/v1718175491/media/y1wmi8gmdbvjkpnodxq2.png) -->
+<!-- ![SHUSH Logo](https://res.cloudinary.com/) -->
 
 ## Description
 
