@@ -3,8 +3,7 @@ import useTheme from '../hooks/useTheme';
 
 const Logo = () => {
   const theme = useTheme();
-  const logoSrc =
-    theme === 'dark' ? `/media/logo-white.png` : `/media/logo-white.png`;
+  const logoSrc = theme === 'dark' ? `/logo-white.png` : `/logo-white.png`;
 
   return (
     <div className='logo'>
