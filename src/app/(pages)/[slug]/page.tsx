@@ -24,12 +24,12 @@ export default async function Page({ params: { slug = 'home' } }: PageParams) {
   return <PageTemplate slug={slug} data={data} />;
 }
 
-export async function generateStaticParams() {
-  const pages = await fetchPages();
+// export async function generateStaticParams() {
+//   const pages = await fetchPages();
 
-  return pages
-    .filter(
-      ({ slug }) => slug !== 'home' && slug !== 'media' && slug !== 'audio'
-    )
-    .map(({ slug }) => ({ slug }));
-}
+//   return pages
+//     .filter(
+//       ({ slug }) => slug !== 'home' && slug !== 'media' && slug !== 'audio'
+//     )
+//     .map(({ slug }) => ({ slug }));
+// }
