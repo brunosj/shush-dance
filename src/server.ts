@@ -10,6 +10,11 @@ dotenv.config({
 });
 
 const app = express();
+
+// Serve media files statically
+const mediaPath = path.resolve(__dirname, '../media');
+app.use('/media', express.static(mediaPath));
+
 const PORT = process.env.PORT || 3000;
 const start = async (): Promise<void> => {
   console.log(`Server starting on port ${PORT}`);
