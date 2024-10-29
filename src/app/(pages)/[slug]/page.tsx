@@ -8,8 +8,16 @@ interface PageParams {
 }
 
 export default async function Page({ params: { slug = 'home' } }: PageParams) {
-  const data = await fetchPageData(slug);
-  if (!data.page) {
+  let data;
+
+  try {
+    data = await fetchPageData(slug);
+
+    if (!data || !data.page) {
+      return notFound();
+    }
+  } catch (error) {
+    console.error(`Failed to fetch data for slug "${slug}":`, error);
     return notFound();
   }
 
