@@ -1,7 +1,7 @@
 import type { Social } from '../../payload/payload-types';
 
-export const fetchSocials = async (): Promise<Social[]> => {
-  const pageRes: Social[] = await fetch(
+export const fetchSocials = async (): Promise<Social> => {
+  const socialsRes: Social = await fetch(
     `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/globals/socials`,
     {
       headers: {
@@ -12,5 +12,5 @@ export const fetchSocials = async (): Promise<Social[]> => {
     }
   ).then((res) => res.json()); // eslint-disable-line function-paren-newline
 
-  return pageRes ?? [];
+  return socialsRes ?? { id: '' };
 };

@@ -1,8 +1,8 @@
-import type { Page } from '../../payload/payload-types';
+import type { Event } from '../../payload/payload-types';
 
-export const fetchEvents = async (): Promise<Page[]> => {
-  const pageRes: {
-    docs: Page[];
+export const fetchEvents = async (): Promise<Event[]> => {
+  const eventsRes: {
+    docs: Event[];
   } = await fetch(
     `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/events?depth=2&limit=0`,
     {
@@ -14,5 +14,5 @@ export const fetchEvents = async (): Promise<Page[]> => {
     }
   ).then((res) => res.json()); // eslint-disable-line function-paren-newline
 
-  return pageRes?.docs ?? [];
+  return eventsRes?.docs ?? [];
 };
