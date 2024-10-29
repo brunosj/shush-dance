@@ -10,7 +10,7 @@ const Icon = () => {
     <div className='icon'>
       <img
         src={logoSrc}
-        alt='sketchy house'
+        alt='SHUSH'
         style={{ maxHeight: '15px', margin: 'auto' }}
       />
     </div>
