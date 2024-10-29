@@ -21,7 +21,7 @@ const siteMetadata: Metadata = {
     siteName: 'SHUSH',
     images: [
       {
-        url: 'https://shush.dance/shush.jpg',
+        url: 'https://shush.dance/shush_logo_cream_v2.jpg',
         width: 1200,
         height: 630,
         alt: 'SHUSH Image',
@@ -36,7 +36,7 @@ const siteMetadata: Metadata = {
     card: 'summary_large_image',
     title: 'SHUSH',
     description: 'unity through movement and vibration',
-    images: ['https://shush.dance/shush.jpg'],
+    images: ['https://shush.dance/shush_logo_cream_v2.jpg'],
   },
 
   // Verification for search engines

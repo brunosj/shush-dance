@@ -43,10 +43,3 @@ Thumbs.db
 build/
 dist/
 
-# Ignore all files in media and audio folders
-media/*
-audio/*
-
-# But keep the folder structure for API routes
-!media/.gitkeep
-!audio/.gitkeep
