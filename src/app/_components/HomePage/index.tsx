@@ -29,10 +29,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
       <div className='px-2 lg:px-24 py-24 lg:py-32 lg:flex relative lg:gap-32'>
         <aside className='lg:w-1/3 text-left text-lg  '>
           <div className='lg:fixed lg:w-1/4 lg:top-1/2 transform lg:-translate-y-1/2'>
-            <RichText
-              content={page.data.content}
-              className='text-sm lg:text-lg'
-            />
+            <RichText content={page.data.content} />
 
             {socials && socials.items.length > 0 && (
               <nav className='mt-6 lg:mt-12 lowercase'>

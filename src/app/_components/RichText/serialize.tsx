@@ -87,11 +87,7 @@ const serialize = (children: Children): React.ReactNode[] =>
         );
 
       default:
-        return (
-          <p className='mb-4' key={i}>
-            {serialize(node.children)}
-          </p>
-        );
+        return <p key={i}>{serialize(node.children)}</p>;
     }
   });
 

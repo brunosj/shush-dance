@@ -1,7 +1,6 @@
 import React from 'react';
 
 import serialize from './serialize';
-import classes from './index.module.css';
 
 export const RichText: React.FC<{ className?: string; content: any }> = ({
   className,
@@ -12,6 +11,6 @@ export const RichText: React.FC<{ className?: string; content: any }> = ({
   }
 
   return (
-    <div className={(classes.richText, className)}>{serialize(content)}</div>
+    <div className={`richText ${className || ''}`}>{serialize(content)}</div>
   );
 };

@@ -31,10 +31,10 @@ export function Header() {
             </Link>
           </div>
           {cartCount > 0 && (
-            <div className='z-50'>
+            <div className='z-50 relative group '>
               <Link href='/cart' className='relative'>
-                <IoTicketOutline className='w-8 h-8 textHover' />
-                <div className='rounded-full flex justify-center items-center bg-black text-xs text-white absolute w-5 h-5 -bottom-7 -left-2 sm:-bottom-7 sm:-left-2 md:-bottom-7 md:-left-2 lg:-bottom-7 lg:-left-2'>
+                <IoTicketOutline className='w-8 h-8 group-hover:opacity-75' />
+                <div className='cart-count-badge group-hover:opacity-75 '>
                   {cartCount}
                 </div>
               </Link>

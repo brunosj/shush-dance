@@ -23,17 +23,22 @@ const EventList: React.FC<EventListProps> = ({ events }) => {
     return dateB.getTime() - dateA.getTime();
   });
 
-  const handleAddToCart = (tier) => {
+  const handleAddToCart = (tier, event: Event) => {
     const item = {
       id: tier.stripePriceId,
       name: tier.tierName,
+      parentItem: event.title,
       price: tier.price * 100,
       currency: 'EUR',
       quantity: 1,
-      description: `Ticket for ${tier.tierName}`,
+      description: `Ticket for ${event.title}`,
+      priceObject: {
+        value: tier.price * 100,
+        currency: 'EUR',
+      },
     };
     addItem(item, { count: item.quantity });
-    toast.success('added to cart!');
+    toast.success('Added to cart!');
   };
 
   return (
@@ -42,7 +47,7 @@ const EventList: React.FC<EventListProps> = ({ events }) => {
         const eventDate = new Date(event.date);
         const isPastEvent = eventDate.setHours(0, 0, 0, 0) < today.getTime();
 
-        const [imagePosition, setImagePosition] = useState({
+        const [imagePosition] = useState({
           top: `${Math.random() * 80}%`,
           left: `${Math.random() * 80}%`,
         });
@@ -61,7 +66,7 @@ const EventList: React.FC<EventListProps> = ({ events }) => {
             <div
               className={`space-y-4 pb-3 lg:pb-0 ${isPastEvent ? 'opacity-30' : ''}`}
             >
-              <h3 className='font-semibold '>
+              <h3 className='font-semibold'>
                 {event.title} @ {event.location}
               </h3>
 
@@ -75,19 +80,19 @@ const EventList: React.FC<EventListProps> = ({ events }) => {
 
                   return (
                     <div key={artistKey}>
-                      <p className='text-sm lg:text-lg'>{artistName}</p>
+                      <p>{artistName}</p>
                     </div>
                   );
                 })}
               </div>
 
               {/* Tickets */}
-              <div className='space-y-1 relative z-20 '>
+              <div className='space-y-1 relative z-20'>
                 {event.ticketsAvailable &&
                   event.ticketTiers?.map((tier) => (
                     <div key={tier.id}>
                       <Button
-                        onClick={() => handleAddToCart(tier)}
+                        onClick={() => handleAddToCart(tier, event)}
                         label={`${tier.tierName} - €${tier.price}`}
                       />
                     </div>
