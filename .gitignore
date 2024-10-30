@@ -44,7 +44,7 @@ build/
 dist/
 
 # Ignore files in the root media folder
-/media/
+media/
 
 # Do not ignore other media directories
 !**/media/
