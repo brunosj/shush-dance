@@ -46,6 +46,4 @@ dist/
 # Ignore files in the root media folder
 media/
 
-# Do not ignore other media directories
-!**/media/
 
