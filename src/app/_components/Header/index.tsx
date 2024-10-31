@@ -19,7 +19,7 @@ export function Header() {
 
   return (
     <header>
-      <div className=' top-0 w-full z-10 filter-bottom'>
+      <div className='fixed top-0 w-full z-10 filter-bottom'>
         <div className='py-2 px-3 flex items-center  justify-between'>
           <div className=''>
             <Link href='/' className=''>
