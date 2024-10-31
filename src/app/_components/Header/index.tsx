@@ -19,7 +19,7 @@ export function Header() {
 
   return (
     <header>
-      <div className='fixed top-0 w-full z-10 filter-bottom'>
+      <div className=' top-0 w-full z-10 filter-bottom'>
         <div className='py-2 px-3 flex items-center  justify-between'>
           <div className=''>
             <Link href='/' className=''>
@@ -31,10 +31,10 @@ export function Header() {
             </Link>
           </div>
           {cartCount > 0 && (
-            <div className='z-50 relative group '>
-              <Link href='/cart' className='relative'>
+            <div className='z-50 group relative'>
+              <Link href='/cart' className=''>
                 <IoTicketOutline className='w-8 h-8 group-hover:opacity-75' />
-                <div className='cart-count-badge group-hover:opacity-75 '>
+                <div className='rounded-full flex justify-center items-center  text-xs bg-black text-pri absolute w-5 h-5 -mt-2 group-hover:opacity-75 -left-1 '>
                   {cartCount}
                 </div>
               </Link>
