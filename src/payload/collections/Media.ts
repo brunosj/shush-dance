@@ -6,7 +6,7 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     staticURL: '/media',
-    staticDir: path.resolve(__dirname, '../../../media'),
+    staticDir: path.resolve(__dirname, '../../../../media'),
   },
   access: {
     read: () => true,
