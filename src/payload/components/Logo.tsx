@@ -3,7 +3,10 @@ import useTheme from '../hooks/useTheme';
 
 const Logo = () => {
   const theme = useTheme();
-  const logoSrc = theme === 'dark' ? `/logo-white.png` : `/logo-white.png`;
+  const logoSrc =
+    theme === 'dark'
+      ? `/shush_triple_logo_white.png`
+      : `/shush_triple_logo_black.png`;
 
   return (
     <div className='logo'>

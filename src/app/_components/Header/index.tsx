@@ -7,6 +7,7 @@ import localFont from 'next/font/local';
 import { useShoppingCart } from 'use-shopping-cart';
 import { IoTicketOutline } from 'react-icons/io5';
 
+const logoSrc = '/shush_triple_logo_black.png';
 const Carbon = localFont({
   src: '../../../app/_fonts/Carbon.ttf',
   display: 'swap',
@@ -23,11 +24,12 @@ export function Header() {
         <div className='py-2 px-3 flex items-center  justify-between'>
           <div className=''>
             <Link href='/' className=''>
-              <div
+              <Image src={logoSrc} alt='SHUSH' width={125} height={150} />
+              {/* <div
                 className={`${Carbon.className} text-lg lg:text-2xl tracking-[1.2rem]`}
               >
                 SHUSH
-              </div>
+              </div> */}
             </Link>
           </div>
           {cartCount > 0 && (
@@ -43,7 +45,7 @@ export function Header() {
         </div>
       </div>
 
-      <div className='fixed bottom-0 w-full text-right filter-top z-10 py-2 px-3'>
+      {/* <div className='fixed bottom-0 w-full text-right filter-top z-10 py-2 px-3'>
         <Link href='/' className=''>
           <div
             className={`${Carbon.className} text-lg lg:text-2xl tracking-[1.2rem]`}
@@ -51,7 +53,7 @@ export function Header() {
             DANCE
           </div>
         </Link>
-      </div>
+      </div> */}
     </header>
   );
 }
