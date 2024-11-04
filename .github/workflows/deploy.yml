@@ -10,19 +10,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - name: Setup SSH
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        HOST: ${{ secrets.HOST }}
       run: |
         mkdir -p ~/.ssh/
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        echo "${SSH_PRIVATE_KEY}" | tr -d '\r' > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+
     - name: Execute deployment script
       env:
         HOST: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
       run: |
         set -e
-        ssh -o StrictHostKeyChecking=no ${{ env.USERNAME }}@${{ env.HOST }} "cd ~ && ./deploy.sh"
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.USERNAME }}@${{ env.HOST }} "cd ~ && ./deploy.sh"
         EXIT_STATUS=$?
         echo "Deployment script exited with status $EXIT_STATUS"
         exit $EXIT_STATUS
