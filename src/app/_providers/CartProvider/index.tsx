@@ -10,7 +10,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       cartMode='client-only'
       stripe={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string}
       successUrl={`${process.env.NEXT_PUBLIC_SERVER_URL}/success`}
-      cancelUrl={`${process.env.NEXT_PUBLIC_SERVER_URL}/?success=false`}
+      cancelUrl={`${process.env.NEXT_PUBLIC_SERVER_URL}`}
       currency='EUR'
       billingAddressCollection={true}
       shouldPersist={true}
