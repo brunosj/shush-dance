@@ -84,7 +84,7 @@ export const Events: CollectionConfig = {
         {
           name: 'visible',
           type: 'checkbox',
-          label: 'Visible/Hidden',
+          label: 'Visible',
           defaultValue: true,
         },
         {

@@ -54,6 +54,12 @@ export const Releases: CollectionConfig = {
       label: 'Credits',
     }),
     {
+      name: 'buyLink',
+      type: 'text',
+      label: 'Buy Link',
+      required: false,
+    },
+    {
       name: 'artwork',
       type: 'upload',
       relationTo: 'media',
