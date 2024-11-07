@@ -7,6 +7,7 @@ import { InitTheme } from './_providers/Theme/InitTheme';
 import { mergeOpenGraph } from './_utilities/mergeOpenGraph';
 import { siteMetadata } from './_components/Metadata';
 import { Header } from './_components/Header';
+import { Footer } from './_components/Footer/footer';
 import { Toaster } from 'react-hot-toast';
 
 import './_css/globals.css';
@@ -66,6 +67,7 @@ export default async function RootLayout({
           />
           <Header />
           {children}
+          <Footer />
         </Providers>
       </body>
     </html>

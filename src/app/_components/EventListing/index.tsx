@@ -45,16 +45,16 @@ const EventListing: React.FC<EventListingProps> = ({ event }) => {
   return (
     <li
       key={event.id}
-      className='relative lg:flex space-y-3 lg:space-y-0 lg:space-x-12 group'
+      className='relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-12 group'
     >
-      <div>
+      <div className='flex-grow-0'>
         <p className={`font-semibold ${isPastEvent ? 'opacity-30' : ''}`}>
           {formatDate(event.date)}
         </p>
       </div>
 
       <div
-        className={`space-y-4 pb-3 lg:pb-0 ${isPastEvent ? 'opacity-30' : ''}`}
+        className={`space-y-4 pb-3 col-span-4 lg:pb-0 ${isPastEvent ? 'opacity-30' : ''}`}
       >
         <h3 className='font-semibold'>
           {event.title} @ {event.location}

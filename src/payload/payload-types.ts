@@ -113,6 +113,7 @@ export interface Release {
         [k: string]: unknown;
       }[]
     | null;
+  buyLink?: string | null;
   artwork: string | Media;
   images?:
     | {
@@ -125,6 +126,7 @@ export interface Release {
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

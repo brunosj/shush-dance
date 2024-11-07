@@ -3,6 +3,7 @@ import { fetchPage } from './fetchPage';
 import { fetchEvents } from './fetchEvents';
 import { fetchReleases } from './fetchReleases';
 import { fetchSocials } from './fetchSocials';
+import { release } from 'os';
 
 export const fetchPageData = async (slug: string) => {
   // Base page data fetched for all pages
@@ -16,6 +17,7 @@ export const fetchPageData = async (slug: string) => {
         page: basePage,
         socials: socials,
         events: await fetchEvents(),
+        releases: await fetchReleases(),
       };
 
     case 'events':

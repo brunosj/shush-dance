@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { RichText } from '../RichText';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
+import Button from '../Button';
 
 interface ReleaseListingProps {
   release: Release;
@@ -25,6 +26,7 @@ const ReleaseListing: React.FC<ReleaseListingProps> = ({ release }) => {
     images,
     catalogNumber,
     releaseYear,
+    buyLink,
   } = release;
 
   const artistName = typeof artist === 'string' ? artist : artist.artistName;
@@ -47,30 +49,35 @@ const ReleaseListing: React.FC<ReleaseListingProps> = ({ release }) => {
     setLightboxOpen(false);
   };
 
-  console.log(transformedImages);
   return (
-    <div className='release-item mb-8 space-y-12'>
-      <div className='lg:flex gap-12 items-center'>
-        {/* Artwork */}
-        {artworkUrl && (
-          <div className='release-artwork relative w-48 h-48'>
-            <Image
-              src={artworkUrl}
-              alt={`${title} artwork`}
-              fill
-              className='object-contain w-full h-auto cursor-pointer'
-              onClick={() => handleThumbnailClick(0)}
-            />
-          </div>
-        )}
+    <div className='release-item mb-8 space-y-6 lg:space-y-12'>
+      <div className='lg:grid grid-cols-2'>
+        <div className='lg:flex gap-12 items-center'>
+          {/* Artwork */}
+          {artworkUrl && (
+            <div className='release-artwork relative w-48 h-48'>
+              <Image
+                src={artworkUrl}
+                alt={`${title} artwork`}
+                fill
+                className='object-contain w-full h-auto cursor-pointer'
+                onClick={() => handleThumbnailClick(0)}
+              />
+            </div>
+          )}
 
-        {/* Release Details */}
-        <div className='space-y-1'>
-          <h2 className='release-title'>{title}</h2>
-          <h4 className='release-artist'>{artistName}</h4>
-          <h4 className='release-catalog-number'>
-            {catalogNumber} - {releaseYear}
-          </h4>
+          {/* Release Details */}
+          <div className='space-y-1'>
+            <h2 className='release-title'>{title}</h2>
+            <h4 className='release-artist'>{artistName}</h4>
+            <h4 className='release-catalog-number'>
+              {catalogNumber} - {releaseYear}
+            </h4>
+          </div>
+        </div>
+        {/* Buy Link */}
+        <div className='pt-3 lg:pt-0 ml-auto my-auto'>
+          <Button href={buyLink} label='get the record!' target='_blank' />
         </div>
       </div>
 

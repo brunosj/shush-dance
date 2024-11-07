@@ -13,3 +13,7 @@ export const menuItems = [
     href: '/releases',
   },
 ];
+
+export const footerItems = [
+  { label: 'Imprint/Privacy Policy', href: '/imprint' },
+];

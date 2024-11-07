@@ -17,7 +17,18 @@ export const createRichTextField = ({
   required: false,
   editor: slateEditor({
     admin: {
-      elements: ['h1', 'h2', 'h3', 'h4', 'link', 'blockquote', 'ol', 'ul'],
+      elements: [
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'link',
+        'blockquote',
+        'ol',
+        'ul',
+      ],
       leaves: ['bold', 'italic'],
       link: {
         fields: [

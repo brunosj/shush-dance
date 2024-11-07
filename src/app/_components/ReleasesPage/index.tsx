@@ -24,9 +24,9 @@ const ReleasesPage: React.FC<ReleasesPageProps> = ({ data }) => {
   }
 
   return (
-    <article className='container layout relative overflow-hidden'>
+    <article className='container layout relative overflow-hidden  '>
       {releases && releases.length > 0 && (
-        <section className='my-12 lg:my-0'>
+        <section>
           {releases.map((release, index) => (
             <li key={index} className='list-none'>
               <ReleaseListing release={release} />
