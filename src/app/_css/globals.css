@@ -23,7 +23,7 @@
   }
 
   h4 {
-    @apply text-sm lg:text-lg font-semibold;
+    @apply text-sm lg:text-lg;
   }
 
   p {
@@ -41,6 +41,10 @@
 
 .container {
   @apply max-w-screen-xl mx-auto;
+}
+
+.layout {
+  @apply px-2 lg:px-24 py-24 lg:py-32;
 }
 
 .filter-bottom {

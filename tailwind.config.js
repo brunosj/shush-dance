@@ -4,7 +4,7 @@ module.exports = {
   theme: {
     colors: {
       pri: {
-        DEFAULT: '#F2F2EB',
+        DEFAULT: '#FEFEF6',
       },
       sec: {
         DEFAULT: '#97AAFF',

@@ -59,7 +59,7 @@ export default async function RootLayout({
               success: {
                 iconTheme: {
                   primary: '#000000',
-                  secondary: '#F2F2EB',
+                  secondary: '#FEFEF6',
                 },
               },
             }}

@@ -2,10 +2,13 @@
 import type { Page } from '../../payload/payload-types';
 import HomePage from './HomePage';
 import CartPage from './CartPage';
+import EventsPage from './EventsPage';
+import ReleasesPage from './ReleasesPage';
 
 const componentMapping: { [key: string]: React.FC<{ data: any }> } = {
   home: HomePage,
   cart: CartPage,
-  // Add other page components here
+  events: EventsPage,
+  releases: ReleasesPage,
 };
 export default componentMapping;

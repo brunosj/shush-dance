@@ -18,11 +18,17 @@ export const fetchPageData = async (slug: string) => {
         events: await fetchEvents(),
       };
 
-    // case 'events':
-    //   return {
-    //     page: basePage,
-    //     events: await fetchEvents(),
-    //   };
+    case 'events':
+      return {
+        page: basePage,
+        events: await fetchEvents(),
+      };
+
+    case 'releases':
+      return {
+        page: basePage,
+        releases: await fetchReleases(),
+      };
 
     default:
       return { page: basePage, socials: socials };

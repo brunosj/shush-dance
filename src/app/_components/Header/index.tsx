@@ -2,58 +2,66 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import Logo from '../../../../public/logo-black.png';
-import localFont from 'next/font/local';
 import { useShoppingCart } from 'use-shopping-cart';
 import { IoTicketOutline } from 'react-icons/io5';
+import { Fade as Hamburger } from 'hamburger-react';
+import { useState } from 'react';
+import { menuItems } from '../Menu';
 
 const logoSrc = '/shush_triple_logo_black.png';
-const Carbon = localFont({
-  src: '../../../app/_fonts/Carbon.ttf',
-  display: 'swap',
-  variable: '--editorial',
-  weight: '1 1000',
-});
 
 export function Header() {
   const { cartCount } = useShoppingCart();
+  const [isOpen, setOpen] = useState(false);
+
+  const closeMenu = () => setOpen(false);
 
   return (
-    <header>
-      <div className='fixed top-0 w-full z-10 filter-bottom'>
-        <div className='py-2 px-3 flex items-center  justify-between'>
-          <div className=''>
-            <Link href='/' className=''>
-              <Image src={logoSrc} alt='SHUSH' width={125} height={150} />
-              {/* <div
-                className={`${Carbon.className} text-lg lg:text-2xl tracking-[1.2rem]`}
-              >
-                SHUSH
-              </div> */}
+    <header className='fixed top-0 w-full z-30 filter-bottom'>
+      <div className='relative py-2 px-3 flex items-center'>
+        {/* Logo on the left */}
+        <div className='flex-shrink-0'>
+          <Link href='/' onClick={closeMenu}>
+            <Image src={logoSrc} alt='SHUSH' width={125} height={150} />
+          </Link>
+        </div>
+
+        {/* Centered Hamburger */}
+        {/* <div className='absolute left-1/2 transform -translate-x-1/2'>
+          <Hamburger toggled={isOpen} toggle={setOpen} size={25} />
+        </div> */}
+
+        {/* Cart Icon on the right */}
+        {cartCount > 0 && (
+          <div className='ml-auto z-50 group relative'>
+            <Link href='/cart' onClick={closeMenu}>
+              <IoTicketOutline className='w-8 h-8 group-hover:opacity-75' />
+              <div className='rounded-full flex justify-center items-center text-xs bg-black text-pri absolute w-5 h-5 -mt-2 group-hover:opacity-75 -left-1'>
+                {cartCount}
+              </div>
             </Link>
           </div>
-          {cartCount > 0 && (
-            <div className='z-50 group relative'>
-              <Link href='/cart' className=''>
-                <IoTicketOutline className='w-8 h-8 group-hover:opacity-75' />
-                <div className='rounded-full flex justify-center items-center  text-xs bg-black text-pri absolute w-5 h-5 -mt-2 group-hover:opacity-75 -left-1 '>
-                  {cartCount}
-                </div>
-              </Link>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* <div className='fixed bottom-0 w-full text-right filter-top z-10 py-2 px-3'>
-        <Link href='/' className=''>
-          <div
-            className={`${Carbon.className} text-lg lg:text-2xl tracking-[1.2rem]`}
-          >
-            DANCE
-          </div>
-        </Link>
-      </div> */}
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <nav className='absolute top-full left-0 w-full bg-pri shadow-md'>
+          <ul className='flex flex-col items-center py-4'>
+            {menuItems.map((item, index) => (
+              <li key={index} className='py-2'>
+                <Link
+                  href={item.href}
+                  className='text-lg hover:text-gray-700'
+                  onClick={closeMenu}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
     </header>
   );
 }
