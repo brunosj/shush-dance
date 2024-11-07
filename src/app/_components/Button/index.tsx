@@ -21,14 +21,14 @@ const Button: React.FC<ButtonProps> = ({
       {onClick ? (
         <button
           onClick={onClick}
-          className={`lowercase py-1 px-2 bg-black text-pri hover:bg-darkGray duration-200 ease-in-out ${textStyles}`}
+          className={`lowercase py-1 px-3 bg-black text-pri hover:bg-darkGray duration-200 ease-in-out ${textStyles}`}
         >
           {label}
         </button>
       ) : (
         <Link href={href || '#'} target={target}>
           <span
-            className={`lowercase py-1 px-2 bg-black text-pri hover:bg-darkGray duration-200 ease-in-out ${textStyles}`}
+            className={`lowercase py-1 px-3 bg-black text-pri hover:bg-darkGray duration-200 ease-in-out ${textStyles}`}
           >
             {label}
           </span>

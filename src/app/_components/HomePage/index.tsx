@@ -65,9 +65,9 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
           {latestRelease && (
             <div className='space-y-6  border-gray pb-6 lg:pb-12 border-b'>
               <h2>Announcing!</h2>
-              <div>
+              <ul className='list-none'>
                 <ReleaseCard release={latestRelease} />
-              </div>
+              </ul>
             </div>
           )}
 

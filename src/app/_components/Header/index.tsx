@@ -69,7 +69,7 @@ export function Header() {
       {/* Dropdown Menu */}
       {isOpen && (
         <nav className='absolute top-0 left-0 w-full bg-pri shadow-md'>
-          <ul className='flex flex-col items-center pb-4 lg:pb-6 pt-12 space-y-1 lg:space-y-2 lg:pt-16'>
+          <ul className='flex flex-col items-center pb-4 lg:pb-6 pt-12 space-y-2 lg:space-y-4 lg:pt-16'>
             {menuItems.map((item, index) => (
               <li key={index} className=''>
                 <Link

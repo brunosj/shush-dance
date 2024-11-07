@@ -46,12 +46,16 @@
     @apply mb-4 text-sm lg:text-base;
   }
 
+  .richText h6 {
+    @apply text-sm lg:text-base;
+  }
+
   .richTextSmallP p {
     @apply text-xs lg:text-sm;
   }
 
-  .richText h6 {
-    @apply text-sm lg:text-base;
+  .richTextSmallP h6 {
+    @apply text-xs lg:text-sm;
   }
 }
 
