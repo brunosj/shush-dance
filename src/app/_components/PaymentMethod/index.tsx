@@ -1,9 +1,9 @@
 interface PaymentMethodRadioProps {
   label: string;
   icon: React.ReactNode;
-  value: 'stripe' | 'paypal'; // Make sure the value is of the correct type
-  selectedPaymentMethod: 'stripe' | 'paypal'; // Same here
-  onChange: (value: 'stripe' | 'paypal') => void; // Update onChange type
+  value: 'stripe' | 'paypal';
+  selectedPaymentMethod: 'stripe' | 'paypal';
+  onChange: (value: 'stripe' | 'paypal') => void;
 }
 
 const PaymentMethodRadio: React.FC<PaymentMethodRadioProps> = ({
