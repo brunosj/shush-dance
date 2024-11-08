@@ -7,7 +7,7 @@ const siteMetadata: Metadata = {
 
   // Basic metadata
   applicationName: 'SHUSH',
-  authors: [{ name: 'Bruno SJ', url: 'https://landozone.net' }],
+  authors: [{ name: 'SHUSH', url: 'https://shush.dance' }],
   keywords: ['dance', 'berlin', 'underground'],
   referrer: 'origin-when-cross-origin',
   creator: 'landozone',
@@ -21,7 +21,7 @@ const siteMetadata: Metadata = {
     siteName: 'SHUSH',
     images: [
       {
-        url: 'https://shush.dance/shush_logo_cream_v2.jpg',
+        url: 'https://shush.dance/SHUSH_logo_SEO.png',
         width: 1200,
         height: 630,
         alt: 'SHUSH Image',
@@ -36,7 +36,7 @@ const siteMetadata: Metadata = {
     card: 'summary_large_image',
     title: 'SHUSH',
     description: 'unity through movement and vibration',
-    images: ['https://shush.dance/shush_logo_cream_v2.jpg'],
+    images: ['https://shush.dance/SHUSH_logo_SEO.png'],
   },
 
   // Verification for search engines
