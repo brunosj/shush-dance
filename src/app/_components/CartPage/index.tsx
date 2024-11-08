@@ -41,7 +41,18 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
     'stripe'
   );
   const [currency, setCurrency] = useState('EUR');
-  const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const navigateToSuccess = () => {
+    if (isMounted) {
+      const router = useRouter();
+      router.push('/success');
+    }
+  };
 
   useEffect(() => {
     if (cartCount !== undefined) {
@@ -190,7 +201,7 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
               onApprove={async (data, actions) => {
                 try {
                   const details = await actions.order.capture();
-                  router.push('/success');
+                  navigateToSuccess();
                 } catch (err) {
                   console.error('PayPal error:', err);
                   alert('Payment failed');
