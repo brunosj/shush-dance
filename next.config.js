@@ -3,6 +3,9 @@ const ContentSecurityPolicy = require('./csp');
 const redirects = require('./redirects');
 
 const nextConfig = {
+  // need to see how this can properly work with the current setup
+  // https://nextjs.org/docs/app/api-reference/next-config-js/output
+  // output: 'standalone',
   reactStrictMode: true,
   swcMinify: true,
   images: {
