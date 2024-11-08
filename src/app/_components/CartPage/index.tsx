@@ -14,6 +14,7 @@ import {
   PayPalButtons,
   PayPalButtonsComponentProps,
 } from '@paypal/react-paypal-js';
+import { useRouter } from 'next/router';
 
 interface CartPageProps {
   data: {
@@ -40,6 +41,7 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
     'stripe'
   );
   const [currency, setCurrency] = useState('EUR');
+  const router = useRouter();
 
   useEffect(() => {
     if (cartCount !== undefined) {
@@ -185,12 +187,14 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
                   ],
                 });
               }}
-              onApprove={(data, actions) => {
-                return actions.order.capture().then((details) => {
-                  alert(
-                    'Transaction completed by ' + details.payer.name.given_name
-                  );
-                });
+              onApprove={async (data, actions) => {
+                try {
+                  const details = await actions.order.capture();
+                  router.push('/success');
+                } catch (err) {
+                  console.error('PayPal error:', err);
+                  alert('Payment failed');
+                }
               }}
               onError={(err) => {
                 console.error('PayPal error:', err);
