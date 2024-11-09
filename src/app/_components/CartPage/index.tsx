@@ -54,6 +54,13 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
     }
   };
 
+  const navigateToError = () => {
+    if (isMounted) {
+      const router = useRouter();
+      router.push('/error');
+    }
+  };
+
   useEffect(() => {
     if (cartCount !== undefined) {
       setIsLoading(false);
@@ -87,6 +94,10 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
         const result = await redirectToCheckout();
         if (result?.error) {
           console.error('Error during checkout:', result.error);
+        } else {
+          // Clear the cart after successful payment
+          clearCart();
+          navigateToSuccess();
         }
       } catch (error) {
         console.error('Checkout error:', error);
@@ -201,15 +212,15 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
               onApprove={async (data, actions) => {
                 try {
                   const details = await actions.order.capture();
+                  clearCart();
                   navigateToSuccess();
                 } catch (err) {
                   console.error('PayPal error:', err);
-                  alert('Payment failed');
                 }
               }}
               onError={(err) => {
                 console.error('PayPal error:', err);
-                alert('Payment failed');
+                navigateToError();
               }}
               style={styles}
             />
