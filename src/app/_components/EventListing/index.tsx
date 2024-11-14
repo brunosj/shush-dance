@@ -80,10 +80,12 @@ const EventListing: React.FC<EventListingProps> = ({ event }) => {
           {event.ticketsAvailable &&
             event.ticketTiers?.map((tier) => (
               <div key={tier.id}>
-                <Button
-                  onClick={() => handleAddToCart(tier)}
-                  label={`${tier.tierName} - €${tier.price}`}
-                />
+                {tier.visible && (
+                  <Button
+                    onClick={() => handleAddToCart(tier)}
+                    label={`${tier.tierName} - €${tier.price}`}
+                  />
+                )}
               </div>
             ))}
         </div>
