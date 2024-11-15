@@ -67,16 +67,19 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
     }
   }, [cartCount]);
 
-  // Format items for PayPal
+  // Format items for PayPal with safety checks
   const formatItemsForPayPal = () =>
-    Object.values(cartDetails).map((item) => ({
-      name: item.name,
-      description: item.description,
+    Object.values(cartDetails || {}).map((item) => ({
+      name: item?.name || 'Product',
+      description: item?.description || '',
       unit_amount: {
         currency_code: currency,
-        value: (item.priceObject.value / 100).toFixed(2),
+        value: (item?.priceObject?.value
+          ? item.priceObject.value / 100
+          : 0
+        ).toFixed(2),
       },
-      quantity: item.quantity.toString(),
+      quantity: item?.quantity?.toString() || '1',
     }));
 
   // Styling for the Paypal buttons
@@ -112,37 +115,41 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
         Loading your cart...
       </p>
     );
-  if (cartCount === 0)
+  if (!cartDetails || Object.keys(cartDetails).length === 0) {
     return (
       <div className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
         <h1 className='text-base lg:text-xl'>Your cart is empty</h1>
         <Button href='/' label='Return to home' />
       </div>
     );
+  }
 
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-32'>
       <ul className='space-y-4'>
-        {Object.entries(cartDetails).map(([key, item]) => (
+        {Object.entries(cartDetails || {}).map(([key, item]) => (
           <li
             key={key}
             className='flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray'
           >
             <div className='flex flex-col'>
-              <h4 className='font-bold '>{item.parentItem}</h4>
+              <h4 className='font-bold '>{item?.parentItem || 'Product'}</h4>
               <p className='text-darkGray'>
-                {item.name} | {formatCurrencyString(item.priceObject)}
+                {item?.name || 'Unknown'} |{' '}
+                {item?.priceObject
+                  ? formatCurrencyString(item.priceObject)
+                  : '€0.00'}
               </p>
             </div>
             <div className='ml-auto flex items-center gap-2 space-x-3'>
               <button
                 onClick={() => decrementItem(key)}
                 className='bg-gray-200 text-black px-2 py-1'
-                disabled={item.quantity <= 1}
+                disabled={item?.quantity <= 1}
               >
                 -
               </button>
-              <span className='text-sm lg:text-base'>{item.quantity}</span>
+              <span className='text-sm lg:text-base'>{item?.quantity}</span>
               <button
                 onClick={() => incrementItem(key)}
                 className='bg-gray-200 text-black px-2 py-1'
@@ -150,7 +157,7 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
                 +
               </button>
               <div className='h-6 border-l border-gray'></div>
-              <p>{item.formattedValue}</p>
+              <p>{item?.formattedValue}</p>
               <div className='h-6 border-l border-gray'></div>
               <button
                 className='text-black px-2 py-1 rounded'

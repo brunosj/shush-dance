@@ -76,19 +76,21 @@ const EventListing: React.FC<EventListingProps> = ({ event }) => {
         </div>
 
         {/* Tickets */}
-        <div className='space-y-1 relative z-20'>
-          {event.ticketsAvailable &&
-            event.ticketTiers?.map((tier) => (
-              <div key={tier.id}>
-                {tier.visible && (
-                  <Button
-                    onClick={() => handleAddToCart(tier)}
-                    label={`${tier.tierName} - €${tier.price}`}
-                  />
-                )}
-              </div>
-            ))}
-        </div>
+        {!isPastEvent && (
+          <div className='space-y-1 relative z-20'>
+            {event.ticketsAvailable &&
+              event.ticketTiers?.map((tier) => (
+                <div key={tier.id}>
+                  {tier.visible && (
+                    <Button
+                      onClick={() => handleAddToCart(tier)}
+                      label={`${tier.tierName} - €${tier.price}`}
+                    />
+                  )}
+                </div>
+              ))}
+          </div>
+        )}
 
         {/* Event Information */}
         {!isPastEvent && (

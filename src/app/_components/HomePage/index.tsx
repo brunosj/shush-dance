@@ -26,7 +26,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
   const upcomingEvents = events?.filter((event) => {
     const eventDate = new Date(event.date);
     const currentDate = new Date();
-    return eventDate > currentDate;
+    return eventDate >= currentDate;
   });
 
   const latestRelease = data.releases?.[0];
