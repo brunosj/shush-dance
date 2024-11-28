@@ -6,6 +6,10 @@ import { adminsOrPublished } from '../../access/adminsOrPublished';
 
 export const Merch: CollectionConfig = {
   slug: 'merch',
+  labels: {
+    singular: 'Merch Item',
+    plural: 'Merch Items',
+  },
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'itemType', 'updatedAt'],

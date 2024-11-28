@@ -9,10 +9,17 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['localhost', process.env.NEXT_PUBLIC_PAYLOAD_URL]
-      .filter(Boolean)
-      .map((url) => url.replace(/https?:\/\//, '')),
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname:
+          process.env.NEXT_PUBLIC_PAYLOAD_URL?.replace(/https?:\/\//, '') ||
+          'localhost',
+        pathname: '/media/**',
+      },
+    ],
   },
+
   redirects,
   async headers() {
     const headers = [];

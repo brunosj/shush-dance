@@ -10,6 +10,7 @@ export interface Config {
   collections: {
     events: Event;
     releases: Release;
+    merch: Merch;
     artists: Artist;
     tracks: Track;
     pages: Page;
@@ -162,6 +163,32 @@ export interface Audio {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "merch".
+ */
+export interface Merch {
+  id: string;
+  title: string;
+  itemType: string;
+  description?:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
+  buyLink?: string | null;
+  mainImage: string | Media;
+  images?:
+    | {
+        image?: string | Media | null;
+        id?: string | null;
+      }[]
+    | null;
+  slug?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
