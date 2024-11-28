@@ -13,29 +13,28 @@ import MerchListing from '../MerchListing';
 interface MerchPageProps {
   data: {
     page: { data: Page | null | undefined };
-    merch?: Merch[];
+    merchItems?: Merch[];
   };
 }
 
 const MerchPage: React.FC<MerchPageProps> = ({ data }) => {
-  const { page, merch } = data;
+  const { page, merchItems } = data;
 
   if (!page) {
     return <p>Loading...</p>;
   }
 
-  console.log(merch);
   return (
     <article className='container layout relative overflow-hidden  '>
-      {/* {merch && merch.length > 0 && (
+      {merchItems && merchItems.length > 0 && (
         <section>
-          {merch.map((release, index) => (
+          {merchItems.map((merchItem, index) => (
             <li key={index} className='list-none'>
-              <MerchListing merch={merch} />
+              <MerchListing merch={merchItem} />
             </li>
           ))}
         </section>
-      )} */}
+      )}
     </article>
   );
 };

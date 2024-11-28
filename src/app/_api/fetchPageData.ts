@@ -35,7 +35,7 @@ export const fetchPageData = async (slug: string) => {
     case 'merch':
       return {
         page: basePage,
-        merch: await fetchMerch(),
+        merchItems: await fetchMerch(),
       };
 
     default:

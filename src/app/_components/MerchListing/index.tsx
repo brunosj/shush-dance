@@ -40,33 +40,37 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
     setLightboxOpen(false);
   };
 
+  console.log(buyLink);
   return (
     <div className='release-item mb-8 space-y-6 lg:space-y-12'>
-      <div className='lg:grid grid-cols-2'>
-        <div className='lg:flex gap-12 items-center'>
-          {/* Artwork */}
-          {mainImageUrl && (
-            <div className='release-artwork relative w-48 h-48'>
-              <Image
-                src={mainImageUrl}
-                alt={`${title} artwork`}
-                fill
-                className='object-contain w-full h-auto cursor-pointer'
-                onClick={() => handleThumbnailClick(0)}
-              />
-            </div>
-          )}
-
-          {/* Release Details */}
-          <div className='space-y-1'>
-            <h2 className='release-title'>{title}</h2>
-            <h4 className='release-artist'>{itemType}</h4>
-            {/* <h4 className='release-catalog-number'>{itemType}</h4> */}
+      <div className='lg:grid grid-cols-2 gap-6 lg:gap-12'>
+        {/* Artwork */}
+        {mainImageUrl && (
+          <div className='release-artwork relative h-[40vh] w-full'>
+            <Image
+              src={mainImageUrl}
+              alt={`${title} artwork`}
+              fill
+              className='object-contain w-full h-auto'
+              // onClick={() => handleThumbnailClick(0)}
+            />
           </div>
-        </div>
-        {/* Buy Link */}
-        <div className='pt-3 lg:pt-0 ml-auto my-auto'>
-          <Button href={buyLink} label='get the record!' target='_blank' />
+        )}
+        {/* Release Details */}
+        <div className='lg:flex space-y-3  my-auto flex-col'>
+          <h2 className='release-title'>{title}</h2>
+          <h4 className='release-artist'>{itemType}</h4>
+          {/* <h4 className='release-catalog-number'>{itemType}</h4> */}
+          {/* Buy Link */}
+
+          <div className='pt-3 my-auto'>
+            <Button
+              href={buyLink}
+              label={buyLink ? 'buy' : 'sold out'}
+              target='_blank'
+              disabled={buyLink === undefined}
+            />
+          </div>
         </div>
       </div>
 
