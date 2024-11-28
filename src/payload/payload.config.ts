@@ -15,6 +15,7 @@ import Tracks from './collections/Tracks';
 import { Events } from './collections/Events';
 import { Artists } from './collections/Artists';
 import { Releases } from './collections/Releases';
+import { Merch } from './collections/Merch';
 import Users from './collections/Users';
 import { Socials } from './globals/Socials';
 
@@ -38,7 +39,17 @@ export default buildConfig({
     url: process.env.DATABASE_URI,
   }),
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
-  collections: [Events, Releases, Artists, Tracks, Pages, Audio, Media, Users],
+  collections: [
+    Events,
+    Releases,
+    Merch,
+    Artists,
+    Tracks,
+    Pages,
+    Audio,
+    Media,
+    Users,
+  ],
   globals: [Socials],
   typescript: {
     outputFile: path.resolve(__dirname, 'payload-types.ts'),
