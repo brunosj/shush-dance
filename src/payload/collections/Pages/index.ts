@@ -40,8 +40,7 @@ export const Pages: CollectionConfig = {
       type: 'text',
       required: true,
     },
-    createRichTextField({ label: 'Contenttt' }),
-    { name: 'content', type: 'richText', required: false },
+    createRichTextField({ label: 'Content' }),
     // {
     //   name: 'publishedAt',
     //   type: 'date',

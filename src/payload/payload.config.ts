@@ -16,8 +16,6 @@ import { Events } from './collections/Events';
 import { Artists } from './collections/Artists';
 import { Releases } from './collections/Releases';
 import Users from './collections/Users';
-import { Footer } from './globals/Footer';
-import { Header } from './globals/Header';
 import { Socials } from './globals/Socials';
 
 dotenv.config({

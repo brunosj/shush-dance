@@ -12,6 +12,10 @@ export const menuItems = [
     label: 'Releases',
     href: '/releases',
   },
+  {
+    label: 'Merch',
+    href: '/merch',
+  },
 ];
 
 export const footerItems = [

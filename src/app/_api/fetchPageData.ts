@@ -3,7 +3,7 @@ import { fetchPage } from './fetchPage';
 import { fetchEvents } from './fetchEvents';
 import { fetchReleases } from './fetchReleases';
 import { fetchSocials } from './fetchSocials';
-import { release } from 'os';
+import { fetchMerch } from './fetchMerch';
 
 export const fetchPageData = async (slug: string) => {
   // Base page data fetched for all pages
@@ -30,6 +30,12 @@ export const fetchPageData = async (slug: string) => {
       return {
         page: basePage,
         releases: await fetchReleases(),
+      };
+
+    case 'merch':
+      return {
+        page: basePage,
+        merch: await fetchMerch(),
       };
 
     default:

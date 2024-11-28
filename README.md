@@ -6,7 +6,7 @@ This repo contains the website of [SHUSH](https://shush.dance).
 
 ## Technologies
 
-This is a [Next.js](https://nextjs.org) app using the [App Router](https://nextjs.org/docs/app). Data is sourced from [Payload](https://payloadcms.com/).
+This is a [Next.js](https://nextjs.org) app using the [App Router](https://nextjs.org/docs/app). Data is sourced from [Payload](https://payloadcms.com/) and the backend lives on the same server at /admin. It integrates with [Stripe](https://stripe.com/) and [Paypal](https://www.paypal.com/) for payments.
 
 ## Installation
 
