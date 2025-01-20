@@ -41,6 +41,14 @@ export const Pages: CollectionConfig = {
       required: true,
     },
     createRichTextField({ label: 'Content' }),
+    {
+      name: 'showEventsFirst',
+      type: 'checkbox',
+      label: 'Show events before announcements?',
+      admin: {
+        condition: (data) => data.slug === 'home',
+      },
+    },
     // {
     //   name: 'publishedAt',
     //   type: 'date',

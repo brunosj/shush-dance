@@ -62,28 +62,58 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
         </aside>
 
         <div className='w-full lg:w-2/3 ml-auto space-y-6 lg:space-y-12 mt-12 lg:mt-0'>
-          {latestRelease && (
-            <div className='space-y-6  border-gray pb-6 lg:pb-12 border-b'>
-              <h2>Announcing!</h2>
-              <ul className='list-none'>
-                <ReleaseCard release={latestRelease} />
-              </ul>
-            </div>
-          )}
+          {page.data.showEventsFirst ? (
+            <>
+              {upcomingEvents && upcomingEvents.length > 0 && (
+                <div className='space-y-6'>
+                  <h2>
+                    {upcomingEvents.length > 1
+                      ? 'Upcoming Events'
+                      : 'Upcoming Event'}
+                  </h2>
+                  <ul className='lg:space-y-8 space-y-4'>
+                    {upcomingEvents.map((event) => (
+                      <EventListing key={event.id} event={event} />
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-          {upcomingEvents && upcomingEvents.length > 0 && (
-            <div className='space-y-6'>
-              <h2>
-                {upcomingEvents.length > 1
-                  ? 'Upcoming Events'
-                  : 'Upcoming Event'}
-              </h2>
-              <ul className='lg:space-y-8 space-y-4'>
-                {upcomingEvents.map((event) => (
-                  <EventListing key={event.id} event={event} />
-                ))}
-              </ul>
-            </div>
+              {latestRelease && (
+                <div className='space-y-6  border-gray pb-6 lg:pb-12 border-b'>
+                  <h2>Announcing!</h2>
+                  <ul className='list-none'>
+                    <ReleaseCard release={latestRelease} />
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {latestRelease && (
+                <div className='space-y-6  border-gray pb-6 lg:pb-12 border-b'>
+                  <h2>Announcing!</h2>
+                  <ul className='list-none'>
+                    <ReleaseCard release={latestRelease} />
+                  </ul>
+                </div>
+              )}
+
+              {upcomingEvents && upcomingEvents.length > 0 && (
+                <div className='space-y-6'>
+                  <h2>
+                    {upcomingEvents.length > 1
+                      ? 'Upcoming Events'
+                      : 'Upcoming Event'}
+                  </h2>
+                  <ul className='lg:space-y-8 space-y-4'>
+                    {upcomingEvents.map((event) => (
+                      <EventListing key={event.id} event={event} />
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -202,6 +202,7 @@ export interface Page {
         [k: string]: unknown;
       }[]
     | null;
+  showEventsFirst?: boolean | null;
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
