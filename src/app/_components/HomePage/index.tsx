@@ -65,7 +65,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
           {page.data.showEventsFirst ? (
             <>
               {upcomingEvents && upcomingEvents.length > 0 && (
-                <div className='space-y-6'>
+                <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
                   <h2>
                     {upcomingEvents.length > 1
                       ? 'Upcoming Events'
@@ -80,7 +80,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
               )}
 
               {latestRelease && (
-                <div className='space-y-6  border-gray pb-6 lg:pb-12 border-b'>
+                <div className='space-y-6  '>
                   <h2>Announcing!</h2>
                   <ul className='list-none'>
                     <ReleaseCard release={latestRelease} />
