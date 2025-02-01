@@ -24,9 +24,13 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
   const { cartCount } = useShoppingCart();
 
   const upcomingEvents = events?.filter((event) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const eventDate = new Date(event.date);
-    const currentDate = new Date();
-    return eventDate >= currentDate;
+    eventDate.setHours(0, 0, 0, 0);
+
+    return eventDate.getTime() >= today.getTime();
   });
 
   const latestRelease = data.releases?.[0];
@@ -102,7 +106,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
               {upcomingEvents && upcomingEvents.length > 0 && (
                 <div className='space-y-6'>
                   <h2>
-                    {upcomingEvents.length > 1
+                    {upcomingEvents.length >= 1
                       ? 'Upcoming Events'
                       : 'Upcoming Event'}
                   </h2>

@@ -14,7 +14,7 @@ import {
   PayPalButtons,
   PayPalButtonsComponentProps,
 } from '@paypal/react-paypal-js';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 
 interface CartPageProps {
   data: {
@@ -43,22 +43,18 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
   const [currency, setCurrency] = useState('EUR');
   const [isMounted, setIsMounted] = useState(false);
 
+  const router = useRouter();
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   const navigateToSuccess = () => {
-    if (isMounted) {
-      const router = useRouter();
-      router.push('/success');
-    }
+    router.push('/success');
   };
 
   const navigateToError = () => {
-    if (isMounted) {
-      const router = useRouter();
-      router.push('/error');
-    }
+    router.push('/error');
   };
 
   useEffect(() => {
@@ -83,7 +79,7 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
     }));
 
   // Styling for the Paypal buttons
-  const styles: PayPalButtonsComponentProps['style'] = {
+  const styles = {
     shape: 'sharp',
     layout: 'vertical',
     color: 'black',
@@ -99,12 +95,44 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
           console.error('Error during checkout:', result.error);
         } else {
           // Clear the cart after successful payment
-          clearCart();
+          await clearCart();
           navigateToSuccess();
         }
       } catch (error) {
         console.error('Checkout error:', error);
       }
+    }
+  };
+
+  const createOrder = (data: any, actions: any) => {
+    return actions.order.create({
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          amount: {
+            currency_code: currency,
+            value: (totalPrice / 100).toFixed(2),
+            breakdown: {
+              item_total: {
+                currency_code: currency,
+                value: (totalPrice / 100).toFixed(2),
+              },
+            },
+          },
+          items: formatItemsForPayPal(),
+        },
+      ],
+    });
+  };
+
+  const onApprove = async (data: any, actions: any) => {
+    try {
+      const details = await actions.order.capture();
+      await clearCart();
+      navigateToSuccess();
+    } catch (err) {
+      console.error('PayPal error:', err);
+      navigateToError();
     }
   };
 
@@ -196,40 +224,13 @@ const CartTest: React.FC<CartPageProps> = ({ data }) => {
           {/* PayPal Buttons */}
           {paymentMethod === 'paypal' && (
             <PayPalButtons
-              createOrder={(data, actions) => {
-                return actions.order.create({
-                  intent: 'CAPTURE',
-                  purchase_units: [
-                    {
-                      amount: {
-                        currency_code: currency,
-                        value: (totalPrice / 100).toFixed(2),
-                        breakdown: {
-                          item_total: {
-                            currency_code: currency,
-                            value: (totalPrice / 100).toFixed(2),
-                          },
-                        },
-                      },
-                      items: formatItemsForPayPal(),
-                    },
-                  ],
-                });
-              }}
-              onApprove={async (data, actions) => {
-                try {
-                  const details = await actions.order.capture();
-                  clearCart();
-                  navigateToSuccess();
-                } catch (err) {
-                  console.error('PayPal error:', err);
-                }
-              }}
+              style={styles as PayPalButtonsComponentProps['style']}
+              createOrder={createOrder}
+              onApprove={onApprove}
               onError={(err) => {
                 console.error('PayPal error:', err);
                 navigateToError();
               }}
-              style={styles}
             />
           )}
 
