@@ -47,6 +47,16 @@ const start = async (): Promise<void> => {
 
   const nextHandler = nextApp.getRequestHandler();
 
+  // IMPORTANT: Move this after Payload initialization but before the catch-all handler
+  app.use('/admin', (req, res, next) => {
+    if (req.url === '/admin') {
+      res.redirect('/admin/');
+      return;
+    }
+    next();
+  });
+
+  // The catch-all handler should be last
   app.use((req, res) => nextHandler(req, res));
 
   nextApp.prepare().then(() => {
