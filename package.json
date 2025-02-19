@@ -7,11 +7,10 @@
   "scripts": {
     "dev": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts nodemon",
     "build:payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload build",
-    "build:server": "tsc --project tsconfig.server.json",
     "build:next": "cross-env PAYLOAD_CONFIG_PATH=dist/payload/payload.config.js NEXT_BUILD=true node dist/server.js",
     "build:next-green": "cross-env PAYLOAD_CONFIG_PATH=dist/payload/payload.config.js NEXT_BUILD=true PORT=3001 node dist/server.js",
-    "build": "cross-env NODE_ENV=production npm run build:payload && npm run build:server && npm run build:next",
-    "build-green": "cross-env NODE_ENV=production PORT=3001 npm run build:payload && npm run build:server && npm run build:next",
+    "build": "cross-env NODE_ENV=production npm run build:payload && npm run build:next",
+    "build-green": "cross-env NODE_ENV=production PORT=3001 npm run build:payload && npm run build:next",
     "serve": "cross-env PAYLOAD_CONFIG_PATH=dist/payload/payload.config.js NODE_ENV=production PORT=3000 node dist/server.js",
     "serve-green": "cross-env PAYLOAD_CONFIG_PATH=dist/payload/payload.config.js NODE_ENV=production PORT=3001 node dist/server.js",
     "eject": "yarn remove next react react-dom @next/eslint-plugin-next && ts-node eject.ts",
@@ -20,8 +19,7 @@
     "generate:graphQLSchema": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload generate:graphQLSchema",
     "lint": "eslint src",
     "lint:fix": "eslint --fix --ext .ts,.tsx src",
-    "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload",
-    "sync-bandcamp": "ts-node scripts/sync-bandcamp-sales.ts"
+    "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload"
   },
   "dependencies": {
     "@payloadcms/bundler-webpack": "^1.0.7",
@@ -40,7 +38,6 @@
     "fs": "0.0.1-security",
     "hamburger-react": "^2.5.2",
     "lodash": "^4.17.21",
-    "mongodb": "^6.13.0",
     "music-metadata": "^10.8.2",
     "next": "14.2.15",
     "node-cron": "^3.0.3",

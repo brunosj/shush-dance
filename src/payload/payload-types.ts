@@ -17,6 +17,7 @@ export interface Config {
     audio: Audio;
     media: Media;
     users: User;
+    sales: Sale;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
@@ -226,6 +227,53 @@ export interface User {
   loginAttempts?: number | null;
   lockUntil?: string | null;
   password: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sales".
+ */
+export interface Sale {
+  id: string;
+  itemName: string;
+  artist?: string | null;
+  itemType?: string | null;
+  package?: string | null;
+  option?: string | null;
+  type: 'record' | 'merch' | 'digital' | 'track' | 'album' | 'package';
+  itemPrice?: number | null;
+  quantity?: number | null;
+  subTotal?: number | null;
+  currency?: string | null;
+  additionalFanContribution?: number | null;
+  itemTotal?: number | null;
+  netAmount?: number | null;
+  transactionFee?: number | null;
+  feeType?: string | null;
+  amountYouReceived?: number | null;
+  sellerTax?: number | null;
+  marketplaceTax?: number | null;
+  taxRate?: number | null;
+  shipping?: number | null;
+  buyerName?: string | null;
+  buyerEmail?: string | null;
+  buyerPhone?: string | null;
+  city?: string | null;
+  regionOrState?: string | null;
+  country?: string | null;
+  countryCode?: string | null;
+  bandcampTransactionId?: string | null;
+  bandcampTransactionItemId: string;
+  bandcampRelatedTransactionId?: string | null;
+  itemUrl?: string | null;
+  referer?: string | null;
+  refererUrl?: string | null;
+  catalogNumber?: string | null;
+  upc?: string | null;
+  isrc?: string | null;
+  buyerNote?: string | null;
+  soldAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -20,6 +20,7 @@ import Users from './collections/Users';
 import { Socials } from './globals/Socials';
 import { Sales } from './collections/Sales';
 import { testBandcampEndpoint } from './endpoints/testBandcamp';
+import { syncBandcampEndpoint } from './endpoints/syncBandcamp';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
@@ -60,5 +61,5 @@ export default buildConfig({
   },
   cors: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
   csrf: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
-  endpoints: [testBandcampEndpoint],
+  endpoints: [testBandcampEndpoint, syncBandcampEndpoint],
 });

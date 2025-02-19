@@ -21,79 +21,94 @@ interface TokenResponse {
   ok: boolean;
 }
 
+interface SaleItem {
+  bandcamp_transaction_id: number;
+  bandcamp_transaction_item_id: number;
+  bandcamp_related_transaction_id: number | null;
+  date: string;
+  paid_to: string;
+  item_type: string;
+  item_name: string;
+  artist: string;
+  currency: string;
+  item_price: number;
+  quantity: number;
+  discount_code: string | null;
+  sub_total: number;
+  additional_fan_contribution: number;
+  seller_tax: number | null;
+  marketplace_tax: number | null;
+  tax_rate: number | null;
+  collection_society_share: number | null;
+  shipping: number | null;
+  ship_from_country_name: string | null;
+  transaction_fee: number;
+  fee_type: string;
+  item_total: number;
+  amount_you_received: number;
+  paypal_transaction_id: string | null;
+  net_amount: number;
+  package: string;
+  option: string | null;
+  item_url: string;
+  catalog_number: string | null;
+  upc: string;
+  isrc: string;
+  buyer_name: string;
+  buyer_email: string;
+  buyer_phone: string | null;
+  buyer_note: string | null;
+  ship_to_name: string;
+  ship_to_street: string;
+  ship_to_street_2: string;
+  ship_to_city: string | null;
+  ship_to_state: string | null;
+  ship_to_zip: string | null;
+  ship_to_country: string | null;
+  ship_to_country_code: string | null;
+  ship_date: string | null;
+  ship_notes: string | null;
+  country: string;
+  country_code: string;
+  region_or_state: string;
+  city: string;
+  referer: string;
+  referer_url: string;
+  sku: string | null;
+}
+
+interface SalesResponse {
+  report: SaleItem[];
+}
+
 let authToken: string | null = null;
 let refreshToken: string | null = null;
 
-const TIMEOUT_MS = 10000; // 10 seconds
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 2000; // 2 seconds
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const authenticate = async (retryCount = 0): Promise<void> => {
-  console.log(
-    'Starting authentication process... (attempt',
-    retryCount + 1,
-    'of',
-    MAX_RETRIES + 1,
-    ')'
-  );
-  console.log('Checking environment variables...');
-
-  if (!CLIENT_ID) {
-    console.error('CLIENT_ID is missing');
-    throw new Error('Missing CLIENT_ID');
-  }
-  if (!CLIENT_SECRET) {
-    console.error('CLIENT_SECRET is missing');
-    throw new Error('Missing CLIENT_SECRET');
-  }
-
-  console.log('Environment variables present');
-
+const authenticate = async (): Promise<void> => {
   try {
     const params = new URLSearchParams({
       grant_type: 'client_credentials',
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      scope: 'sales',
+      client_id: CLIENT_ID!,
+      client_secret: CLIENT_SECRET!,
     });
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-    console.log('Making request to Bandcamp...');
-    const response = await fetch(`${BASE_URL}/oauth/token`, {
+    const response = await fetch(`${BASE_URL}/oauth_token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
-      signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Authentication failed: ${response.statusText} - ${errorText}`
-      );
+      throw new Error(`Authentication failed: ${response.statusText}`);
     }
 
     const data: TokenResponse = await response.json();
     authToken = data.access_token;
     refreshToken = data.refresh_token;
-    console.log('Authentication successful');
   } catch (error) {
-    console.error('Bandcamp authentication attempt failed:', error);
-
-    if (retryCount < MAX_RETRIES) {
-      console.log(`Retrying in ${RETRY_DELAY_MS}ms...`);
-      await sleep(RETRY_DELAY_MS);
-      return authenticate(retryCount + 1);
-    }
-
+    console.error('Bandcamp authentication failed:', error);
     throw error;
   }
 };
@@ -128,7 +143,7 @@ export const fetchSalesForBand = async (
   bandId: number,
   startDate: Date,
   endDate: Date
-) => {
+): Promise<SalesResponse> => {
   if (!authToken) {
     await authenticate();
   }

@@ -40,7 +40,6 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
     setLightboxOpen(false);
   };
 
-  console.log(buyLink);
   return (
     <div className='release-item mb-8 space-y-6 lg:space-y-12'>
       <div className='lg:grid grid-cols-2 gap-6 lg:gap-12'>

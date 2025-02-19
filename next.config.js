@@ -55,6 +55,10 @@ const nextConfig = {
 
     return headers;
   },
+  env: {
+    NEXT_PUBLIC_BANDCAMP_CLIENT_ID: process.env.NEXT_PUBLIC_BANDCAMP_CLIENT_ID,
+    BANDCAMP_CLIENT_SECRET: process.env.BANDCAMP_CLIENT_SECRET,
+  },
 };
 
 module.exports = nextConfig;
