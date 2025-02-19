@@ -4,6 +4,7 @@ import nextBuild from 'next/dist/build';
 import path from 'path';
 import express from 'express';
 import { getPayloadClient } from './payload/getPayload';
+import payload from 'payload';
 
 dotenv.config({
   path: path.resolve(__dirname, '../.env'),
@@ -11,7 +12,6 @@ dotenv.config({
 
 const app = express();
 
-// Serve media files statically
 const mediaPath = path.resolve(__dirname, '../../media');
 app.use('/media', express.static(mediaPath));
 
@@ -47,7 +47,6 @@ const start = async (): Promise<void> => {
 
   const nextHandler = nextApp.getRequestHandler();
 
-  // IMPORTANT: Move this after Payload initialization but before the catch-all handler
   app.use('/admin', (req, res, next) => {
     if (req.url === '/admin') {
       res.redirect('/admin/');
@@ -56,7 +55,6 @@ const start = async (): Promise<void> => {
     next();
   });
 
-  // The catch-all handler should be last
   app.use((req, res) => nextHandler(req, res));
 
   nextApp.prepare().then(() => {

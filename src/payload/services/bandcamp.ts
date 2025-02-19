@@ -24,31 +24,76 @@ interface TokenResponse {
 let authToken: string | null = null;
 let refreshToken: string | null = null;
 
-const authenticate = async (): Promise<void> => {
+const TIMEOUT_MS = 10000; // 10 seconds
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000; // 2 seconds
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const authenticate = async (retryCount = 0): Promise<void> => {
+  console.log(
+    'Starting authentication process... (attempt',
+    retryCount + 1,
+    'of',
+    MAX_RETRIES + 1,
+    ')'
+  );
+  console.log('Checking environment variables...');
+
+  if (!CLIENT_ID) {
+    console.error('CLIENT_ID is missing');
+    throw new Error('Missing CLIENT_ID');
+  }
+  if (!CLIENT_SECRET) {
+    console.error('CLIENT_SECRET is missing');
+    throw new Error('Missing CLIENT_SECRET');
+  }
+
+  console.log('Environment variables present');
+
   try {
     const params = new URLSearchParams({
       grant_type: 'client_credentials',
-      client_id: CLIENT_ID!,
-      client_secret: CLIENT_SECRET!,
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      scope: 'sales',
     });
 
-    const response = await fetch(`${BASE_URL}/oauth_token`, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    console.log('Making request to Bandcamp...');
+    const response = await fetch(`${BASE_URL}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`Authentication failed: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(
+        `Authentication failed: ${response.statusText} - ${errorText}`
+      );
     }
 
     const data: TokenResponse = await response.json();
     authToken = data.access_token;
     refreshToken = data.refresh_token;
+    console.log('Authentication successful');
   } catch (error) {
-    console.error('Bandcamp authentication failed:', error);
+    console.error('Bandcamp authentication attempt failed:', error);
+
+    if (retryCount < MAX_RETRIES) {
+      console.log(`Retrying in ${RETRY_DELAY_MS}ms...`);
+      await sleep(RETRY_DELAY_MS);
+      return authenticate(retryCount + 1);
+    }
+
     throw error;
   }
 };
