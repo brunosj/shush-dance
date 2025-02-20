@@ -6,10 +6,6 @@ export const syncBandcampEndpoint: Endpoint = {
   method: 'post',
   handler: async (req, res) => {
     try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 60); // Last 60 days
-
       // Fetch bands
       const bands = await fetchBands();
       console.log(`Found ${bands.length} bands`);
@@ -17,8 +13,13 @@ export const syncBandcampEndpoint: Endpoint = {
       let totalFound = 0;
       let totalCreated = 0;
 
+      // Define the start and end dates
+      const startDate = new Date('2024-01-01');
+      const endDate = new Date();
+
       // Process each band
       for (const band of bands) {
+        // Fetch sales with the specified date range
         const salesData = await fetchSalesForBand(
           band.band_id,
           startDate,
@@ -66,12 +67,13 @@ export const syncBandcampEndpoint: Endpoint = {
                     package: sale.package,
                     option: sale.option,
                     type: determineItemType(sale.item_type, sale.package || ''),
+                    pointOfSale: 'bandcamp',
 
                     // Financial Information
                     itemPrice: sale.item_price || 0,
                     quantity: sale.quantity || 1,
                     subTotal: sale.sub_total || 0,
-                    currency: sale.currency || 'USD',
+                    currency: sale.currency || 'EUR',
                     additionalFanContribution:
                       sale.additional_fan_contribution || 0,
                     itemTotal: sale.item_total || 0,
@@ -114,7 +116,6 @@ export const syncBandcampEndpoint: Endpoint = {
                     isrc: sale.isrc || '',
                     buyerNote: sale.buyer_note || '',
                     soldAt: new Date(sale.date),
-                    platform: 'bandcamp',
                   },
                 });
                 totalCreated++;
@@ -132,15 +133,20 @@ export const syncBandcampEndpoint: Endpoint = {
         }
       }
 
+      // Update the settings global with the sync timestamp
+      await req.payload.updateGlobal({
+        slug: 'settings',
+        data: {
+          lastBandcampSync: new Date().toISOString(),
+        },
+      });
+
       res.status(200).json({
         success: true,
         totalSales: totalFound,
         newSales: totalCreated,
         bandsProcessed: bands.length,
-        dateRange: {
-          from: startDate.toISOString(),
-          to: endDate.toISOString(),
-        },
+        syncedAt: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Sync error:', error);

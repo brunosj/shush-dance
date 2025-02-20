@@ -5,9 +5,19 @@ export const SyncBandcampButton: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string>('');
 
+  const formatDateTime = (isoString: string) => {
+    return new Date(isoString).toLocaleString('en-GB', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const handleSync = async () => {
     setIsLoading(true);
-    setStatus('Starting sync...');
+    setStatus('Syncing in progress...');
 
     try {
       const response = await fetch('/api/sync-bandcamp', {
@@ -18,7 +28,7 @@ export const SyncBandcampButton: React.FC = () => {
 
       if (data.success) {
         setStatus(
-          `Sync complete! Found ${data.totalSales} sales, created ${data.newSales} new entries.`
+          `Sync complete! Found ${data.totalSales} sales, created ${data.newSales} new entries. Please refresh`
         );
       } else {
         throw new Error(data.error);
@@ -32,7 +42,7 @@ export const SyncBandcampButton: React.FC = () => {
   };
 
   return (
-    <div style={{ paddingLeft: '80px', paddingBottom: '10px' }}>
+    <div style={{ paddingLeft: '80px' }}>
       <Button onClick={handleSync} disabled={isLoading}>
         {isLoading ? 'Syncing...' : 'Sync Bandcamp Sales'}
       </Button>
@@ -40,6 +50,7 @@ export const SyncBandcampButton: React.FC = () => {
         <div
           style={{
             marginTop: '10px',
+            marginBottom: '10px',
             color: status.includes('Error') ? 'red' : 'inherit',
           }}
         >

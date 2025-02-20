@@ -1,5 +1,7 @@
 'use client';
 
+import { formatCurrency, formatNumber } from '../../_utilities/formatters';
+
 interface SalesTableProps {
   sales: any[];
   sortBy: string;
@@ -26,12 +28,16 @@ export function SalesTable({
     { key: 'soldAt', label: 'Date' },
     { key: 'itemName', label: 'Item' },
     { key: 'type', label: 'Type' },
-    { key: 'amount', label: 'Gross Amount' },
+    { key: 'itemTotal', label: 'Gross Amount' },
     { key: 'netAmount', label: 'Net Amount' },
-    { key: 'taxAmount', label: 'Tax' },
+    { key: 'calculatedTax', label: 'Tax' },
     { key: 'taxRate', label: 'Tax Rate' },
     { key: 'transactionFee', label: 'Fee' },
   ];
+
+  const calculateTaxAmount = (sale: any) => {
+    return (sale.sellerTax || 0) + (sale.marketplaceTax || 0);
+  };
 
   return (
     <div className='overflow-x-auto rounded-lg border border-gray-200'>
@@ -104,29 +110,19 @@ export function SalesTable({
                 </span>
               </td>
               <td className='px-6 py-4 text-sm'>
-                {new Intl.NumberFormat('de-DE', {
-                  style: 'currency',
-                  currency: sale.currency,
-                }).format(sale.amount)}
+                {formatCurrency(sale.itemTotal, sale.currency)}
               </td>
               <td className='px-6 py-4 text-sm'>
-                {new Intl.NumberFormat('de-DE', {
-                  style: 'currency',
-                  currency: sale.currency,
-                }).format(sale.netAmount)}
+                {formatCurrency(sale.netAmount, sale.currency)}
               </td>
               <td className='px-6 py-4 text-sm'>
-                {new Intl.NumberFormat('de-DE', {
-                  style: 'currency',
-                  currency: sale.currency,
-                }).format(sale.taxAmount)}
+                {formatCurrency(calculateTaxAmount(sale), sale.currency)}
               </td>
-              <td className='px-6 py-4 text-sm'>{sale.taxRate}%</td>
               <td className='px-6 py-4 text-sm'>
-                {new Intl.NumberFormat('de-DE', {
-                  style: 'currency',
-                  currency: sale.currency,
-                }).format(sale.transactionFee)}
+                {formatNumber(sale.taxRate, 1)}%
+              </td>
+              <td className='px-6 py-4 text-sm'>
+                {formatCurrency(sale.transactionFee, sale.currency)}
               </td>
             </tr>
           ))}

@@ -21,6 +21,7 @@ import { Socials } from './globals/Socials';
 import { Sales } from './collections/Sales';
 import { testBandcampEndpoint } from './endpoints/testBandcamp';
 import { syncBandcampEndpoint } from './endpoints/syncBandcamp';
+import { Settings } from './globals/settings';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
@@ -54,7 +55,7 @@ export default buildConfig({
     Users,
     Sales,
   ],
-  globals: [Socials],
+  globals: [Socials, Settings],
   typescript: {
     outputFile: path.resolve(__dirname, 'payload-types.ts'),
     declare: false,

@@ -9,9 +9,13 @@ import type { Sale } from '../../../payload/payload-types';
 
 interface SalesDashboardProps {
   initialSales: Sale[];
+  lastSyncedAt?: string;
 }
 
-export function SalesDashboard({ initialSales }: SalesDashboardProps) {
+export function SalesDashboard({
+  initialSales,
+  lastSyncedAt,
+}: SalesDashboardProps) {
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
     null,
     null,
@@ -58,6 +62,7 @@ export function SalesDashboard({ initialSales }: SalesDashboardProps) {
         setDateRange={setDateRange}
         selectedTypes={selectedTypes}
         setSelectedTypes={setSelectedTypes}
+        lastSyncedAt={lastSyncedAt}
       />
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>

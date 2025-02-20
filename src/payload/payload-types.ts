@@ -23,6 +23,7 @@ export interface Config {
   };
   globals: {
     socials: Social;
+    settings: Setting;
   };
 }
 /**
@@ -236,24 +237,24 @@ export interface Sale {
   id: string;
   itemName: string;
   artist?: string | null;
+  pointOfSale: 'bandcamp' | 'paypal' | 'in-person' | 'promo';
+  type: 'record' | 'merch' | 'digital' | 'track' | 'album' | 'package';
   itemType?: string | null;
   package?: string | null;
-  option?: string | null;
-  type: 'record' | 'merch' | 'digital' | 'track' | 'album' | 'package';
+  soldAt: string;
   itemPrice?: number | null;
   quantity?: number | null;
-  subTotal?: number | null;
   currency?: string | null;
+  subTotal?: number | null;
   additionalFanContribution?: number | null;
-  itemTotal?: number | null;
-  netAmount?: number | null;
-  transactionFee?: number | null;
-  feeType?: string | null;
-  amountYouReceived?: number | null;
   sellerTax?: number | null;
   marketplaceTax?: number | null;
   taxRate?: number | null;
   shipping?: number | null;
+  itemTotal?: number | null;
+  transactionFee?: number | null;
+  feeType?: string | null;
+  netAmount?: number | null;
   buyerName?: string | null;
   buyerEmail?: string | null;
   buyerPhone?: string | null;
@@ -261,6 +262,7 @@ export interface Sale {
   regionOrState?: string | null;
   country?: string | null;
   countryCode?: string | null;
+  buyerNote?: string | null;
   bandcampTransactionId?: string | null;
   bandcampTransactionItemId: string;
   bandcampRelatedTransactionId?: string | null;
@@ -270,8 +272,6 @@ export interface Sale {
   catalogNumber?: string | null;
   upc?: string | null;
   isrc?: string | null;
-  buyerNote?: string | null;
-  soldAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -330,6 +330,16 @@ export interface Social {
         id?: string | null;
       }[]
     | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings".
+ */
+export interface Setting {
+  id: string;
+  lastBandcampSync?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }

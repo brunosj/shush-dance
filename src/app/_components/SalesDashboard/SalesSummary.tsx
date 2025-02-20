@@ -1,26 +1,62 @@
 'use client';
 
+import { formatCurrency } from '../../_utilities/formatters';
+
 interface SalesSummaryProps {
   sales: any[];
 }
 
 export function SalesSummary({ sales }: SalesSummaryProps) {
+  // Debug log to check input sales
+  console.log('Sales data:', {
+    totalSales: sales.length,
+    firstSale: sales[0],
+    sampleTotals: sales.slice(0, 3).map((s) => ({
+      itemTotal: s.itemTotal,
+      netAmount: s.netAmount,
+      currency: s.currency,
+    })),
+  });
+
   const summaryByType = sales.reduce((acc, sale) => {
+    // Skip invalid sales
+    if (!sale || !sale.type) {
+      console.warn('Invalid sale detected:', sale);
+      return acc;
+    }
+
     const key = `${sale.type}_${sale.currency}`;
+
     if (!acc[key]) {
       acc[key] = {
         type: sale.type,
-        currency: sale.currency,
+        currency: sale.currency || 'EUR',
         totalGross: 0,
         totalNet: 0,
         count: 0,
       };
     }
-    acc[key].totalGross += sale.amount;
-    acc[key].totalNet += sale.netAmount;
+
+    // Convert string values to numbers if needed
+    const itemTotal =
+      typeof sale.itemTotal === 'string'
+        ? parseFloat(sale.itemTotal)
+        : sale.itemTotal || 0;
+
+    const netAmount =
+      typeof sale.netAmount === 'string'
+        ? parseFloat(sale.netAmount)
+        : sale.netAmount || 0;
+
+    acc[key].totalGross += itemTotal;
+    acc[key].totalNet += netAmount;
     acc[key].count += 1;
+
     return acc;
   }, {});
+
+  // Debug log to check calculations
+  console.log('Summary calculations:', summaryByType);
 
   return (
     <div className='bg-white rounded-lg border border-gray-200 p-6'>
@@ -51,19 +87,13 @@ export function SalesSummary({ sales }: SalesSummaryProps) {
               <div>
                 <p className='text-sm text-gray-500'>Gross Revenue</p>
                 <p className='text-lg font-medium'>
-                  {new Intl.NumberFormat('de-DE', {
-                    style: 'currency',
-                    currency: summary.currency,
-                  }).format(summary.totalGross)}
+                  {formatCurrency(summary.totalGross, summary.currency)}
                 </p>
               </div>
               <div>
                 <p className='text-sm text-gray-500'>Net Revenue</p>
                 <p className='text-lg font-medium'>
-                  {new Intl.NumberFormat('de-DE', {
-                    style: 'currency',
-                    currency: summary.currency,
-                  }).format(summary.totalNet)}
+                  {formatCurrency(summary.totalNet, summary.currency)}
                 </p>
               </div>
             </div>
