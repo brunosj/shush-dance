@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { SalesDashboard } from '../../_components/SalesDashboard';
 import { fetchSales } from '../../_api/fetchSales';
 import { useRouter } from 'next/navigation';
+import type { Sale } from '../../../payload/payload-types';
 import Link from 'next/link';
 
 export function DashboardClient() {
   const router = useRouter();
   const [data, setData] = useState<{
-    sales: any[];
+    sales: Sale[];
     lastSyncedAt: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,10 +44,10 @@ export function DashboardClient() {
       <div className='bg-white rounded-lg border border-gray-200 p-6 text-center'>
         <p className='text-gray-500'>
           Please{' '}
-          <Link href='/admin' className='text-blue-500'>
+          <Link href='/admin' className='text-blue-500' target='_blank'>
             login
           </Link>{' '}
-          to the CMS to access data.
+          to the CMS and refresh the page to access data.
         </p>
       </div>
     );

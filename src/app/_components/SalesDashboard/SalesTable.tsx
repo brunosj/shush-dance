@@ -1,9 +1,10 @@
 'use client';
 
 import { formatCurrency, formatNumber } from '../../_utilities/formatters';
+import type { Sale } from '../../../payload/payload-types';
 
 interface SalesTableProps {
-  sales: any[];
+  sales: Sale[];
   sortBy: string;
   sortDirection: 'asc' | 'desc';
   onSort: (column: string) => void;
@@ -28,6 +29,7 @@ export function SalesTable({
     { key: 'soldAt', label: 'Date' },
     { key: 'itemName', label: 'Item' },
     { key: 'type', label: 'Type' },
+    { key: 'countryCode', label: 'Country' },
     { key: 'itemTotal', label: 'Gross Amount' },
     { key: 'netAmount', label: 'Net Amount' },
     { key: 'calculatedTax', label: 'Tax' },
@@ -107,6 +109,11 @@ export function SalesTable({
                   }`}
                 >
                   {sale.type}
+                </span>
+              </td>
+              <td className='px-6 py-4 text-sm'>
+                <span className='px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800'>
+                  {sale.countryCode || 'N/A'}
                 </span>
               </td>
               <td className='px-6 py-4 text-sm'>

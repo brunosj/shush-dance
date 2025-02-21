@@ -7,6 +7,8 @@ interface SalesFiltersProps {
   setDateRange: (range: [Date | null, Date | null]) => void;
   selectedTypes: string[];
   setSelectedTypes: (types: string[]) => void;
+  selectedCountry: string | null;
+  setSelectedCountry: (country: string | null) => void;
   lastSyncedAt?: string;
 }
 
@@ -15,6 +17,8 @@ export function SalesFilters({
   setDateRange,
   selectedTypes,
   setSelectedTypes,
+  selectedCountry,
+  setSelectedCountry,
   lastSyncedAt,
 }: SalesFiltersProps) {
   const types = ['record', 'merch', 'digital'];
@@ -59,6 +63,26 @@ export function SalesFilters({
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
+          </div>
+        </div>
+        <div className='w-40'>
+          <label className='block text-sm font-medium text-gray-700 mb-3'>
+            Country
+          </label>
+          <div className='flex flex-wrap gap-2 rounded-md'>
+            <button
+              onClick={() =>
+                setSelectedCountry(selectedCountry === 'DE' ? null : 'DE')
+              }
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors
+                ${
+                  selectedCountry === 'DE'
+                    ? 'bg-blue-500 text-white shadow-sm'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+            >
+              Germany
+            </button>
           </div>
         </div>
       </div>

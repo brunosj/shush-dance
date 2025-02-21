@@ -21,6 +21,7 @@ export function SalesDashboard({
     null,
   ]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>('soldAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -33,10 +34,12 @@ export function SalesDashboard({
         !dateRange[1] ||
         (new Date(sale.soldAt) >= dateRange[0] &&
           new Date(sale.soldAt) <= dateRange[1]);
+      const matchesCountry =
+        !selectedCountry || sale.countryCode === selectedCountry;
 
-      return matchesType && matchesDate;
+      return matchesType && matchesDate && matchesCountry;
     });
-  }, [initialSales, selectedTypes, dateRange]);
+  }, [initialSales, selectedTypes, dateRange, selectedCountry]);
 
   const sortedSales = useMemo(() => {
     return [...filteredSales].sort((a, b) => {
@@ -62,12 +65,14 @@ export function SalesDashboard({
         setDateRange={setDateRange}
         selectedTypes={selectedTypes}
         setSelectedTypes={setSelectedTypes}
+        selectedCountry={selectedCountry}
+        setSelectedCountry={setSelectedCountry}
         lastSyncedAt={lastSyncedAt}
       />
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
         <SalesSummary sales={sortedSales} />
-        <TaxSummary sales={sortedSales} />
+        <TaxSummary sales={sortedSales} selectedCountry={selectedCountry} />
       </div>
 
       <SalesTable

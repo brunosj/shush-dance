@@ -1,16 +1,24 @@
 'use client';
 
+import { useState } from 'react';
 import { formatCurrency, formatNumber } from '../../_utilities/formatters';
+import type { Sale } from '../../../payload/payload-types';
 
 interface TaxSummaryProps {
-  sales: any[];
+  sales: Sale[];
+  selectedCountry: string | null;
 }
 
-export function TaxSummary({ sales }: TaxSummaryProps) {
-  // Filter for German sales only
-  const germanSales = sales.filter((sale) => sale.countryCode === 'DE');
+export function TaxSummary({ sales, selectedCountry }: TaxSummaryProps) {
+  const [showAll, setShowAll] = useState(false);
+  const INITIAL_DISPLAY_COUNT = 3;
 
-  const taxSummary = germanSales.reduce((acc, sale) => {
+  // Filter sales based on selected country
+  const filteredSales = selectedCountry
+    ? sales.filter((sale) => sale.countryCode === selectedCountry)
+    : sales;
+
+  const taxSummary = filteredSales.reduce((acc, sale) => {
     const key = `${sale.taxRate}_${sale.currency}`;
     const taxAmount = (sale.sellerTax || 0) + (sale.marketplaceTax || 0);
 
@@ -34,19 +42,31 @@ export function TaxSummary({ sales }: TaxSummaryProps) {
   if (Object.keys(taxSummary).length === 0) {
     return (
       <div className='bg-white rounded-lg border border-gray-200 p-6'>
-        <h2 className='text-lg font-semibold mb-4'>German Tax Summary</h2>
-        <p className='text-gray-500 text-center'>
-          No German sales data available
-        </p>
+        <h2 className='text-lg font-semibold mb-4'>
+          {selectedCountry ? 'German Tax Summary' : 'Tax Summary'}
+        </h2>
+        <p className='text-gray-500 text-center'>No tax data available</p>
       </div>
     );
   }
 
+  // Sort tax rates by count (most transactions first)
+  const sortedSummaries = Object.values(taxSummary).sort(
+    (a: any, b: any) => b.count - a.count
+  );
+
+  // Slice the array based on showAll state
+  const displayedSummaries = showAll
+    ? sortedSummaries
+    : sortedSummaries.slice(0, INITIAL_DISPLAY_COUNT);
+
   return (
     <div className='bg-white rounded-lg border border-gray-200 p-6'>
-      <h2 className='text-lg font-semibold mb-4'>German Tax Summary</h2>
+      <h2 className='text-lg font-semibold mb-4'>
+        {selectedCountry ? 'German Tax Summary' : 'Tax Summary'}
+      </h2>
       <div className='space-y-6'>
-        {Object.values(taxSummary).map((summary: any) => (
+        {displayedSummaries.map((summary: any) => (
           <div
             key={`${summary.taxRate}_${summary.currency}`}
             className='border-b border-gray-100 pb-4 last:border-0'
@@ -80,6 +100,19 @@ export function TaxSummary({ sales }: TaxSummaryProps) {
           </div>
         ))}
       </div>
+
+      {sortedSummaries.length > INITIAL_DISPLAY_COUNT && (
+        <div className='mt-4 text-center'>
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className='text-blue-500 hover:text-blue-600 text-sm font-medium'
+          >
+            {showAll
+              ? 'Show Less'
+              : `Show ${sortedSummaries.length - INITIAL_DISPLAY_COUNT} More`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

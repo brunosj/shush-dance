@@ -1,9 +1,10 @@
 'use client';
 
 import { formatCurrency } from '../../_utilities/formatters';
+import type { Sale } from '../../../payload/payload-types';
 
 interface SalesSummaryProps {
-  sales: any[];
+  sales: Sale[];
 }
 
 export function SalesSummary({ sales }: SalesSummaryProps) {
@@ -100,6 +101,9 @@ export function SalesSummary({ sales }: SalesSummaryProps) {
           </div>
         ))}
       </div>
+      <p className='text-xs text-amber-600 mt-2 italic'>
+        Note: Gross amounts include shipping costs where applicable
+      </p>
     </div>
   );
 }

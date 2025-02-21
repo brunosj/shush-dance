@@ -155,7 +155,7 @@ export function DateRangePicker({
             Select a date range to filter sales
           </p>
         )}
-        <p className='mt-2 text-xs text-amber-600'>
+        <p className='mt-2 text-xs text-amber-600 italic'>
           {lastSyncedAt
             ? `Sales data is synced until ${formatDateTime(lastSyncedAt)}. Visit the CMS to sync more recent data.`
             : 'Sales data sync status unknown. Visit the CMS to sync data.'}

@@ -85,7 +85,7 @@ export const syncBandcampEndpoint: Endpoint = {
                     // Tax and Shipping
                     sellerTax: sale.seller_tax || 0,
                     marketplaceTax: sale.marketplace_tax || 0,
-                    taxRate: sale.tax_rate || 0,
+                    taxRate: sale.tax_rate / 100 || 0,
                     shipping: sale.shipping || 0,
 
                     // Customer Information
