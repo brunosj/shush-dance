@@ -10,12 +10,14 @@ export const Sales: CollectionConfig = {
     useAsTitle: 'itemName',
     defaultColumns: ['itemName', 'type', 'amount', 'pointOfSale', 'soldAt'],
     components: {
-      BeforeList: [SyncBandcampButton],
+      BeforeListTable: [SyncBandcampButton],
     },
   },
 
   access: {
-    read: anyone,
+    read: ({ req: { user } }) => {
+      return Boolean(user);
+    },
     update: admins,
     create: admins,
     delete: admins,
