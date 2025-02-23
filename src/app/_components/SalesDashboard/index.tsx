@@ -24,11 +24,17 @@ export function SalesDashboard({
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>('soldAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [selectedPointsOfSale, setSelectedPointsOfSale] = useState<string[]>(
+    []
+  );
 
   const filteredSales = useMemo(() => {
     return initialSales.filter((sale) => {
       const matchesType =
         selectedTypes.length === 0 || selectedTypes.includes(sale.type);
+      const matchesPointOfSale =
+        selectedPointsOfSale.length === 0 ||
+        selectedPointsOfSale.includes(sale.pointOfSale);
       const matchesDate =
         !dateRange[0] ||
         !dateRange[1] ||
@@ -37,9 +43,15 @@ export function SalesDashboard({
       const matchesCountry =
         !selectedCountry || sale.countryCode === selectedCountry;
 
-      return matchesType && matchesDate && matchesCountry;
+      return matchesType && matchesPointOfSale && matchesDate && matchesCountry;
     });
-  }, [initialSales, selectedTypes, dateRange, selectedCountry]);
+  }, [
+    initialSales,
+    selectedTypes,
+    selectedPointsOfSale,
+    dateRange,
+    selectedCountry,
+  ]);
 
   const sortedSales = useMemo(() => {
     return [...filteredSales].sort((a, b) => {
@@ -68,6 +80,8 @@ export function SalesDashboard({
         selectedCountry={selectedCountry}
         setSelectedCountry={setSelectedCountry}
         lastSyncedAt={lastSyncedAt}
+        selectedPointsOfSale={selectedPointsOfSale}
+        setSelectedPointsOfSale={setSelectedPointsOfSale}
       />
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
