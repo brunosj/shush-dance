@@ -237,8 +237,17 @@ export interface Sale {
   id: string;
   itemName: string;
   artist?: string | null;
+  cmsItem?:
+    | ({
+        relationTo: 'releases';
+        value: string | Release;
+      } | null)
+    | ({
+        relationTo: 'merch';
+        value: string | Merch;
+      } | null);
   pointOfSale: 'bandcamp' | 'paypal' | 'in-person' | 'promo';
-  type: 'record' | 'merch' | 'digital' | 'track' | 'album' | 'package';
+  type: 'record' | 'merch' | 'digital';
   itemType?: string | null;
   package?: string | null;
   soldAt: string;
@@ -264,7 +273,7 @@ export interface Sale {
   countryCode?: string | null;
   buyerNote?: string | null;
   bandcampTransactionId?: string | null;
-  bandcampTransactionItemId: string;
+  bandcampTransactionItemId?: string | null;
   bandcampRelatedTransactionId?: string | null;
   itemUrl?: string | null;
   referer?: string | null;

@@ -58,7 +58,7 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
         {/* Release Details */}
         <div className='lg:flex space-y-3  my-auto flex-col'>
           <h2 className='release-title'>{title}</h2>
-          <h4 className='release-artist'>{itemType}</h4>
+          {/* <h4 className='release-artist'>{itemType}</h4> */}
           {/* <h4 className='release-catalog-number'>{itemType}</h4> */}
           {/* Buy Link */}
 

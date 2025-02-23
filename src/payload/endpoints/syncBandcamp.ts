@@ -1,6 +1,149 @@
 import { Endpoint } from 'payload/config';
 import { fetchBands, fetchSalesForBand } from '../services/bandcamp';
 
+async function findRelatedRelease(
+  payload: any,
+  sale: any
+): Promise<string | null> {
+  if (!sale.catalog_number) return null;
+
+  // Clean up catalog number for comparison
+  const cleanCatalogNumber = sale.catalog_number.trim().toLowerCase();
+
+  // Try exact match first
+  const exactMatch = await payload.find({
+    collection: 'releases',
+    where: {
+      catalogNumber: {
+        equals: cleanCatalogNumber,
+      },
+    },
+  });
+
+  if (exactMatch.docs[0]?.id) {
+    return exactMatch.docs[0].id;
+  }
+
+  // Try fuzzy match if exact match fails
+  // This handles cases where catalog numbers might have slight variations
+  // e.g., "ABC-123" vs "ABC123" vs "ABC 123"
+  const fuzzyMatch = await payload.find({
+    collection: 'releases',
+    where: {
+      catalogNumber: {
+        like: cleanCatalogNumber.replace(/[-\s]/g, ''),
+      },
+    },
+  });
+
+  return fuzzyMatch.docs[0]?.id || null;
+}
+
+async function findRelatedMerchItem(
+  payload: any,
+  sale: any
+): Promise<string | null> {
+  if (!sale.item_type || !sale.item_name) return null;
+
+  // Clean and normalize the item name from bandcamp
+  // Remove artist name if it exists (typically after " by " in bandcamp titles)
+  const cleanItemName = sale.item_name
+    .split(' by ')[0] // Remove everything after " by "
+    .trim()
+    .toLowerCase();
+
+  const cleanItemType = sale.item_type.trim().toLowerCase();
+
+  // Try exact match first
+  const exactMatch = await payload.find({
+    collection: 'merch',
+    where: {
+      and: [
+        {
+          itemType: {
+            equals: cleanItemType,
+          },
+        },
+        {
+          title: {
+            equals: cleanItemName,
+          },
+        },
+      ],
+    },
+  });
+
+  if (exactMatch.docs[0]?.id) {
+    return exactMatch.docs[0].id;
+  }
+
+  // Try partial match if exact match fails
+  // This helps with slight variations in naming
+  const partialMatch = await payload.find({
+    collection: 'merch',
+    where: {
+      and: [
+        {
+          itemType: {
+            like: cleanItemType,
+          },
+        },
+        {
+          title: {
+            like: cleanItemName,
+          },
+        },
+      ],
+    },
+  });
+
+  if (partialMatch.docs[0]?.id) {
+    return partialMatch.docs[0].id;
+  }
+
+  // Try matching just by title if both previous attempts fail
+  // This helps when item types might be categorized differently
+  const titleOnlyMatch = await payload.find({
+    collection: 'merch',
+    where: {
+      title: {
+        like: cleanItemName,
+      },
+    },
+  });
+
+  if (!titleOnlyMatch.docs[0]?.id) {
+    // Log the attempted matches for debugging
+    console.warn('Failed to match merch item:', {
+      originalName: sale.item_name,
+      cleanedName: cleanItemName,
+      itemType: cleanItemType,
+      attempted: {
+        exactMatch: exactMatch.docs,
+        partialMatch: partialMatch.docs,
+        titleOnlyMatch: titleOnlyMatch.docs,
+      },
+    });
+  }
+
+  return titleOnlyMatch.docs[0]?.id || null;
+}
+
+// Add a logging function to track unmatched items
+async function logUnmatchedItem(
+  payload: any,
+  sale: any,
+  type: 'release' | 'merch'
+): Promise<void> {
+  console.warn(`Unmatched ${type} item:`, {
+    itemName: sale.item_name,
+    itemType: sale.item_type,
+    catalogNumber: sale.catalog_number,
+    package: sale.package,
+    bandcampTransactionId: sale.bandcamp_transaction_id,
+  });
+}
+
 export const syncBandcampEndpoint: Endpoint = {
   path: '/sync-bandcamp',
   method: 'post',
@@ -57,16 +200,40 @@ export const syncBandcampEndpoint: Endpoint = {
 
             if (existingSale.totalDocs === 0) {
               try {
+                // Find related items
+                const itemType = determineItemType(
+                  sale.item_type,
+                  sale.package || ''
+                );
+
+                let cmsItem = null;
+                if (itemType === 'record') {
+                  const releaseId = await findRelatedRelease(req.payload, sale);
+                  if (releaseId) {
+                    cmsItem = { relationTo: 'releases', value: releaseId };
+                  } else {
+                    await logUnmatchedItem(req.payload, sale, 'release');
+                  }
+                } else if (itemType === 'merch') {
+                  const merchId = await findRelatedMerchItem(req.payload, sale);
+                  if (merchId) {
+                    cmsItem = { relationTo: 'merch', value: merchId };
+                  } else {
+                    await logUnmatchedItem(req.payload, sale, 'merch');
+                  }
+                }
+
                 await req.payload.create({
                   collection: 'sales',
                   data: {
                     // Basic Item Information
                     itemName: sale.item_name,
                     artist: sale.artist,
+                    cmsItem,
                     itemType: sale.item_type,
                     package: sale.package,
                     option: sale.option,
-                    type: determineItemType(sale.item_type, sale.package || ''),
+                    type: itemType,
                     pointOfSale: 'bandcamp',
 
                     // Financial Information

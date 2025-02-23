@@ -50,6 +50,21 @@ export const Sales: CollectionConfig = {
               type: 'row',
               fields: [
                 {
+                  name: 'cmsItem',
+                  type: 'relationship',
+                  relationTo: ['releases', 'merch'],
+                  hasMany: false,
+                  admin: {
+                    width: '100%',
+                    description: 'Related Release or Merch item from the CMS',
+                  },
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
                   name: 'pointOfSale',
                   type: 'select',
                   options: [
@@ -68,9 +83,6 @@ export const Sales: CollectionConfig = {
                     { label: 'Record', value: 'record' },
                     { label: 'Merch', value: 'merch' },
                     { label: 'Digital', value: 'digital' },
-                    { label: 'Track', value: 'track' },
-                    { label: 'Album', value: 'album' },
-                    { label: 'Package', value: 'package' },
                   ],
                   required: true,
                   admin: { width: '25%' },
@@ -312,7 +324,6 @@ export const Sales: CollectionConfig = {
                 {
                   name: 'bandcampTransactionItemId',
                   type: 'text',
-                  required: true,
                   admin: { width: '33%' },
                 },
                 {
