@@ -8,7 +8,7 @@ export const Sales: CollectionConfig = {
 
   admin: {
     useAsTitle: 'itemName',
-    defaultColumns: ['itemName', 'type', 'amount', 'pointOfSale', 'soldAt'],
+    defaultColumns: ['cmsItem', 'type', 'amount', 'pointOfSale', 'soldAt'],
     components: {
       BeforeListTable: [SyncBandcampButton],
     },
@@ -36,7 +36,7 @@ export const Sales: CollectionConfig = {
                 {
                   name: 'itemName',
                   type: 'text',
-                  required: true,
+                  required: false,
                   admin: { width: '50%' },
                 },
                 {
@@ -124,6 +124,7 @@ export const Sales: CollectionConfig = {
                 {
                   name: 'quantity',
                   type: 'number',
+                  required: true,
                   admin: {
                     width: '33%',
                     step: 1,
@@ -243,6 +244,7 @@ export const Sales: CollectionConfig = {
                 {
                   name: 'netAmount',
                   type: 'number',
+                  required: true,
                   admin: {
                     width: '33%',
                     step: 0.01,

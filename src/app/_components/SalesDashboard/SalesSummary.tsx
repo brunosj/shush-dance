@@ -34,7 +34,8 @@ export function SalesSummary({ sales }: SalesSummaryProps) {
         currency: sale.currency || 'EUR',
         totalGross: 0,
         totalNet: 0,
-        count: 0,
+        salesCount: 0,
+        itemsCount: 0,
       };
     }
 
@@ -49,9 +50,15 @@ export function SalesSummary({ sales }: SalesSummaryProps) {
         ? parseFloat(sale.netAmount)
         : sale.netAmount || 0;
 
+    const quantity =
+      typeof sale.quantity === 'string'
+        ? parseInt(sale.quantity)
+        : sale.quantity || 1;
+
     acc[key].totalGross += itemTotal;
     acc[key].totalNet += netAmount;
-    acc[key].count += 1;
+    acc[key].salesCount += 1;
+    acc[key].itemsCount += quantity;
 
     return acc;
   }, {});
@@ -81,7 +88,7 @@ export function SalesSummary({ sales }: SalesSummaryProps) {
                 {summary.type}
               </span>
               <span className='text-sm text-gray-500'>
-                {summary.count} sales
+                {summary.itemsCount} items ({summary.salesCount} sales)
               </span>
             </div>
             <div className='grid grid-cols-2 gap-4'>
