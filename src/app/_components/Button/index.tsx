@@ -23,21 +23,21 @@ const Button: React.FC<ButtonProps> = ({
       {onClick ? (
         <button
           onClick={onClick}
-          className={`lowercase py-1 px-3 bg-black text-pri hover:bg-darkGray duration-200 ease-in-out ${textStyles} `}
+          className={` py-3 px-4 lg:px-6 hover:bg-black hover:text-pri text-black border-black border-[1px] bg-transparent duration-200 ease-in-out ${textStyles} `}
           disabled={disabled}
         >
           {label}
         </button>
       ) : disabled ? (
         <span
-          className={`lowercase py-1 px-3 bg-black text-pri duration-200 ease-in-out ${textStyles} opacity-50 cursor-not-allowed`}
+          className={` py-3 px-4 lg:px-6 hover:bg-black bg-transparent hover:text-pri text-black border-black border-[1px] duration-200 ease-in-out ${textStyles} opacity-50 cursor-not-allowed`}
         >
           {label}
         </span>
       ) : (
         <Link href={href || '#'} target={target} passHref>
           <span
-            className={`lowercase py-1 px-3 bg-black text-pri hover:bg-darkGray duration-200 ease-in-out ${textStyles}`}
+            className={` py-3 px-4 lg:px-6 hover:bg-black hover:text-pri text-black border-black border-[1px] bg-transparent duration-200 ease-in-out ${textStyles}`}
           >
             {label}
           </span>

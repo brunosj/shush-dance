@@ -12,9 +12,16 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname:
-          process.env.NEXT_PUBLIC_PAYLOAD_URL?.replace(/https?:\/\//, '') ||
-          'localhost',
+        hostname: process.env.NEXT_PUBLIC_PAYLOAD_URL?.replace(
+          /https?:\/\//,
+          ''
+        ),
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
         pathname: '/media/**',
       },
     ],
