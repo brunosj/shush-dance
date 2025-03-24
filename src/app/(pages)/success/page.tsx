@@ -15,7 +15,7 @@ const SuccessPage: React.FC = () => {
         name will be added to a list at the door.
       </p>
       <div className=''>
-        <Button href='/' label='return to home' />
+        <Button href='/' label='Return to Home' />
       </div>
     </article>
   );

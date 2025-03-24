@@ -64,7 +64,7 @@ const Cart: React.FC<CartPageProps> = ({ data }) => {
       <div className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
         <h1 className='text-base lg:text-xl'>Your cart is empty</h1>
         <div>
-          <Button href='/' label='Return to home' />
+          <Button href='/' label='Return to Home' />
         </div>
       </div>
     );

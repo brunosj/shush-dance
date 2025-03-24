@@ -8,7 +8,7 @@ const ErrorPage: React.FC = () => {
       <h1 className='font-bold '></h1>
       <p className=''>The payment was not successful. Please try again.</p>
       <div className=''>
-        <Button href='/cart' label='return to cart' />
+        <Button href='/cart' label='Return to Cart' />
       </div>
     </article>
   );

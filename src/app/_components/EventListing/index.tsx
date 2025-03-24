@@ -9,9 +9,13 @@ import { RichText } from '../RichText';
 
 interface EventListingProps {
   event: Event;
+  imageHover?: boolean;
 }
 
-const EventListing: React.FC<EventListingProps> = ({ event }) => {
+const EventListing: React.FC<EventListingProps> = ({
+  event,
+  imageHover = true,
+}) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const { addItem } = useShoppingCart();
@@ -45,20 +49,35 @@ const EventListing: React.FC<EventListingProps> = ({ event }) => {
   return (
     <li
       key={event.id}
-      className='relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-12 group'
+      className='relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-16 group'
     >
       <div className='flex-grow-0'>
-        <p className={`font-semibold ${isPastEvent ? 'opacity-30' : ''}`}>
-          {formatDate(event.date)}
-        </p>
+        {event.image && typeof event.image !== 'string' && !imageHover && (
+          <div className='relative h-full'>
+            <div className='flex flex-col items-start'>
+              <Image
+                src={event.image.url}
+                alt={event.image.alt}
+                width={200}
+                height={200}
+                className='object-contain w-full h-auto'
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div
         className={`space-y-4 pb-3 col-span-4 lg:pb-0 ${isPastEvent ? 'opacity-30' : ''}`}
       >
-        <h3 className='font-semibold'>
-          {event.title} @ {event.location}
-        </h3>
+        <div>
+          <h3 className='font-semibold'>
+            {event.title} @ {event.location}
+          </h3>
+          <p className={`font-semibold ${isPastEvent ? 'opacity-30' : ''}`}>
+            {formatDate(event.date)}
+          </p>
+        </div>
 
         {/* Artists */}
         <div>
@@ -104,7 +123,7 @@ const EventListing: React.FC<EventListingProps> = ({ event }) => {
       </div>
 
       {/* Image on Hover */}
-      {event.image && typeof event.image !== 'string' && (
+      {event.image && typeof event.image !== 'string' && imageHover && (
         <div
           className='h-32 lg:h-64 w-full absolute opacity-0 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none z-10'
           style={{

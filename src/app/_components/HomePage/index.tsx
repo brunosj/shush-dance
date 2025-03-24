@@ -77,7 +77,11 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
                   </h2>
                   <ul className='lg:space-y-8 space-y-4'>
                     {upcomingEvents.map((event) => (
-                      <EventListing key={event.id} event={event} />
+                      <EventListing
+                        key={event.id}
+                        event={event}
+                        imageHover={false}
+                      />
                     ))}
                   </ul>
                 </div>

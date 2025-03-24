@@ -65,7 +65,7 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
           <div className='pt-3 my-auto'>
             <Button
               href={buyLink}
-              label={buyLink ? 'buy' : 'sold out'}
+              label={buyLink ? 'Buy' : 'Sold Out'}
               target='_blank'
               disabled={buyLink === undefined}
             />

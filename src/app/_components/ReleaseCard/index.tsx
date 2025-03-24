@@ -69,7 +69,7 @@ const ReleaseCard: React.FC<ReleaseCardProps> = ({ release }) => {
             <div>
               <Button
                 onClick={() => window.open(release.buyLink, '_blank')}
-                label='get the record!'
+                label='Get the Record!'
               />
             </div>
           )}

@@ -77,7 +77,7 @@ const ReleaseListing: React.FC<ReleaseListingProps> = ({ release }) => {
         </div>
         {/* Buy Link */}
         <div className='pt-3 lg:pt-0 ml-auto my-auto'>
-          <Button href={buyLink} label='get the record!' target='_blank' />
+          <Button href={buyLink} label='Get the Record!' target='_blank' />
         </div>
       </div>
 
