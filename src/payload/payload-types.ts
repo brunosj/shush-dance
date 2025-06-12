@@ -40,6 +40,7 @@ export interface Event {
     | null;
   image?: string | Media | null;
   date: string;
+  time?: string | null;
   location: string;
   artists?: (string | Artist)[] | null;
   ticketsAvailable?: boolean | null;
@@ -235,7 +236,7 @@ export interface User {
  */
 export interface Sale {
   id: string;
-  itemName: string;
+  itemName?: string | null;
   artist?: string | null;
   cmsItem?:
     | ({
@@ -252,7 +253,7 @@ export interface Sale {
   package?: string | null;
   soldAt: string;
   itemPrice?: number | null;
-  quantity?: number | null;
+  quantity: number;
   currency?: string | null;
   subTotal?: number | null;
   additionalFanContribution?: number | null;
@@ -263,7 +264,7 @@ export interface Sale {
   itemTotal?: number | null;
   transactionFee?: number | null;
   feeType?: string | null;
-  netAmount?: number | null;
+  netAmount: number;
   buyerName?: string | null;
   buyerEmail?: string | null;
   buyerPhone?: string | null;

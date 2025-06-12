@@ -41,6 +41,13 @@ export const Events: CollectionConfig = {
       admin: { position: 'sidebar' },
     },
     {
+      name: 'time',
+      type: 'text',
+      label: 'Event Time',
+      required: false,
+      admin: { position: 'sidebar' },
+    },
+    {
       name: 'location',
       type: 'text',
       label: 'Event Location',

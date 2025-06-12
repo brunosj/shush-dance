@@ -74,8 +74,13 @@ const EventListing: React.FC<EventListingProps> = ({
           <h3 className='font-semibold'>
             {event.title} @ {event.location}
           </h3>
-          <p className={`font-semibold ${isPastEvent ? 'opacity-30' : ''}`}>
-            {formatDate(event.date)}
+          <p className='pt-3 italic font-semibold'>
+            <span className={` ${isPastEvent ? 'opacity-30' : ''}`}>
+              {formatDate(event.date)}
+            </span>
+            {event.time && !isPastEvent && (
+              <span className={`pl-2 `}>- {event.time}</span>
+            )}
           </p>
         </div>
 
