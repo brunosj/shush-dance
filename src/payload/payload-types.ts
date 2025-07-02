@@ -18,6 +18,7 @@ export interface Config {
     media: Media;
     users: User;
     sales: Sale;
+    'online-orders': OnlineOrder;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
@@ -105,8 +106,8 @@ export interface Artist {
 export interface Release {
   id: string;
   title: string;
-  tracks?: (string | Track)[] | null;
   artist: string | Artist;
+  tracks?: (string | Track)[] | null;
   description?:
     | {
         [k: string]: unknown;
@@ -117,6 +118,20 @@ export interface Release {
         [k: string]: unknown;
       }[]
     | null;
+  catalogNumber: string;
+  releaseYear: number;
+  slug?: string | null;
+  price?: number | null;
+  shippingPrices: {
+    germany: number;
+    germanyAdditional: number;
+    eu: number;
+    euAdditional: number;
+    restOfWorld: number;
+    restOfWorldAdditional: number;
+  };
+  stockQuantity?: number | null;
+  isDigital?: boolean | null;
   buyLink?: string | null;
   artwork: string | Media;
   images?:
@@ -125,9 +140,6 @@ export interface Release {
         id?: string | null;
       }[]
     | null;
-  catalogNumber: string;
-  releaseYear: number;
-  slug?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -180,6 +192,18 @@ export interface Merch {
         [k: string]: unknown;
       }[]
     | null;
+  slug?: string | null;
+  price: number;
+  shippingPrices: {
+    germany: number;
+    germanyAdditional: number;
+    eu: number;
+    euAdditional: number;
+    restOfWorld: number;
+    restOfWorldAdditional: number;
+  };
+  stockQuantity?: number | null;
+  isDigital?: boolean | null;
   buyLink?: string | null;
   mainImage: string | Media;
   images?:
@@ -188,7 +212,6 @@ export interface Merch {
         id?: string | null;
       }[]
     | null;
-  slug?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -282,6 +305,54 @@ export interface Sale {
   catalogNumber?: string | null;
   upc?: string | null;
   isrc?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "online-orders".
+ */
+export interface OnlineOrder {
+  id: string;
+  orderNumber: string;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentMethod: 'stripe' | 'paypal';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  transactionId?: string | null;
+  customerEmail: string;
+  customerPhone?: string | null;
+  firstName: string;
+  lastName: string;
+  shippingAddress: {
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+    shippingRegion: 'germany' | 'eu' | 'restOfWorld';
+  };
+  items: {
+    product:
+      | {
+          relationTo: 'releases';
+          value: string | Release;
+        }
+      | {
+          relationTo: 'merch';
+          value: string | Merch;
+        };
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+    id?: string | null;
+  }[];
+  orderTotals: {
+    subtotal: number;
+    shipping: number;
+    vat: number;
+    total: number;
+  };
+  customerNotes?: string | null;
+  internalNotes?: string | null;
   updatedAt: string;
   createdAt: string;
 }

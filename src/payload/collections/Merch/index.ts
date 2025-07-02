@@ -12,7 +12,7 @@ export const Merch: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'itemType', 'updatedAt'],
+    defaultColumns: ['title', 'itemType', 'price', 'updatedAt'],
   },
   versions: {
     drafts: true,
@@ -25,47 +25,196 @@ export const Merch: CollectionConfig = {
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
-      label: 'Title',
-      required: true,
-    },
-    {
-      name: 'itemType',
-      type: 'text',
-      label: 'Item Type',
-      required: true,
-    },
-    createRichTextField({
-      label: 'Description',
-    }),
-    {
-      name: 'buyLink',
-      type: 'text',
-      label: 'Buy Link',
-      required: false,
-    },
-    {
-      name: 'mainImage',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'Main Image',
-      required: true,
-    },
-    {
-      name: 'images',
-      type: 'array',
-      label: 'Images',
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'image',
-          type: 'upload',
-          relationTo: 'media',
-          label: 'Image',
-          required: false,
+          label: 'Info',
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+              label: 'Title',
+              required: true,
+            },
+            {
+              name: 'itemType',
+              type: 'text',
+              label: 'Item Type',
+              required: true,
+            },
+            createRichTextField({
+              label: 'Description',
+            }),
+            slugField('title'),
+          ],
+        },
+        {
+          label: 'Shipping',
+          fields: [
+            {
+              name: 'price',
+              type: 'number',
+              label: 'Price (EUR)',
+              required: true,
+              min: 0,
+              admin: {
+                description: 'Price in EUR (without VAT)',
+              },
+            },
+            {
+              name: 'shippingPrices',
+              type: 'group',
+              label: 'Shipping Prices (EUR)',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'germany',
+                      type: 'number',
+                      label: 'Germany - First Item',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                    {
+                      name: 'germanyAdditional',
+                      type: 'number',
+                      label: 'Germany - Each Additional',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'eu',
+                      type: 'number',
+                      label: 'EU - First Item',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                    {
+                      name: 'euAdditional',
+                      type: 'number',
+                      label: 'EU - Each Additional',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'restOfWorld',
+                      type: 'number',
+                      label: 'Rest of World - First Item',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                    {
+                      name: 'restOfWorldAdditional',
+                      type: 'number',
+                      label: 'Rest of World - Each Additional',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'stockQuantity',
+                  type: 'number',
+                  label: 'Stock Quantity',
+                  required: false,
+                  min: 0,
+                  admin: {
+                    width: '33%',
+                    description: 'Leave empty for unlimited stock',
+                  },
+                },
+                {
+                  name: 'isDigital',
+                  type: 'checkbox',
+                  label: 'Digital Product',
+                  defaultValue: false,
+                  admin: {
+                    width: '33%',
+                    description:
+                      'Check if this is a digital product (no shipping required)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'buyLink',
+              type: 'text',
+              label: 'External Buy Link',
+              required: false,
+              admin: {
+                description:
+                  'Optional external link (will disable internal cart functionality)',
+              },
+            },
+          ],
+        },
+        {
+          label: 'Images',
+          fields: [
+            {
+              name: 'mainImage',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Main Image',
+              required: true,
+            },
+            {
+              name: 'images',
+              type: 'array',
+              label: 'Additional Images',
+              fields: [
+                {
+                  name: 'image',
+                  type: 'upload',
+                  relationTo: 'media',
+                  label: 'Image',
+                  required: false,
+                },
+              ],
+            },
+          ],
         },
       ],
     },
-    slugField('title'),
   ],
 };

@@ -9,6 +9,7 @@ import { useShoppingCart } from 'use-shopping-cart';
 import Button from '../Button';
 import ReleaseListing from '../ReleaseListing';
 import MerchListing from '../MerchListing';
+import type { ExtendedMerch } from '../../_types/extended-payload-types';
 
 interface MerchPageProps {
   data: {
@@ -30,7 +31,7 @@ const MerchPage: React.FC<MerchPageProps> = ({ data }) => {
         <section>
           {merchItems.map((merchItem, index) => (
             <li key={index} className='list-none'>
-              <MerchListing merch={merchItem} />
+              <MerchListing merch={merchItem as ExtendedMerch} />
             </li>
           ))}
         </section>

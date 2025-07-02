@@ -5,6 +5,8 @@ import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { AuthProvider } from '../_providers/Auth';
 import { ThemeProvider } from './Theme';
 import CartProvider from './CartProvider';
+import { ShippingProvider } from './ShippingProvider';
+
 export const Providers: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
@@ -16,9 +18,11 @@ export const Providers: React.FC<{
 
   return (
     <CartProvider>
-      <PayPalScriptProvider options={initialOptions}>
-        <ThemeProvider>{children}</ThemeProvider>
-      </PayPalScriptProvider>
+      <ShippingProvider>
+        <PayPalScriptProvider options={initialOptions}>
+          <ThemeProvider>{children}</ThemeProvider>
+        </PayPalScriptProvider>
+      </ShippingProvider>
     </CartProvider>
   );
 };

@@ -5,14 +5,16 @@ import type {
   Artist,
   Media,
 } from '../../../payload/payload-types';
+import type { ExtendedRelease } from '../../_types/extended-payload-types';
 import Image from 'next/image';
 import { RichText } from '../RichText';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import Button from '../Button';
+import AddToCartButton from '../AddToCartButton';
 
 interface ReleaseListingProps {
-  release: Release;
+  release: ExtendedRelease;
 }
 
 const ReleaseListing: React.FC<ReleaseListingProps> = ({ release }) => {
@@ -26,7 +28,7 @@ const ReleaseListing: React.FC<ReleaseListingProps> = ({ release }) => {
     images,
     catalogNumber,
     releaseYear,
-    buyLink,
+    price,
   } = release;
 
   const artistName = typeof artist === 'string' ? artist : artist.artistName;
@@ -70,14 +72,34 @@ const ReleaseListing: React.FC<ReleaseListingProps> = ({ release }) => {
           <div className='space-y-1'>
             <h2 className='release-title'>{title}</h2>
             <h4 className='release-artist'>{artistName}</h4>
-            <h4 className='release-catalog-number'>
-              {catalogNumber} - {releaseYear}
-            </h4>
+            <div className='flex items-center gap-3'>
+              <h4 className='release-catalog-number'>
+                {catalogNumber} - {releaseYear}
+              </h4>
+              {price && price > 0 && (
+                <span className='text-lg font-semibold'>
+                  €{price.toFixed(2)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        {/* Buy Link */}
-        <div className='pt-3 lg:pt-0 ml-auto my-auto'>
-          <Button href={buyLink} label='Get the Record!' target='_blank' />
+
+        {/* Price and Cart Button */}
+        <div className='pt-3 lg:pt-0 ml-auto my-auto space-y-3'>
+          {price && price > 0 && (
+            <div className='space-y-1'>
+              <p className='text-sm text-gray-600'>
+                {release.isDigital
+                  ? 'Digital Release'
+                  : 'Physical Release + Shipping'}
+              </p>
+              <p className='text-xs text-gray-500'>
+                (Price excludes VAT and shipping)
+              </p>
+            </div>
+          )}
+          <AddToCartButton item={release as any} type='release' />
         </div>
       </div>
 

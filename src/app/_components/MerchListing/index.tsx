@@ -6,18 +6,20 @@ import type {
   Media,
   Merch,
 } from '../../../payload/payload-types';
+import type { ExtendedMerch } from '../../_types/extended-payload-types';
 import Image from 'next/image';
 import { RichText } from '../RichText';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import Button from '../Button';
+import AddToCartButton from '../AddToCartButton';
 
 interface MerchListingProps {
-  merch: Merch;
+  merch: ExtendedMerch;
 }
 
 const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
-  const { title, itemType, description, mainImage, images, buyLink } = merch;
+  const { title, itemType, description, mainImage, images, price } = merch;
 
   // const artistName = typeof artist === 'string' ? artist : artist.artistName;
   const mainImageUrl =
@@ -56,19 +58,35 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
           </div>
         )}
         {/* Release Details */}
-        <div className='lg:flex space-y-3  my-auto flex-col'>
-          <h2 className='release-title'>{title}</h2>
-          {/* <h4 className='release-artist'>{itemType}</h4> */}
-          {/* <h4 className='release-catalog-number'>{itemType}</h4> */}
-          {/* Buy Link */}
+        <div className='lg:flex space-y-3 my-auto flex-col'>
+          <div className='space-y-1'>
+            <h2 className='release-title'>{title}</h2>
+            <div className='flex items-center gap-3'>
+              <h4 className='release-artist'>{itemType}</h4>
+              {price && price > 0 && (
+                <span className='text-lg font-semibold'>
+                  €{price.toFixed(2)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Additional Product Info */}
+          {price && price > 0 && (
+            <div className='space-y-1'>
+              <p className='text-sm text-gray-600'>
+                {merch.isDigital
+                  ? 'Digital Product'
+                  : 'Physical Product + Shipping'}
+              </p>
+              <p className='text-xs text-gray-500'>
+                (Price excludes VAT and shipping)
+              </p>
+            </div>
+          )}
 
           <div className='pt-3 my-auto'>
-            <Button
-              href={buyLink}
-              label={buyLink ? 'Buy' : 'Sold Out'}
-              target='_blank'
-              disabled={buyLink === undefined}
-            />
+            <AddToCartButton item={merch as any} type='merch' />
           </div>
         </div>
       </div>

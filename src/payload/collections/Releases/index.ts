@@ -13,6 +13,7 @@ export const Releases: CollectionConfig = {
       'artist',
       'catalogNumber',
       'releaseYear',
+      'price',
       'updatedAt',
     ],
   },
@@ -27,77 +28,231 @@ export const Releases: CollectionConfig = {
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
-      label: 'Release Title',
-      required: true,
-    },
-    {
-      name: 'tracks',
-      type: 'relationship',
-      relationTo: 'tracks',
-      label: 'Tracks',
-      hasMany: true,
-    },
-    {
-      name: 'artist',
-      type: 'relationship',
-      relationTo: 'artists',
-      label: 'Artist',
-      required: true,
-    },
-
-    createRichTextField({
-      label: 'Description',
-    }),
-    createRichTextField({
-      label: 'Credits',
-    }),
-    {
-      name: 'buyLink',
-      type: 'text',
-      label: 'Buy Link',
-      required: false,
-    },
-    {
-      name: 'artwork',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'Artwork',
-      required: true,
-    },
-    {
-      name: 'images',
-      type: 'array',
-      label: 'Images',
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'image',
-          type: 'upload',
-          relationTo: 'media',
-          label: 'Image',
-          required: true,
+          label: 'Info',
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+              label: 'Release Title',
+              required: true,
+            },
+            {
+              name: 'artist',
+              type: 'relationship',
+              relationTo: 'artists',
+              label: 'Artist',
+              required: true,
+            },
+            {
+              name: 'tracks',
+              type: 'relationship',
+              relationTo: 'tracks',
+              label: 'Tracks',
+              hasMany: true,
+            },
+            createRichTextField({
+              label: 'Description',
+            }),
+            createRichTextField({
+              label: 'Credits',
+            }),
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'catalogNumber',
+                  type: 'text',
+                  label: 'Catalog Number',
+                  required: true,
+                  admin: {
+                    width: '50%',
+                  },
+                },
+                {
+                  name: 'releaseYear',
+                  type: 'number',
+                  label: 'Release Year',
+                  required: true,
+                  admin: {
+                    width: '50%',
+                  },
+                },
+              ],
+            },
+            slugField('title'),
+          ],
+        },
+        {
+          label: 'Shipping',
+          fields: [
+            {
+              name: 'price',
+              type: 'number',
+              label: 'Price (EUR)',
+              required: false,
+              min: 0,
+              admin: {
+                description:
+                  'Price in EUR (without VAT). Leave empty if not for sale.',
+              },
+            },
+            {
+              name: 'shippingPrices',
+              type: 'group',
+              label: 'Shipping Prices (EUR)',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'germany',
+                      type: 'number',
+                      label: 'Germany - First Item',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                    {
+                      name: 'germanyAdditional',
+                      type: 'number',
+                      label: 'Germany - Each Additional',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'eu',
+                      type: 'number',
+                      label: 'EU - First Item',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                    {
+                      name: 'euAdditional',
+                      type: 'number',
+                      label: 'EU - Each Additional',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'restOfWorld',
+                      type: 'number',
+                      label: 'Rest of World - First Item',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                    {
+                      name: 'restOfWorldAdditional',
+                      type: 'number',
+                      label: 'Rest of World - Each Additional',
+                      required: true,
+                      min: 0,
+                      defaultValue: 0,
+                      admin: {
+                        width: '50%',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'stockQuantity',
+                  type: 'number',
+                  label: 'Stock Quantity',
+                  required: false,
+                  min: 0,
+                  admin: {
+                    width: '33%',
+                    description: 'Leave empty for unlimited stock',
+                  },
+                },
+                {
+                  name: 'isDigital',
+                  type: 'checkbox',
+                  label: 'Digital Release',
+                  defaultValue: false,
+                  admin: {
+                    width: '33%',
+                    description:
+                      'Check if this is a digital release (no shipping required)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'buyLink',
+              type: 'text',
+              label: 'External Buy Link',
+              required: false,
+              admin: {
+                description:
+                  'Optional external link (will disable internal cart functionality)',
+              },
+            },
+          ],
+        },
+        {
+          label: 'Images',
+          fields: [
+            {
+              name: 'artwork',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Artwork',
+              required: true,
+            },
+            {
+              name: 'images',
+              type: 'array',
+              label: 'Additional Images',
+              fields: [
+                {
+                  name: 'image',
+                  type: 'upload',
+                  relationTo: 'media',
+                  label: 'Image',
+                  required: true,
+                },
+              ],
+            },
+          ],
         },
       ],
     },
-    {
-      name: 'catalogNumber',
-      type: 'text',
-      label: 'Catalog Number',
-      required: true,
-      admin: {
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'releaseYear',
-      type: 'number',
-      label: 'Release Year',
-      required: true,
-      admin: {
-        position: 'sidebar',
-      },
-    },
-    slugField('title'),
   ],
 };
