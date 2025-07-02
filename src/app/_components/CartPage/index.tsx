@@ -146,6 +146,7 @@ const CartPage = () => {
 
   // Format items for PayPal with safety checks
   const formatItemsForPayPal = () => {
+    // Only include actual products, not shipping (shipping is handled in breakdown)
     const items = Object.values(cartDetails || {}).map((item) => ({
       name: item?.name || 'Product',
       description: item?.description || '',
@@ -159,19 +160,6 @@ const CartPage = () => {
       quantity: item?.quantity?.toString() || '1',
     }));
 
-    // Add shipping as separate line item if applicable
-    if (shippingCost + shippingVAT > 0) {
-      items.push({
-        name: 'Shipping',
-        description: `Shipping to ${getRegionLabel()}`,
-        unit_amount: {
-          currency_code: currency,
-          value: ((shippingCost + shippingVAT) / 100).toFixed(2),
-        },
-        quantity: '1',
-      });
-    }
-
     return items;
   };
 
@@ -184,6 +172,15 @@ const CartPage = () => {
   };
 
   const createOrder = (data: any, actions: any) => {
+    const items = formatItemsForPayPal();
+
+    // Calculate the actual item total (sum of all items)
+    const calculatedItemTotal = items.reduce((total, item) => {
+      return (
+        total + parseFloat(item.unit_amount.value) * parseInt(item.quantity)
+      );
+    }, 0);
+
     return actions.order.create({
       intent: 'CAPTURE',
       purchase_units: [
@@ -194,11 +191,19 @@ const CartPage = () => {
             breakdown: {
               item_total: {
                 currency_code: currency,
-                value: (finalTotal / 100).toFixed(2),
+                value: calculatedItemTotal.toFixed(2),
+              },
+              shipping: {
+                currency_code: currency,
+                value: (shippingCost / 100).toFixed(2),
+              },
+              tax_total: {
+                currency_code: currency,
+                value: (totalVAT / 100).toFixed(2),
               },
             },
           },
-          items: formatItemsForPayPal(),
+          items: items,
         },
       ],
     });

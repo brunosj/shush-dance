@@ -31,6 +31,7 @@
     "@payloadcms/plugin-seo": "^2.4.0",
     "@payloadcms/richtext-slate": "^1.5.2",
     "@paypal/react-paypal-js": "^8.8.2",
+    "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^4.10.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.7",
@@ -50,6 +51,7 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "6.27.0",
     "sharp": "0.33.5",
+    "stripe": "^18.3.0",
     "use-shopping-cart": "^3.2.0",
     "yet-another-react-lightbox": "^3.21.8"
   },
