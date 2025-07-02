@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPayloadClient } from '../../../payload/getPayload';
-import config from '../../../payload/payload.config';
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await getPayloadClient();
     const data = await request.json();
 
     const {
@@ -17,67 +14,93 @@ export async function POST(request: NextRequest) {
       transactionId,
     } = data;
 
-    // Create the online order
-    const order = await payload.create({
-      collection: 'online-orders',
-      data: {
-        orderNumber,
-        status: 'pending',
-        paymentMethod,
-        paymentStatus: transactionId ? 'paid' : 'pending',
-        transactionId,
-        customerEmail: customerData.email,
-        customerPhone: customerData.phone || '',
-        firstName: customerData.firstName,
-        lastName: customerData.lastName,
-        shippingAddress: {
-          street: customerData.street,
-          city: customerData.city,
-          postalCode: customerData.postalCode,
-          country: customerData.country,
-          shippingRegion,
+    // Create the online order via Payload REST API
+    const orderResponse = await fetch(
+      `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/online-orders`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
         },
-        items: cartItems.map((item: any) => ({
-          // We'll need to find the actual product ID from the cart item ID
-          product: null, // This will need to be mapped from cart item data
-          quantity: item.quantity,
-          unitPrice: item.unitPrice / 100, // Convert from cents to euros
-          lineTotal: item.lineTotal / 100,
-        })),
-        orderTotals: {
-          subtotal: totals.subtotal,
-          shipping: totals.shipping,
-          vat: totals.vat,
-          total: totals.total,
-        },
-        customerNotes: customerData.customerNotes || '',
-      },
-    });
+        body: JSON.stringify({
+          orderNumber,
+          status: 'pending',
+          paymentMethod,
+          paymentStatus: transactionId ? 'paid' : 'pending',
+          transactionId,
+          customerEmail: customerData.email,
+          customerPhone: customerData.phone || '',
+          firstName: customerData.firstName,
+          lastName: customerData.lastName,
+          shippingAddress: {
+            street: customerData.street,
+            city: customerData.city,
+            postalCode: customerData.postalCode,
+            country: customerData.country,
+            shippingRegion,
+          },
+          items: cartItems.map((item: any) => ({
+            // We'll need to find the actual product ID from the cart item ID
+            product: null, // This will need to be mapped from cart item data
+            quantity: item.quantity,
+            unitPrice: item.unitPrice / 100, // Convert from cents to euros
+            lineTotal: item.lineTotal / 100,
+          })),
+          orderTotals: {
+            subtotal: totals.subtotal,
+            shipping: totals.shipping,
+            vat: totals.vat,
+            total: totals.total,
+          },
+          customerNotes: customerData.customerNotes || '',
+        }),
+      }
+    );
 
-    // Create a sale record for tracking
-    const sale = await payload.create({
-      collection: 'sales',
-      data: {
-        itemName: `Order ${orderNumber}`,
-        quantity: cartItems.reduce(
-          (sum: number, item: any) => sum + item.quantity,
-          0
-        ),
-        basePrice: totals.subtotal,
-        shippingPrice: totals.shipping,
-        vatAmount: totals.vat,
-        totalAmount: totals.total,
-        currency: 'EUR',
-        paymentMethod: paymentMethod,
-        shippingRegion,
-        transactionId: transactionId || orderNumber, // Use transaction ID if available, otherwise order number
-      },
-    });
+    if (!orderResponse.ok) {
+      throw new Error(`Failed to create order: ${orderResponse.statusText}`);
+    }
+
+    const order = await orderResponse.json();
+
+    // Create a sale record for tracking via Payload REST API
+    const saleResponse = await fetch(
+      `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/sales`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
+        },
+        body: JSON.stringify({
+          itemName: `Order ${orderNumber}`,
+          quantity: cartItems.reduce(
+            (sum: number, item: any) => sum + item.quantity,
+            0
+          ),
+          basePrice: totals.subtotal,
+          shippingPrice: totals.shipping,
+          vatAmount: totals.vat,
+          totalAmount: totals.total,
+          currency: 'EUR',
+          paymentMethod: paymentMethod,
+          shippingRegion,
+          transactionId: transactionId || orderNumber, // Use transaction ID if available, otherwise order number
+        }),
+      }
+    );
+
+    if (!saleResponse.ok) {
+      console.error('Failed to create sale record, but order was created');
+    }
+
+    const sale = saleResponse.ok ? await saleResponse.json() : null;
 
     return NextResponse.json({
       success: true,
       order: order.id,
-      sale: sale.id,
+      sale: sale?.id || null,
       orderNumber,
     });
   } catch (error) {
