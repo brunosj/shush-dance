@@ -47,35 +47,53 @@ export const calculateCartShipping = (
   }>,
   region: ShippingRegion
 ): number => {
-  let totalShipping = 0;
-  let hasPhysicalItems = false;
-
-  // Group items by shipping type and calculate total quantity of physical items
+  // Filter out digital items as they don't require shipping
   const physicalItems = cartItems.filter((item) => !item.isDigital);
 
   if (physicalItems.length === 0) return 0;
 
-  // For simplicity, we'll use the highest shipping rate for the first item
-  // and add additional shipping for each extra item
-  let totalQuantity = 0;
-  let maxFirstItemShipping = 0;
-  let maxAdditionalShipping = 0;
+  // Group items by their shipping price structure
+  const shippingGroups = new Map<
+    string,
+    { items: typeof physicalItems; totalQuantity: number }
+  >();
 
   physicalItems.forEach((item) => {
-    totalQuantity += item.quantity;
-    const firstItemShipping = item.shippingPrices[region] || 0;
-    const additionalShipping =
+    // Create a unique key based on shipping prices for this region
+    const firstPrice = item.shippingPrices[region] || 0;
+    const additionalPrice =
       item.shippingPrices[`${region}Additional` as keyof ShippingPrices] || 0;
+    const shippingKey = `${firstPrice}-${additionalPrice}`;
 
-    maxFirstItemShipping = Math.max(maxFirstItemShipping, firstItemShipping);
-    maxAdditionalShipping = Math.max(maxAdditionalShipping, additionalShipping);
+    if (!shippingGroups.has(shippingKey)) {
+      shippingGroups.set(shippingKey, { items: [], totalQuantity: 0 });
+    }
+
+    const group = shippingGroups.get(shippingKey)!;
+    group.items.push(item);
+    group.totalQuantity += item.quantity;
   });
 
-  if (totalQuantity === 1) {
-    return maxFirstItemShipping;
-  }
+  // Calculate shipping cost for each group and sum them up
+  let totalShippingCost = 0;
 
-  return maxFirstItemShipping + maxAdditionalShipping * (totalQuantity - 1);
+  shippingGroups.forEach((group) => {
+    // Use the first item's shipping structure for this group (they're all the same)
+    const shippingStructure = group.items[0].shippingPrices;
+    const firstUnitPrice = shippingStructure[region] || 0;
+    const additionalUnitPrice =
+      shippingStructure[`${region}Additional` as keyof ShippingPrices] || 0;
+
+    // Calculate shipping for this group: first unit + (total quantity - 1) * additional unit price
+    if (group.totalQuantity === 1) {
+      totalShippingCost += firstUnitPrice;
+    } else {
+      totalShippingCost +=
+        firstUnitPrice + additionalUnitPrice * (group.totalQuantity - 1);
+    }
+  });
+
+  return totalShippingCost;
 };
 
 export const calculateVAT = (price: number, vatRate: number): number => {

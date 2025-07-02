@@ -30,8 +30,21 @@ export function Header() {
   useEffect(() => {
     updateLogoSize();
     window.addEventListener('resize', updateLogoSize);
-    return () => window.removeEventListener('resize', updateLogoSize);
-  }, []);
+
+    // Add ESC key listener to close menu
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscKey);
+
+    return () => {
+      window.removeEventListener('resize', updateLogoSize);
+      window.removeEventListener('keydown', handleEscKey);
+    };
+  }, [isOpen]);
 
   return (
     <header className='fixed top-0 w-full z-30 filter-top'>

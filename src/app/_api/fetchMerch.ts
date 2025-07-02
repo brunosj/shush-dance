@@ -1,10 +1,15 @@
-import type { Event } from '../../payload/payload-types';
+import type { Merch } from '../../payload/payload-types';
 
-export const fetchMerch = async (): Promise<Event[]> => {
+export const fetchMerch = async (): Promise<Merch[]> => {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/merch`,
+    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/merch?depth=2&limit=0`,
     {
       method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
+      },
+      next: { revalidate: 1 },
     }
   );
 

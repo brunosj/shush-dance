@@ -69,6 +69,7 @@ export const Sales: CollectionConfig = {
                   type: 'select',
                   options: [
                     { label: 'Bandcamp', value: 'bandcamp' },
+                    { label: 'Stripe', value: 'stripe' },
                     { label: 'PayPal', value: 'paypal' },
                     { label: 'In-Person', value: 'in-person' },
                     { label: 'Promo', value: 'promo' },

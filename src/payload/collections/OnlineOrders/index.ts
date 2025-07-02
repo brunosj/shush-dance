@@ -226,7 +226,34 @@ export const OnlineOrders: CollectionConfig = {
                   type: 'relationship',
                   relationTo: ['releases', 'merch'],
                   label: 'Product',
-                  required: true,
+                  required: false,
+                  admin: {
+                    description: 'Optional: Link to CMS product if available',
+                  },
+                },
+                {
+                  name: 'cartItemId',
+                  type: 'text',
+                  label: 'Cart Item ID',
+                  admin: {
+                    description: 'Original cart item identifier',
+                  },
+                },
+                {
+                  name: 'cartItemName',
+                  type: 'text',
+                  label: 'Item Name',
+                  admin: {
+                    description: 'Product name from cart',
+                  },
+                },
+                {
+                  name: 'cartItemDescription',
+                  type: 'text',
+                  label: 'Item Description',
+                  admin: {
+                    description: 'Product description from cart',
+                  },
                 },
                 {
                   type: 'row',

@@ -22,6 +22,9 @@ import { Socials } from './globals/Socials';
 import { Sales } from './collections/Sales';
 import { testBandcampEndpoint } from './endpoints/testBandcamp';
 import { syncBandcampEndpoint } from './endpoints/syncBandcamp';
+import { createOrderEndpoint } from './endpoints/createOrder';
+import { createPaymentIntentEndpoint } from './endpoints/createPaymentIntent';
+import { createSaleEndpoint } from './endpoints/createSale';
 import { Settings } from './globals/settings';
 
 dotenv.config({
@@ -64,5 +67,11 @@ export default buildConfig({
   },
   cors: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
   csrf: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
-  endpoints: [testBandcampEndpoint, syncBandcampEndpoint],
+  endpoints: [
+    testBandcampEndpoint,
+    syncBandcampEndpoint,
+    createOrderEndpoint,
+    createPaymentIntentEndpoint,
+    createSaleEndpoint,
+  ],
 });

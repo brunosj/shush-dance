@@ -53,41 +53,35 @@ const ReleaseListing: React.FC<ReleaseListingProps> = ({ release }) => {
 
   return (
     <div className='release-item mb-8 space-y-6 lg:space-y-12'>
-      <div className='lg:grid grid-cols-2'>
-        <div className='lg:flex gap-12 items-center'>
-          {/* Artwork */}
-          {artworkUrl && (
-            <div className='release-artwork relative w-48 h-48'>
-              <Image
-                src={artworkUrl}
-                alt={`${title} artwork`}
-                fill
-                className='object-contain w-full h-auto cursor-pointer'
-                onClick={() => handleThumbnailClick(0)}
-              />
-            </div>
-          )}
+      <div className='lg:grid grid-cols-2 gap-6 lg:gap-12'>
+        {/* Artwork */}
+        {artworkUrl && (
+          <div className='release-artwork relative h-[40vh] w-full'>
+            <Image
+              src={artworkUrl}
+              alt={`${title} artwork`}
+              fill
+              className='object-contain w-full h-auto cursor-pointer'
+              onClick={() => handleThumbnailClick(0)}
+            />
+          </div>
+        )}
 
-          {/* Release Details */}
+        {/* Release Details */}
+        <div className='lg:flex space-y-3 my-auto flex-col'>
           <div className='space-y-1'>
             <h2 className='release-title'>{title}</h2>
             <h4 className='release-artist'>{artistName}</h4>
-            <div className='flex items-center gap-3'>
-              <h4 className='release-catalog-number'>
-                {catalogNumber} - {releaseYear}
-              </h4>
-              {price && price > 0 && (
-                <span className='text-lg font-semibold'>
-                  €{price.toFixed(2)}
-                </span>
-              )}
-            </div>
+            <h4 className='release-catalog-number'>
+              {catalogNumber} - {releaseYear}
+            </h4>
           </div>
-        </div>
-
-        {/* Price and Cart Button */}
-        <div className='pt-3 lg:pt-0 ml-auto my-auto space-y-3'>
           {price && price > 0 && (
+            <div className='text-lg font-semibold'>€{price.toFixed(2)}</div>
+          )}
+
+          {/* Additional Product Info */}
+          {/* {price && price > 0 && (
             <div className='space-y-1'>
               <p className='text-sm text-gray-600'>
                 {release.isDigital
@@ -98,8 +92,11 @@ const ReleaseListing: React.FC<ReleaseListingProps> = ({ release }) => {
                 (Price excludes VAT and shipping)
               </p>
             </div>
-          )}
-          <AddToCartButton item={release as any} type='release' />
+          )} */}
+
+          <div className='pt-3 my-auto'>
+            <AddToCartButton item={release as any} type='release' />
+          </div>
         </div>
       </div>
 

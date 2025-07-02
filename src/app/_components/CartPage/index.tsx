@@ -2,14 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
-import { BsTrash3, BsPaypal, BsCreditCard } from 'react-icons/bs';
+import { BsTrash3 } from 'react-icons/bs';
 import { formatCurrencyString } from 'use-shopping-cart';
 import { useRouter } from 'next/navigation';
-import {
-  PayPalButtons,
-  PayPalButtonsComponentProps,
-} from '@paypal/react-paypal-js';
+
 import { useShipping } from '../../_providers/ShippingProvider';
+import { useCheckout, CustomerData } from '../../_providers/CheckoutProvider';
 import {
   calculateCartShipping,
   calculateVAT,
@@ -17,9 +15,8 @@ import {
   type ShippingRegion,
 } from '../../_types/shipping';
 import ShippingLocationSelector from '../ShippingLocationSelector';
-import CustomerDataForm, { CustomerData } from '../CustomerDataForm';
+import CustomerDataForm from '../CustomerDataForm';
 import StepIndicator from '../StepIndicator';
-import PaymentMethodRadio from '../PaymentMethod';
 import StripeCheckoutButton from '../StripeCheckoutButton';
 
 type CheckoutStep = 'cart' | 'customer-info' | 'payment';
@@ -36,12 +33,10 @@ const CartPage = () => {
   } = useShoppingCart();
 
   const { selectedRegion, getRegionLabel } = useShipping();
+  const { customerData, setCustomerData, hasCustomerData, clearCustomerData } =
+    useCheckout();
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('cart');
-  const [customerData, setCustomerData] = useState<CustomerData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>(
-    'stripe'
-  );
   const [currency] = useState('EUR');
 
   const router = useRouter();
@@ -58,7 +53,7 @@ const CartPage = () => {
   const getCompletedSteps = (): CheckoutStep[] => {
     const completed: CheckoutStep[] = ['cart']; // Cart is always completed
 
-    if (customerData) {
+    if (hasCustomerData()) {
       completed.push('customer-info');
     }
 
@@ -144,256 +139,6 @@ const CartPage = () => {
 
   const finalTotal = subtotalExclVAT + shippingCost + totalVAT;
 
-  // Format items for PayPal with safety checks
-  const formatItemsForPayPal = () => {
-    // Only include actual products, not shipping (shipping is handled in breakdown)
-    const items = Object.values(cartDetails || {}).map((item) => ({
-      name: item?.name || 'Product',
-      description: item?.description || '',
-      unit_amount: {
-        currency_code: currency,
-        value: (item?.priceObject?.value
-          ? item.priceObject.value / 100
-          : 0
-        ).toFixed(2),
-      },
-      quantity: item?.quantity?.toString() || '1',
-    }));
-
-    // Calculate current sum of individual items
-    const itemsSum = items.reduce((total, item) => {
-      return (
-        total + parseFloat(item.unit_amount.value) * parseInt(item.quantity)
-      );
-    }, 0);
-
-    const expectedItemTotal = subtotalExclVAT / 100;
-    const difference = expectedItemTotal - itemsSum;
-
-    // If there's a rounding difference, adjust the first item
-    if (Math.abs(difference) > 0.001 && items.length > 0) {
-      const firstItemPrice = parseFloat(items[0].unit_amount.value);
-      const firstItemQuantity = parseInt(items[0].quantity);
-      const adjustedPrice = (
-        firstItemPrice +
-        difference / firstItemQuantity
-      ).toFixed(2);
-
-      items[0].unit_amount.value = adjustedPrice;
-
-      console.log('PayPal Items Adjustment:', {
-        originalSum: itemsSum.toFixed(2),
-        expectedTotal: expectedItemTotal.toFixed(2),
-        difference: difference.toFixed(2),
-        adjustedFirstItemPrice: adjustedPrice,
-      });
-    }
-
-    return items;
-  };
-
-  // Styling for the PayPal buttons
-  const styles = {
-    shape: 'sharp',
-    layout: 'vertical',
-    color: 'black',
-    height: 40,
-  };
-
-  const createOrder = (data: any, actions: any) => {
-    const items = formatItemsForPayPal();
-
-    // Use the consistent subtotal from use-shopping-cart for item_total
-    const itemTotalValue = (subtotalExclVAT / 100).toFixed(2);
-    const shippingValue = (shippingCost / 100).toFixed(2);
-    const taxValue = (totalVAT / 100).toFixed(2);
-    const totalValue = (finalTotal / 100).toFixed(2);
-
-    // Debug logging to ensure breakdown adds up
-    console.log('PayPal Breakdown Debug:', {
-      itemTotal: itemTotalValue,
-      shipping: shippingValue,
-      tax: taxValue,
-      calculatedTotal: (
-        parseFloat(itemTotalValue) +
-        parseFloat(shippingValue) +
-        parseFloat(taxValue)
-      ).toFixed(2),
-      expectedTotal: totalValue,
-    });
-
-    return actions.order.create({
-      intent: 'CAPTURE',
-      purchase_units: [
-        {
-          amount: {
-            currency_code: currency,
-            value: totalValue,
-            breakdown: {
-              item_total: {
-                currency_code: currency,
-                value: itemTotalValue,
-              },
-              shipping: {
-                currency_code: currency,
-                value: shippingValue,
-              },
-              tax_total: {
-                currency_code: currency,
-                value: taxValue,
-              },
-            },
-          },
-          items: items,
-        },
-      ],
-    });
-  };
-
-  const onApprove = async (data: any, actions: any) => {
-    try {
-      const details = await actions.order.capture();
-
-      // Create order record first
-      if (customerData) {
-        await createOrderRecord('paypal', details.id);
-      }
-
-      // Create sales records for each item
-      await createSalesRecords('paypal', details.id);
-
-      await clearCart();
-      navigateToSuccess();
-    } catch (err) {
-      console.error('PayPal error:', err);
-      navigateToError();
-    }
-  };
-
-  // Function to create order record
-  const createOrderRecord = async (
-    paymentMethod: string,
-    transactionId: string
-  ) => {
-    if (!customerData) return;
-
-    const orderNumber = `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    const orderData = {
-      orderNumber,
-      customerData,
-      cartItems: Object.entries(cartDetails).map(([key, item]) => ({
-        id: key,
-        name: item.name,
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        lineTotal: item.price * item.quantity,
-      })),
-      totals: {
-        subtotal: subtotalExclVAT / 100,
-        shipping: shippingCost / 100,
-        vat: totalVAT / 100,
-        total: finalTotal / 100,
-      },
-      shippingRegion: selectedRegion,
-      paymentMethod,
-      transactionId,
-    };
-
-    try {
-      const response = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to create order record');
-      }
-    } catch (error) {
-      console.error('Error creating order record:', error);
-    }
-  };
-
-  // Function to create sales records
-  const createSalesRecords = async (
-    paymentMethod: string,
-    transactionId: string
-  ) => {
-    if (!cartDetails) return;
-
-    const salesPromises = Object.values(cartDetails).map(async (item) => {
-      const productData = item?.product_data as any;
-      const metadata = productData?.metadata;
-
-      if (!metadata) return;
-
-      const basePrice = parseFloat(metadata.basePrice || '0');
-      const shippingPrices = metadata.shippingPrices
-        ? JSON.parse(metadata.shippingPrices)
-        : {};
-      const isDigital = metadata.isDigital === 'true';
-      const quantity = item?.quantity || 1;
-
-      // Calculate shipping for this item
-      const itemShipping = isDigital
-        ? 0
-        : calculateCartShipping(
-            [
-              {
-                shippingPrices,
-                quantity,
-                isDigital,
-              },
-            ],
-            selectedRegion
-          );
-
-      const subtotal = basePrice * quantity;
-      const shippingTotal = itemShipping;
-      const itemVAT = subtotal * vatRate;
-      const shippingVATAmount = shippingTotal * vatRate;
-      const totalVATAmount = itemVAT + shippingVATAmount;
-      const totalAmount = subtotal + shippingTotal + totalVATAmount;
-
-      // Create sale record
-      try {
-        const response = await fetch('/api/create-sale', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            itemId: metadata.itemId,
-            itemType: metadata.type,
-            itemName: item?.name || 'Unknown Item',
-            quantity,
-            basePrice,
-            shippingPrice: shippingTotal,
-            vatAmount: totalVATAmount,
-            totalAmount,
-            currency: 'EUR',
-            paymentMethod,
-            shippingRegion: selectedRegion,
-            transactionId,
-            customerEmail: customerData?.email,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to create sale record for item:', item?.name);
-        }
-      } catch (error) {
-        console.error('Error creating sale record:', error);
-      }
-    });
-
-    await Promise.all(salesPromises);
-  };
-
   const handleCustomerDataSubmit = (data: CustomerData) => {
     setCustomerData(data);
     setCheckoutStep('payment');
@@ -408,16 +153,17 @@ const CartPage = () => {
           onStepClick={handleStepNavigation}
           completedSteps={getCompletedSteps()}
         />
-        <div className='mb-6'>
+        {/* <div className='mb-6'>
           <h2 className='text-2xl font-bold mb-2'>Customer Information</h2>
           <p className='text-gray-600'>
             Please provide your shipping details to continue.
           </p>
-        </div>
+        </div> */}
 
         <CustomerDataForm
           onSubmit={handleCustomerDataSubmit}
           isSubmitting={isProcessing}
+          initialData={customerData}
         />
       </div>
     );
@@ -438,100 +184,104 @@ const CartPage = () => {
           </p>
         </div>
 
-        <div className='bg-gray-50 p-6 rounded-lg mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>Order Summary</h3>
-          <div className='space-y-2'>
-            <div className='flex justify-between'>
-              <span>Subtotal (excl. VAT):</span>
-              <span>
-                {formatCurrencyString({
-                  value: subtotalExclVAT,
-                  currency: 'EUR',
-                })}
-              </span>
+        {/* First Row - Order Summary & Shipping Address */}
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-8'>
+          {/* Order Summary */}
+          <div className='bg-gray-50 p-6 rounded-lg'>
+            <h3 className='text-lg font-semibold mb-4'>Order Summary</h3>
+            <div className='space-y-2'>
+              <div className='flex justify-between'>
+                <span>Subtotal (excl. VAT):</span>
+                <span>
+                  {formatCurrencyString({
+                    value: subtotalExclVAT,
+                    currency: 'EUR',
+                  })}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span>Shipping ({getRegionLabel()}):</span>
+                <span>
+                  {formatCurrencyString({
+                    value: shippingCost,
+                    currency: 'EUR',
+                  })}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span>
+                  VAT ({selectedRegion === 'germany' ? '19%' : '0%'}):
+                </span>
+                <span>
+                  {formatCurrencyString({ value: totalVAT, currency: 'EUR' })}
+                </span>
+              </div>
+              <hr className='my-2' />
+              <div className='flex justify-between font-semibold text-lg'>
+                <span>Total:</span>
+                <span>
+                  {formatCurrencyString({
+                    value: finalTotal,
+                    currency: 'EUR',
+                  })}
+                </span>
+              </div>
             </div>
-            <div className='flex justify-between'>
-              <span>Shipping ({getRegionLabel()}):</span>
-              <span>
-                {formatCurrencyString({ value: shippingCost, currency: 'EUR' })}
-              </span>
+          </div>
+
+          {/* Shipping Address */}
+          <div className='bg-gray-50 p-6 rounded-lg'>
+            <h3 className='text-lg font-semibold mb-4'>Shipping Address</h3>
+            <div className='text-sm text-gray-700'>
+              <p className='font-medium'>
+                {customerData?.firstName} {customerData?.lastName}
+              </p>
+              <p>{customerData?.street}</p>
+              <p>
+                {customerData?.city}, {customerData?.postalCode}
+              </p>
+              <p>{customerData?.country}</p>
+              {customerData?.phone && (
+                <p className='mt-2'>Phone: {customerData.phone}</p>
+              )}
+              {customerData?.customerNotes && (
+                <div className='mt-3 pt-3 border-t border-gray-200'>
+                  <p className='font-medium text-xs text-gray-500 uppercase tracking-wide'>
+                    Order Notes:
+                  </p>
+                  <p className='text-sm'>{customerData.customerNotes}</p>
+                </div>
+              )}
             </div>
-            <div className='flex justify-between'>
-              <span>VAT ({selectedRegion === 'germany' ? '19%' : '0%'}):</span>
-              <span>
-                {formatCurrencyString({ value: totalVAT, currency: 'EUR' })}
-              </span>
-            </div>
-            <hr className='my-2' />
-            <div className='flex justify-between font-semibold text-lg'>
-              <span>Total:</span>
-              <span>
-                {formatCurrencyString({ value: finalTotal, currency: 'EUR' })}
-              </span>
-            </div>
+
+            {/* Edit Customer Info Button */}
+            <button
+              onClick={() => setCheckoutStep('customer-info')}
+              className='mt-4 text-sm text-blue-600 hover:text-blue-800 underline'
+            >
+              Edit customer information
+            </button>
           </div>
         </div>
 
-        <div className='bg-gray-50 p-6 rounded-lg mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>Shipping Address</h3>
-          <p>
-            {customerData?.firstName} {customerData?.lastName}
-            <br />
-            {customerData?.street}
-            <br />
-            {customerData?.city}, {customerData?.postalCode}
-            <br />
-            {customerData?.country}
+        {/* Second Row - Payment */}
+        <div className='bg-gray-50 p-6 rounded-lg'>
+          <h3 className='text-lg font-semibold mb-4'>Payment Information</h3>
+          <p className='text-sm text-gray-600 mb-6'>
+            Complete your payment securely with Stripe. PayPal users can select
+            PayPal as a payment method within Stripe.
           </p>
-        </div>
 
-        {/* Payment Method Selection */}
-        <div className='bg-gray-50 p-6 rounded-lg mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>Payment Method</h3>
-          <div className='space-y-4'>
-            <PaymentMethodRadio
-              label='Pay with Credit Card (Stripe)'
-              icon={<BsCreditCard />}
-              value='stripe'
-              selectedPaymentMethod={paymentMethod}
-              onChange={setPaymentMethod}
-            />
-            <PaymentMethodRadio
-              label='Pay with PayPal'
-              icon={<BsPaypal />}
-              value='paypal'
-              selectedPaymentMethod={paymentMethod}
-              onChange={setPaymentMethod}
-            />
-          </div>
-        </div>
-
-        {/* Payment Buttons */}
-        <div className='space-y-4 w-1/2 mx-auto'>
-          {paymentMethod === 'paypal' && (
-            <PayPalButtons
-              style={styles as PayPalButtonsComponentProps['style']}
-              createOrder={createOrder}
-              onApprove={onApprove}
-              onError={(err) => {
-                console.error('PayPal error:', err);
-                navigateToError();
-              }}
-            />
-          )}
-
-          {paymentMethod === 'stripe' && (
-            <StripeCheckoutButton
-              customerData={customerData}
-              orderTotals={{
-                subtotal: subtotalExclVAT / 100,
-                shipping: shippingCost / 100,
-                vat: totalVAT / 100,
-                total: finalTotal / 100,
-              }}
-              shippingRegion={selectedRegion}
-            />
-          )}
+          <StripeCheckoutButton
+            customerData={customerData}
+            orderTotals={{
+              subtotal: subtotalExclVAT / 100,
+              shipping: shippingCost / 100,
+              vat: totalVAT / 100,
+              total: finalTotal / 100,
+            }}
+            shippingRegion={selectedRegion}
+          />
         </div>
       </div>
     );
@@ -547,47 +297,68 @@ const CartPage = () => {
       />
 
       <ul className='space-y-4 pt-6'>
-        {Object.entries(cartDetails || {}).map(([key, item]) => (
-          <li
-            key={key}
-            className='flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray'
-          >
-            <div className='flex flex-col'>
-              <h4 className='font-bold '>{item?.name || 'Product'}</h4>
-              <p className='text-darkGray'>
-                {item?.description || 'Unknown'} |{' '}
-                {item?.priceObject
-                  ? formatCurrencyString(item.priceObject)
-                  : '€0.00'}
-              </p>
-            </div>
-            <div className='ml-auto flex items-center gap-2 space-x-3'>
-              <button
-                onClick={() => decrementItem(key)}
-                className='bg-gray-200 text-black px-2 py-1'
-                disabled={item?.quantity <= 1}
-              >
-                -
-              </button>
-              <span className='text-sm lg:text-base'>{item?.quantity}</span>
-              <button
-                onClick={() => incrementItem(key)}
-                className='bg-gray-200 text-black px-2 py-1'
-              >
-                +
-              </button>
-              <div className='h-6 border-l border-gray'></div>
-              <p>{item?.formattedValue}</p>
-              <div className='h-6 border-l border-gray'></div>
-              <button
-                className='text-black px-2 py-1 rounded'
-                onClick={() => removeItem(key)}
-              >
-                <BsTrash3 className='w-4 h-4' />
-              </button>
-            </div>
-          </li>
-        ))}
+        {Object.entries(cartDetails || {}).map(([key, item]) => {
+          // Extract metadata from product_data
+          const productData = item?.product_data as any;
+          const metadata = productData?.metadata || {};
+          const variant = metadata.variant;
+
+          // Calculate proper price display
+          const unitPrice = item?.price ? item.price / 100 : 0; // Convert from cents
+          const totalPrice = unitPrice * (item?.quantity || 1);
+
+          return (
+            <li
+              key={key}
+              className='flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray'
+            >
+              <div className='flex flex-col'>
+                <h4 className='font-bold '>{item?.name || 'Product'}</h4>
+                <p className='text-darkGray'>
+                  {item?.description || 'Unknown'}
+                  {variant &&
+                    ` | ${metadata.type === 'merch' ? 'Size' : 'Format'}: ${variant}`}{' '}
+                  |{' '}
+                  {formatCurrencyString({
+                    value: Math.round(unitPrice * 100), // Convert back to cents for formatting
+                    currency: 'EUR',
+                  })}{' '}
+                  per item
+                </p>
+              </div>
+              <div className='ml-auto flex items-center gap-2 space-x-3'>
+                <button
+                  onClick={() => decrementItem(key)}
+                  className='bg-gray-200 text-black px-2 py-1'
+                  disabled={item?.quantity <= 1}
+                >
+                  -
+                </button>
+                <span className='text-sm lg:text-base'>{item?.quantity}</span>
+                <button
+                  onClick={() => incrementItem(key)}
+                  className='bg-gray-200 text-black px-2 py-1'
+                >
+                  +
+                </button>
+                <div className='h-6 border-l border-gray'></div>
+                <p>
+                  {formatCurrencyString({
+                    value: Math.round(totalPrice * 100), // Convert to cents for formatting
+                    currency: 'EUR',
+                  })}
+                </p>
+                <div className='h-6 border-l border-gray'></div>
+                <button
+                  className='text-black px-2 py-1 rounded'
+                  onClick={() => removeItem(key)}
+                >
+                  <BsTrash3 className='w-4 h-4' />
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       {/* Shipping Location Selector - moved below cart items */}

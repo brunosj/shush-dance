@@ -7,14 +7,25 @@ import Image from 'next/image';
 type Props = {
   item: {
     id: string;
+    name?: string;
+    description?: string;
+    price?: number;
     quantity: number;
-    ticketTier: any; // Assuming you pass the ticket tier directly
+    image?: string;
+    product_data?: {
+      metadata?: {
+        variant?: string;
+        type?: string;
+        itemId?: string;
+      };
+    };
   };
 };
 
 const CartItem = ({ item }: Props) => {
-  const { id, quantity } = item;
-  const { tierName, stripePriceId, price } = item.ticketTier; // Destructure from ticketTier
+  const { id, quantity, name, description, price, image, product_data } = item;
+  const metadata = product_data?.metadata || {};
+  const variant = metadata.variant;
 
   const { incrementItem, decrementItem, removeItem } = useShoppingCart();
   const [itemQuantity, setItemQuantity] = useState(quantity);
@@ -39,26 +50,36 @@ const CartItem = ({ item }: Props) => {
     }
   };
 
+  // Calculate prices
+  const unitPrice = price ? price / 100 : 0; // Convert from cents
+  const totalPrice = unitPrice * itemQuantity;
+
   return (
     <div className='flex flex-col lg:flex-row items-center mb-3 p-2 justify-between rounded-md'>
       <div className='flex items-center gap-4 w-full lg:w-auto'>
         <div className='relative h-20 aspect-square'>
           <Image
-            src='/path/to/default/image.jpg' // Replace with a default image or handle dynamically
-            alt={tierName}
+            src={image || '/path/to/default/image.jpg'} // Use provided image or default
+            alt={name || 'Product'}
             className='object-contain'
             fill
             priority
           />
         </div>
         <div>
-          {tierName} <span className='text-xs'>({itemQuantity})</span>
+          <div className='font-semibold'>{name || 'Product'}</div>
+          <div className='text-sm text-gray-600'>
+            {description}
+            {variant &&
+              ` | ${metadata.type === 'merch' ? 'Size' : 'Format'}: ${variant}`}
+          </div>
+          <span className='text-xs'>({itemQuantity})</span>
         </div>
       </div>
       <div className='flex items-center justify-around w-full lg:w-auto gap-6'>
         <div>
           {formatCurrencyString({
-            value: parseFloat(price) * 100 * itemQuantity, // Convert price string to number
+            value: Math.round(totalPrice * 100), // Convert to cents for formatting
             currency: 'EUR',
           })}
         </div>
@@ -79,7 +100,7 @@ const CartItem = ({ item }: Props) => {
           }}
           className='p-1'
         >
-          {/* <BsTrash3 className='w-4 h-4' /> */}
+          🗑️
         </button>
       </div>
     </div>

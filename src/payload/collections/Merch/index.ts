@@ -38,9 +38,14 @@ export const Merch: CollectionConfig = {
             },
             {
               name: 'itemType',
-              type: 'text',
+              type: 'select',
               label: 'Item Type',
               required: true,
+              options: [
+                { label: 'Clothing', value: 'clothing' },
+                { label: 'Prints', value: 'prints' },
+                { label: 'Other', value: 'other' },
+              ],
             },
             createRichTextField({
               label: 'Description',
@@ -175,16 +180,6 @@ export const Merch: CollectionConfig = {
                   },
                 },
               ],
-            },
-            {
-              name: 'buyLink',
-              type: 'text',
-              label: 'External Buy Link',
-              required: false,
-              admin: {
-                description:
-                  'Optional external link (will disable internal cart functionality)',
-              },
             },
           ],
         },

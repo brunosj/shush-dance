@@ -55,6 +55,7 @@ const start = async (): Promise<void> => {
     next();
   });
 
+  // Let Next.js handle ALL routes, including API routes
   app.use((req, res) => nextHandler(req, res));
 
   nextApp.prepare().then(() => {

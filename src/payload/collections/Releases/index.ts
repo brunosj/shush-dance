@@ -214,16 +214,6 @@ export const Releases: CollectionConfig = {
                 },
               ],
             },
-            {
-              name: 'buyLink',
-              type: 'text',
-              label: 'External Buy Link',
-              required: false,
-              admin: {
-                description:
-                  'Optional external link (will disable internal cart functionality)',
-              },
-            },
           ],
         },
         {

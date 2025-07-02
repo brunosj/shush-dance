@@ -18,24 +18,26 @@ export interface CustomerData {
 interface CustomerDataFormProps {
   onSubmit: (data: CustomerData) => void;
   isSubmitting?: boolean;
+  initialData?: CustomerData | null;
 }
 
 const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
   onSubmit,
   isSubmitting = false,
+  initialData = null,
 }) => {
   const { selectedRegion, getRegionLabel } = useShipping();
 
   const [formData, setFormData] = useState<CustomerData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    street: '',
-    city: '',
-    postalCode: '',
-    country: '',
-    customerNotes: '',
+    firstName: initialData?.firstName || '',
+    lastName: initialData?.lastName || '',
+    email: initialData?.email || '',
+    phone: initialData?.phone || '',
+    street: initialData?.street || '',
+    city: initialData?.city || '',
+    postalCode: initialData?.postalCode || '',
+    country: initialData?.country || '',
+    customerNotes: initialData?.customerNotes || '',
   });
 
   const [errors, setErrors] = useState<Partial<CustomerData>>({});

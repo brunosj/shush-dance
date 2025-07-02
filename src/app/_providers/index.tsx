@@ -6,6 +6,7 @@ import { AuthProvider } from '../_providers/Auth';
 import { ThemeProvider } from './Theme';
 import CartProvider from './CartProvider';
 import { ShippingProvider } from './ShippingProvider';
+import { CheckoutProvider } from './CheckoutProvider';
 
 export const Providers: React.FC<{
   children: React.ReactNode;
@@ -19,9 +20,11 @@ export const Providers: React.FC<{
   return (
     <CartProvider>
       <ShippingProvider>
-        <PayPalScriptProvider options={initialOptions}>
-          <ThemeProvider>{children}</ThemeProvider>
-        </PayPalScriptProvider>
+        <CheckoutProvider>
+          <PayPalScriptProvider options={initialOptions}>
+            <ThemeProvider>{children}</ThemeProvider>
+          </PayPalScriptProvider>
+        </CheckoutProvider>
       </ShippingProvider>
     </CartProvider>
   );

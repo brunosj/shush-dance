@@ -32,6 +32,13 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+
+  // Define available sizes for t-shirts
+  const tshirtSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
+
+  // Check if this item is clothing based on the structured itemType field
+  const isClothingItem = itemType === 'clothing';
 
   const handleThumbnailClick = (index: number) => {
     setActiveSlide(index);
@@ -59,10 +66,10 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
         )}
         {/* Release Details */}
         <div className='lg:flex space-y-3 my-auto flex-col'>
-          <div className='space-y-1'>
+          <div className='space-y-2'>
             <h2 className='release-title'>{title}</h2>
             <div className='flex items-center gap-3'>
-              <h4 className='release-artist'>{itemType}</h4>
+              {/* <h4 className='release-artist'>{itemType}</h4> */}
               {price && price > 0 && (
                 <span className='text-lg font-semibold'>
                   €{price.toFixed(2)}
@@ -72,7 +79,7 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
           </div>
 
           {/* Additional Product Info */}
-          {price && price > 0 && (
+          {/* {price && price > 0 && (
             <div className='space-y-1'>
               <p className='text-sm text-gray-600'>
                 {merch.isDigital
@@ -83,10 +90,41 @@ const MerchListing: React.FC<MerchListingProps> = ({ merch }) => {
                 (Price excludes VAT and shipping)
               </p>
             </div>
-          )}
+          )} */}
 
           <div className='pt-3 my-auto'>
-            <AddToCartButton item={merch as any} type='merch' />
+            {/* Size selector for apparel items */}
+            {isClothingItem && (
+              <div className='mb-4'>
+                <label
+                  htmlFor='size-select'
+                  className='block text-sm font-medium text-gray-700 mb-2'
+                >
+                  Size
+                </label>
+                <select
+                  id='size-select'
+                  value={selectedSize}
+                  onChange={(e) => setSelectedSize(e.target.value)}
+                  className='block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white'
+                  required
+                >
+                  <option value=''>Select a size</option>
+                  {tshirtSizes.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <AddToCartButton
+              item={merch as any}
+              type='merch'
+              selectedVariant={isClothingItem ? selectedSize : undefined}
+              disabled={isClothingItem && !selectedSize}
+            />
           </div>
         </div>
       </div>

@@ -10,6 +10,8 @@ import type { Merch, Release } from '../../../payload/payload-types';
 interface AddToCartButtonProps {
   item: Merch | Release;
   type: 'merch' | 'release';
+  selectedVariant?: string; // For clothing sizes only
+  disabled?: boolean;
 }
 
 // Type guards
@@ -19,23 +21,18 @@ const hasPrice = (
   return 'price' in item && typeof item.price === 'number' && item.price > 0;
 };
 
-const hasBuyLink = (
-  item: Merch | Release
-): item is (Merch | Release) & { buyLink: string } => {
-  return (
-    'buyLink' in item &&
-    typeof item.buyLink === 'string' &&
-    item.buyLink.length > 0
-  );
-};
-
 const hasStockQuantity = (
   item: Merch | Release
 ): item is (Merch | Release) & { stockQuantity: number } => {
   return 'stockQuantity' in item && typeof item.stockQuantity === 'number';
 };
 
-const AddToCartButton: React.FC<AddToCartButtonProps> = ({ item, type }) => {
+const AddToCartButton: React.FC<AddToCartButtonProps> = ({
+  item,
+  type,
+  selectedVariant,
+  disabled,
+}) => {
   const { addItem } = useShoppingCart();
   const { selectedRegion, getVATRate } = useShipping();
   const [isAdding, setIsAdding] = useState(false);
@@ -48,9 +45,6 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ item, type }) => {
 
     try {
       const basePrice = item.price;
-      // Don't add VAT here - it will be calculated at cart level
-      // const vatRate = getVATRate();
-      // const itemPriceWithVAT = calculateTotalWithVAT(basePrice, vatRate);
 
       // Get image URL safely
       const getImageUrl = () => {
@@ -69,7 +63,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ item, type }) => {
 
       // Create cart item WITHOUT VAT (will be calculated at cart level)
       const cartItem = {
-        id: `${type}_${item.id}_${selectedRegion}`, // Include region in ID to handle region changes
+        id: `${type}_${item.id}_${selectedRegion}${selectedVariant ? `_${selectedVariant}` : ''}`, // Include variant in ID
         name: item.title,
         description:
           type === 'release'
@@ -84,6 +78,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ item, type }) => {
             itemId: item.id,
             shippingRegion: selectedRegion,
             basePrice: basePrice.toString(),
+            variant: selectedVariant || '', // For clothing sizes only
             isDigital: ('isDigital' in item
               ? item.isDigital
               : false
@@ -106,19 +101,10 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ item, type }) => {
 
   // Check availability
   const itemHasPrice = hasPrice(item);
-  const itemHasBuyLink = hasBuyLink(item);
   const isOutOfStock = hasStockQuantity(item) && item.stockQuantity <= 0;
 
   if (!itemHasPrice) {
-    return itemHasBuyLink ? (
-      <Button href={item.buyLink} label='Buy External' target='_blank' />
-    ) : (
-      <Button label='Not Available' disabled />
-    );
-  }
-
-  if (itemHasBuyLink) {
-    return <Button href={item.buyLink} label='Buy External' target='_blank' />;
+    return <Button label='Not Available' disabled />;
   }
 
   if (isOutOfStock) {
@@ -129,7 +115,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ item, type }) => {
     <Button
       onClick={handleAddToCart}
       label={isAdding ? 'Adding...' : 'Add to Cart'}
-      disabled={isAdding}
+      disabled={isAdding || disabled}
     />
   );
 };
