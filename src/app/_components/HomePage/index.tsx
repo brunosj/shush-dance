@@ -1,7 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Page, Event, Social, Release } from '../../../payload/payload-types';
+import {
+  Page,
+  Event,
+  Social,
+  Release,
+  Merch,
+} from '../../../payload/payload-types';
 import { RichText } from '../RichText';
 import EventList from '../EventList';
 import Link from 'next/link';
@@ -9,6 +15,7 @@ import { useShoppingCart } from 'use-shopping-cart';
 import Button from '../Button';
 import EventListing from '../EventListing';
 import ReleaseCard from '../ReleaseCard';
+import MerchCard from '../MerchCard';
 
 interface HomePageProps {
   data: {
@@ -16,6 +23,7 @@ interface HomePageProps {
     socials: Social;
     events?: Event[];
     releases?: Release[];
+    merchItems?: Merch[];
   };
 }
 
@@ -33,7 +41,21 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
     return eventDate.getTime() >= today.getTime();
   });
 
-  const latestRelease = data.releases?.[0];
+  // Get latest release based on updatedAt
+  const latestRelease = data.releases?.length
+    ? [...data.releases].sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )[0]
+    : undefined;
+
+  // Get latest merch based on updatedAt
+  const latestMerch = data.merchItems?.length
+    ? [...data.merchItems].sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )[0]
+    : undefined;
 
   if (!page) {
     return <p>Loading...</p>;
@@ -88,10 +110,19 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
               )}
 
               {latestRelease && (
-                <div className='space-y-6  '>
-                  <h2>Announcing!</h2>
+                <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
+                  {/* <h2>Announcing!</h2> */}
                   <ul className='list-none'>
                     <ReleaseCard release={latestRelease} />
+                  </ul>
+                </div>
+              )}
+
+              {latestMerch && (
+                <div className='space-y-6'>
+                  {/* <h2>Latest Merch</h2> */}
+                  <ul className='list-none'>
+                    <MerchCard merch={latestMerch} />
                   </ul>
                 </div>
               )}
@@ -99,10 +130,19 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
           ) : (
             <>
               {latestRelease && (
-                <div className='space-y-6  border-gray pb-6 lg:pb-12 border-b'>
+                <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
                   <h2>Announcing!</h2>
                   <ul className='list-none'>
                     <ReleaseCard release={latestRelease} />
+                  </ul>
+                </div>
+              )}
+
+              {latestMerch && (
+                <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
+                  <h2>Latest Merch</h2>
+                  <ul className='list-none'>
+                    <MerchCard merch={latestMerch} />
                   </ul>
                 </div>
               )}

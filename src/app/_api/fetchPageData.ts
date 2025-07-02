@@ -18,6 +18,7 @@ export const fetchPageData = async (slug: string) => {
         socials: socials,
         events: await fetchEvents(),
         releases: await fetchReleases(),
+        merchItems: await fetchMerch(),
       };
 
     case 'events':

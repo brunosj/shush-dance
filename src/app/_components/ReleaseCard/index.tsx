@@ -64,15 +64,10 @@ const ReleaseCard: React.FC<ReleaseCardProps> = ({ release }) => {
             </div>
           )}
 
-          {/* Buy Link */}
-          {release.buyLink && (
-            <div>
-              <Button
-                onClick={() => window.open(release.buyLink, '_blank')}
-                label='Get the Record!'
-              />
-            </div>
-          )}
+          {/* Learn More Button */}
+          <div className='pt-3'>
+            <Button href='/releases' label='Learn More' />
+          </div>
         </div>
       </div>
     </li>

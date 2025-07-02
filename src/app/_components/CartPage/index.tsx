@@ -315,7 +315,9 @@ const CartPage = () => {
               <div className='flex flex-col'>
                 <h4 className='font-bold '>{item?.name || 'Product'}</h4>
                 <p className='text-darkGray'>
-                  {item?.description || 'Unknown'}
+                  <span className='capitalize'>
+                    {item?.description || 'Unknown'}
+                  </span>
                   {variant &&
                     ` | ${metadata.type === 'merch' ? 'Size' : 'Format'}: ${variant}`}{' '}
                   |{' '}
