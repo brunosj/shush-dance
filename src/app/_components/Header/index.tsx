@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useShoppingCart } from 'use-shopping-cart';
 import { IoTicketOutline } from 'react-icons/io5';
+import { HiOutlineShoppingBag } from 'react-icons/hi2';
 import { Fade as Hamburger } from 'hamburger-react';
 import { menuItems } from '../Menu';
 
@@ -69,9 +70,9 @@ export function Header() {
         {/* Cart Icon on the right */}
         <div className='ml-auto z-40 group relative'>
           <Link href='/cart' onClick={closeMenu}>
-            <IoTicketOutline className='w-8 h-8 group-hover:opacity-75' />
+            <HiOutlineShoppingBag className='w-8 h-8 group-hover:opacity-75' />
             {cartCount > 0 && (
-              <div className='rounded-full flex justify-center items-center text-xs bg-black text-pri absolute w-5 h-5 -mt-2 group-hover:opacity-75 -left-1'>
+              <div className='rounded-full flex justify-center items-center text-xs bg-black text-pri absolute w-5 h-5 -mt-3 group-hover:opacity-75 -left-1'>
                 {cartCount}
               </div>
             )}
