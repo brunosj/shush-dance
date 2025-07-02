@@ -171,29 +171,61 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   useEffect(() => {
     if (!orderTotals || !customerData) return;
 
-    // Create payment intent
-    fetch('/api/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: orderTotals.total,
-        currency: 'eur',
-        customerData,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    const createPaymentIntent = async () => {
+      try {
+        console.log('Creating payment intent with data:', {
+          amount: orderTotals.total,
+          currency: 'eur',
+          customerData,
+        });
+
+        const response = await fetch('/api/create-payment-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: orderTotals.total,
+            currency: 'eur',
+            customerData,
+          }),
+        });
+
+        console.log('Payment intent response status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(
+            'Payment intent API error:',
+            response.status,
+            errorText
+          );
+          throw new Error(
+            `API responded with ${response.status}: ${errorText}`
+          );
+        }
+
+        const data = await response.json();
+        console.log('Payment intent data received:', {
+          hasClientSecret: !!data.clientSecret,
+        });
+
         if (data.error) {
           setError(data.error);
-        } else {
+        } else if (data.clientSecret) {
           setClientSecret(data.clientSecret);
+        } else {
+          setError('No client secret received');
         }
+      } catch (err: any) {
+        console.error('Payment intent creation failed:', err);
+        setError(err.message || 'Failed to initialize payment');
+      } finally {
         setIsLoading(false);
-      })
-      .catch((err) => {
-        setError('Failed to initialize payment');
-        setIsLoading(false);
-      });
+      }
+    };
+
+    createPaymentIntent();
   }, [orderTotals, customerData]);
 
   const handleSuccess = () => {

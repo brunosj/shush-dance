@@ -160,6 +160,35 @@ const CartPage = () => {
       quantity: item?.quantity?.toString() || '1',
     }));
 
+    // Calculate current sum of individual items
+    const itemsSum = items.reduce((total, item) => {
+      return (
+        total + parseFloat(item.unit_amount.value) * parseInt(item.quantity)
+      );
+    }, 0);
+
+    const expectedItemTotal = subtotalExclVAT / 100;
+    const difference = expectedItemTotal - itemsSum;
+
+    // If there's a rounding difference, adjust the first item
+    if (Math.abs(difference) > 0.001 && items.length > 0) {
+      const firstItemPrice = parseFloat(items[0].unit_amount.value);
+      const firstItemQuantity = parseInt(items[0].quantity);
+      const adjustedPrice = (
+        firstItemPrice +
+        difference / firstItemQuantity
+      ).toFixed(2);
+
+      items[0].unit_amount.value = adjustedPrice;
+
+      console.log('PayPal Items Adjustment:', {
+        originalSum: itemsSum.toFixed(2),
+        expectedTotal: expectedItemTotal.toFixed(2),
+        difference: difference.toFixed(2),
+        adjustedFirstItemPrice: adjustedPrice,
+      });
+    }
+
     return items;
   };
 
@@ -174,12 +203,24 @@ const CartPage = () => {
   const createOrder = (data: any, actions: any) => {
     const items = formatItemsForPayPal();
 
-    // Calculate the actual item total (sum of all items)
-    const calculatedItemTotal = items.reduce((total, item) => {
-      return (
-        total + parseFloat(item.unit_amount.value) * parseInt(item.quantity)
-      );
-    }, 0);
+    // Use the consistent subtotal from use-shopping-cart for item_total
+    const itemTotalValue = (subtotalExclVAT / 100).toFixed(2);
+    const shippingValue = (shippingCost / 100).toFixed(2);
+    const taxValue = (totalVAT / 100).toFixed(2);
+    const totalValue = (finalTotal / 100).toFixed(2);
+
+    // Debug logging to ensure breakdown adds up
+    console.log('PayPal Breakdown Debug:', {
+      itemTotal: itemTotalValue,
+      shipping: shippingValue,
+      tax: taxValue,
+      calculatedTotal: (
+        parseFloat(itemTotalValue) +
+        parseFloat(shippingValue) +
+        parseFloat(taxValue)
+      ).toFixed(2),
+      expectedTotal: totalValue,
+    });
 
     return actions.order.create({
       intent: 'CAPTURE',
@@ -187,19 +228,19 @@ const CartPage = () => {
         {
           amount: {
             currency_code: currency,
-            value: (finalTotal / 100).toFixed(2),
+            value: totalValue,
             breakdown: {
               item_total: {
                 currency_code: currency,
-                value: calculatedItemTotal.toFixed(2),
+                value: itemTotalValue,
               },
               shipping: {
                 currency_code: currency,
-                value: (shippingCost / 100).toFixed(2),
+                value: shippingValue,
               },
               tax_total: {
                 currency_code: currency,
-                value: (totalVAT / 100).toFixed(2),
+                value: taxValue,
               },
             },
           },
