@@ -12,12 +12,16 @@ interface PaymentSectionProps {
     total: number;
   };
   shippingRegion: ShippingRegion;
+  onPaymentStart?: () => void;
+  onPaymentComplete?: () => void;
 }
 
 const PaymentSection: React.FC<PaymentSectionProps> = ({
   customerData,
   orderTotals,
   shippingRegion,
+  onPaymentStart,
+  onPaymentComplete,
 }) => {
   return (
     <div className='bg-gray-50 p-6 rounded-lg'>
@@ -31,6 +35,8 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
         customerData={customerData}
         orderTotals={orderTotals}
         shippingRegion={shippingRegion}
+        onPaymentStart={onPaymentStart}
+        onPaymentComplete={onPaymentComplete}
       />
     </div>
   );

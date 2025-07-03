@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
 import { useRouter } from 'next/navigation';
 
@@ -18,6 +18,7 @@ import EmptyCartState from './EmptyCartState';
 import CartView from './CartView';
 import CustomerInfoStep from './CustomerInfoStep';
 import PaymentStep from './PaymentStep';
+import LoadingSpinner from './LoadingSpinner';
 
 type CheckoutStep = 'cart' | 'customer-info' | 'payment';
 
@@ -35,8 +36,20 @@ const CartPage = () => {
   const { customerData, setCustomerData, hasCustomerData } = useCheckout();
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('cart');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const router = useRouter();
+
+  // Handle initial loading state
+  useEffect(() => {
+    // Add a small delay to prevent flash of empty state
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Determine which steps are completed
   const getCompletedSteps = (): CheckoutStep[] => {
@@ -126,7 +139,17 @@ const CartPage = () => {
     setCheckoutStep('customer-info');
   };
 
-  // Show empty cart state
+  // Show loading spinner during initial load or payment processing
+  if (isInitialLoad) {
+    return <LoadingSpinner message='Loading your cart...' />;
+  }
+
+  // Show payment processing spinner instead of empty cart state
+  if (paymentProcessing) {
+    return <LoadingSpinner message='Processing your payment...' />;
+  }
+
+  // Show empty cart state only if cart is actually empty and not processing
   if (!cartDetails || cartCount === 0) {
     return <EmptyCartState />;
   }
@@ -159,6 +182,8 @@ const CartPage = () => {
         regionLabel={getRegionLabel()}
         selectedRegion={selectedRegion}
         shippingRegion={selectedRegion}
+        onPaymentStart={() => setPaymentProcessing(true)}
+        onPaymentComplete={() => setPaymentProcessing(false)}
       />
     );
   }

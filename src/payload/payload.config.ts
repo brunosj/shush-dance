@@ -1,6 +1,5 @@
 import { webpackBundler } from '@payloadcms/bundler-webpack';
 import { mongooseAdapter } from '@payloadcms/db-mongodb';
-
 import { slateEditor } from '@payloadcms/richtext-slate';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -74,4 +73,17 @@ export default buildConfig({
     createPaymentIntentEndpoint,
     createSaleEndpoint,
   ],
+  email: {
+    fromName: 'SHUSH',
+    fromAddress: 'hello@shush.dance',
+    logMockCredentials: true,
+    transportOptions: {
+      host: process.env.SMTP_HOST,
+      port: 587,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    },
+  },
 });

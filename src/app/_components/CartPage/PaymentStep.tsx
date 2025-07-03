@@ -20,6 +20,8 @@ interface PaymentStepProps {
   regionLabel: string;
   selectedRegion: string;
   shippingRegion: ShippingRegion;
+  onPaymentStart?: () => void;
+  onPaymentComplete?: () => void;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({
@@ -34,6 +36,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   regionLabel,
   selectedRegion,
   shippingRegion,
+  onPaymentStart,
+  onPaymentComplete,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -76,6 +80,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
           total: finalTotal / 100,
         }}
         shippingRegion={shippingRegion}
+        onPaymentStart={onPaymentStart}
+        onPaymentComplete={onPaymentComplete}
       />
     </div>
   );

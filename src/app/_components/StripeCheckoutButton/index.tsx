@@ -22,6 +22,8 @@ interface StripeCheckoutButtonProps {
     total: number;
   };
   shippingRegion?: string;
+  onPaymentStart?: () => void;
+  onPaymentComplete?: () => void;
 }
 
 // Payment form component that uses Stripe Elements
@@ -31,7 +33,17 @@ const CheckoutForm: React.FC<{
   shippingRegion: string;
   onSuccess: () => void;
   onError: (error: string) => void;
-}> = ({ customerData, orderTotals, shippingRegion, onSuccess, onError }) => {
+  onPaymentStart?: () => void;
+  onPaymentComplete?: () => void;
+}> = ({
+  customerData,
+  orderTotals,
+  shippingRegion,
+  onSuccess,
+  onError,
+  onPaymentStart,
+  onPaymentComplete,
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
@@ -41,15 +53,18 @@ const CheckoutForm: React.FC<{
     event.preventDefault();
 
     if (!stripe || !elements) {
+      onError('Payment system not ready. Please try again.');
       return;
     }
 
     setIsLoading(true);
+    onPaymentStart?.(); // Notify parent that payment is starting
 
     try {
       const { error: submitError } = await elements.submit();
       if (submitError) {
         onError(submitError.message || 'Payment failed');
+        onPaymentComplete?.(); // Notify parent that payment is complete (failed)
         setIsLoading(false);
         return;
       }
@@ -64,14 +79,17 @@ const CheckoutForm: React.FC<{
 
       if (error) {
         onError(error.message || 'Payment failed');
+        onPaymentComplete?.(); // Notify parent that payment is complete (failed)
       } else {
         // Payment succeeded - create order and sales records
         await createOrderAndSalesRecords();
         await clearCart();
+        onPaymentComplete?.(); // Notify parent that payment is complete (succeeded)
         onSuccess();
       }
     } catch (err: any) {
       onError(err.message || 'An unexpected error occurred');
+      onPaymentComplete?.(); // Notify parent that payment is complete (failed)
     } finally {
       setIsLoading(false);
     }
@@ -79,8 +97,8 @@ const CheckoutForm: React.FC<{
 
   const createOrderAndSalesRecords = async () => {
     // Create order record
-    const orderNumber = `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const transactionId = `stripe-${orderNumber}`;
+    const orderNumber = `SHUSH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const transactionId = `SHUSH-stripe-${orderNumber}`;
 
     const orderData = {
       orderNumber,
@@ -162,6 +180,8 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   customerData,
   orderTotals,
   shippingRegion,
+  onPaymentStart,
+  onPaymentComplete,
 }) => {
   const [clientSecret, setClientSecret] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -283,6 +303,8 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
         shippingRegion={shippingRegion || 'eu'}
         onSuccess={handleSuccess}
         onError={handleError}
+        onPaymentStart={onPaymentStart}
+        onPaymentComplete={onPaymentComplete}
       />
     </Elements>
   );

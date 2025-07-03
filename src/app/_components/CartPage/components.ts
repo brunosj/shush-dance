@@ -7,3 +7,4 @@ export { default as PaymentSection } from './PaymentSection';
 export { default as CustomerInfoStep } from './CustomerInfoStep';
 export { default as PaymentStep } from './PaymentStep';
 export { default as CartView } from './CartView';
+export { default as LoadingSpinner } from './LoadingSpinner';

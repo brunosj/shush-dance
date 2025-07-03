@@ -75,6 +75,74 @@ export const createOrderEndpoint: Endpoint = {
 
       console.log('Order created successfully:', order.id);
 
+      // Send confirmation emails
+      console.log('Sending confirmation emails...');
+      try {
+        // Format order items for email
+        const itemsList = cartItems
+          .map(
+            (item: any) =>
+              `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
+          )
+          .join('\n');
+
+        const orderSummary = `
+Order Number: ${orderNumber}
+Customer: ${customerData.firstName} ${customerData.lastName}
+Email: ${customerData.email}
+
+Items:
+${itemsList}
+
+Subtotal: €${(totals.subtotal / 100).toFixed(2)}
+Shipping: €${(totals.shipping / 100).toFixed(2)}
+VAT: €${(totals.vat / 100).toFixed(2)}
+Total: €${(totals.total / 100).toFixed(2)}
+
+Shipping Address:
+${customerData.firstName} ${customerData.lastName}
+${customerData.street}
+${customerData.city}, ${customerData.postalCode}
+${customerData.country}
+        `;
+
+        // Send confirmation email to customer
+        await req.payload.sendEmail({
+          to: customerData.email,
+          from: 'hello@shush.dance',
+          subject: `Order Confirmation - ${orderNumber}`,
+          html: `
+            <h2>Thank you for your order!</h2>
+            <p>Hi ${customerData.firstName},</p>
+            <p>We've received your order and it's being processed. Here are the details:</p>
+            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${orderSummary}</pre>
+            <p>We'll notify you by email when your order is shipped.</p>
+            <p>Thanks for supporting us and what we do!</p>
+            <p>- SHUSH crew</p>
+          `,
+        });
+        console.log('Customer confirmation email sent');
+
+        // Send notification email to merch team
+        await req.payload.sendEmail({
+          to: 'merch@shush.dance',
+          from: 'hello@shush.dance',
+          subject: `New Order - ${orderNumber}`,
+          html: `
+            <h2>New Order Received</h2>
+            <p>A new order has been placed:</p>
+            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${orderSummary}</pre>
+            <p>Payment Method: ${paymentMethod}</p>
+            <p>Transaction ID: ${transactionId || 'Pending'}</p>
+            ${customerData.customerNotes ? `<p>Customer Notes: ${customerData.customerNotes}</p>` : ''}
+          `,
+        });
+        console.log('Merch team notification email sent');
+      } catch (emailError) {
+        console.error('Failed to send emails:', emailError);
+        // Don't fail the order creation if emails fail
+      }
+
       // Create a sale record for tracking
       console.log('Creating sale record...');
       let sale = null;
