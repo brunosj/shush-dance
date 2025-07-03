@@ -9,18 +9,18 @@ import {
   PayPalButtons,
   PayPalButtonsComponentProps,
 } from '@paypal/react-paypal-js';
-import { useShipping } from '../../_providers/ShippingProvider';
+import { useShipping } from '../../../_providers/ShippingProvider';
 import {
   calculateCartShipping,
   calculateVAT,
   SHIPPING_LOCATIONS,
   type ShippingRegion,
-} from '../../_types/shipping';
-import ShippingLocationSelector from '../ShippingLocationSelector';
-import CustomerDataForm, { CustomerData } from '../CustomerDataForm';
-import StepIndicator from '../StepIndicator';
-import PaymentMethodRadio from '../PaymentMethod';
-import StripeCheckoutButton from '../StripeCheckoutButton';
+} from '../../../_types/shipping';
+import ShippingLocationSelector from '../../ShippingLocationSelector';
+import CustomerDataForm, { CustomerData } from '../../CustomerDataForm';
+import StepIndicator from '../../StepIndicator';
+import PaymentMethodRadio from '../../PaymentMethod';
+import StripeCheckoutButton from '../../StripeCheckoutButton';
 
 type CheckoutStep = 'cart' | 'customer-info' | 'payment';
 

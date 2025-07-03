@@ -4,7 +4,6 @@ import localFont from 'next/font/local';
 import { Metadata } from 'next';
 import { Providers } from './_providers';
 import { InitTheme } from './_providers/Theme/InitTheme';
-import { mergeOpenGraph } from './_utilities/mergeOpenGraph';
 import { siteMetadata } from './_components/Metadata';
 import { Header } from './_components/Header';
 import { Footer } from './_components/Footer/footer';

@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
 import { useShipping } from '../../_providers/ShippingProvider';
-import { calculateTotalWithVAT } from '../../_types/shipping';
 import Button from '../Button';
 import type { Merch, Release } from '../../../payload/payload-types';
+import toast from 'react-hot-toast';
 
 interface AddToCartButtonProps {
   item: Merch | Release;
@@ -92,6 +92,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       };
 
       await addItem(cartItem);
+      toast.success('Added to cart!');
     } catch (error) {
       console.error('Failed to add item to cart:', error);
     } finally {

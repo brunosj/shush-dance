@@ -1,13 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Page, Event, Release } from '../../../payload/payload-types';
-import { RichText } from '../RichText';
-import EventList from '../EventList';
-import Link from 'next/link';
-import { useShoppingCart } from 'use-shopping-cart';
-import Button from '../Button';
-import ReleaseListing from '../ReleaseListing';
+import { Page, Release } from '../../../payload/payload-types';
+import ProductListing from '../ProductListing';
 import type { ExtendedRelease } from '../../_types/extended-payload-types';
 
 interface ReleasesPageProps {
@@ -30,7 +25,10 @@ const ReleasesPage: React.FC<ReleasesPageProps> = ({ data }) => {
         <section>
           {releases.map((release, index) => (
             <li key={index} className='list-none'>
-              <ReleaseListing release={release as ExtendedRelease} />
+              <ProductListing
+                product={release as ExtendedRelease}
+                type='release'
+              />
             </li>
           ))}
         </section>

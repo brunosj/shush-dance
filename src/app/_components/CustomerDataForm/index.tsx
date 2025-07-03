@@ -85,12 +85,12 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
 
   return (
     <div className='bg-gray-50 p-6 rounded-lg'>
-      <h3 className='text-lg font-semibold mb-4'>Customer Information</h3>
+      <h3 className='font-semibold mb-4'>Customer Information</h3>
       <p className='text-sm text-gray-600 mb-4'>
         Shipping to: <strong>{getRegionLabel()}</strong>
       </p>
 
-      <form onSubmit={handleSubmit} className='space-y-4'>
+      <form onSubmit={handleSubmit} className='space-y-4 text-sm lg:text-base'>
         {/* Name Fields */}
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div>
@@ -293,7 +293,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
             value={formData.customerNotes}
             onChange={handleInputChange}
             rows={3}
-            className='w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+            className='text-sm w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
             placeholder='Any special instructions or notes for your order...'
             disabled={isSubmitting}
           />
@@ -303,7 +303,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
           <button
             type='submit'
             disabled={isSubmitting}
-            className='w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+            className='w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm'
           >
             {isSubmitting ? 'Processing...' : 'Continue to Payment'}
           </button>

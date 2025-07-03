@@ -9,13 +9,10 @@ import {
   Merch,
 } from '../../../payload/payload-types';
 import { RichText } from '../RichText';
-import EventList from '../EventList';
-import Link from 'next/link';
 import { useShoppingCart } from 'use-shopping-cart';
 import Button from '../Button';
 import EventListing from '../EventListing';
-import ReleaseCard from '../ReleaseCard';
-import MerchCard from '../MerchCard';
+import ProductCard from '../ProductCard';
 
 interface HomePageProps {
   data: {
@@ -113,7 +110,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
                 <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
                   {/* <h2>Announcing!</h2> */}
                   <ul className='list-none'>
-                    <ReleaseCard release={latestRelease} />
+                    <ProductCard product={latestRelease} type='release' />
                   </ul>
                 </div>
               )}
@@ -122,7 +119,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
                 <div className='space-y-6'>
                   {/* <h2>Latest Merch</h2> */}
                   <ul className='list-none'>
-                    <MerchCard merch={latestMerch} />
+                    <ProductCard product={latestMerch} type='merch' />
                   </ul>
                 </div>
               )}
@@ -133,7 +130,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
                 <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
                   <h2>Announcing!</h2>
                   <ul className='list-none'>
-                    <ReleaseCard release={latestRelease} />
+                    <ProductCard product={latestRelease} type='release' />
                   </ul>
                 </div>
               )}
@@ -142,7 +139,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
                 <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
                   <h2>Latest Merch</h2>
                   <ul className='list-none'>
-                    <MerchCard merch={latestMerch} />
+                    <ProductCard product={latestMerch} type='merch' />
                   </ul>
                 </div>
               )}

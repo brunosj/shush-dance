@@ -14,7 +14,7 @@ const Button: React.FC<ButtonProps> = ({
   href,
   target = '',
   label,
-  textStyles = 'text-sm lg:text-base',
+  textStyles = 'text-sm',
   onClick,
   disabled = false,
 }) => {

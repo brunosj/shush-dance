@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Page, Merch } from '../../../payload/payload-types';
-import MerchListing from '../MerchListing';
+import ProductListing from '../ProductListing';
 import type { ExtendedMerch } from '../../_types/extended-payload-types';
 
 interface MerchPageProps {
@@ -26,9 +26,12 @@ const MerchPage: React.FC<MerchPageProps> = ({ data }) => {
           {merchItems.map((merchItem, index) => (
             <li
               key={index}
-              className='list-none mb-10 border-b border-gray-200'
+              className='list-none mb-12 border-b border-gray-300 last:border-b-0'
             >
-              <MerchListing merch={merchItem as ExtendedMerch} />
+              <ProductListing
+                product={merchItem as ExtendedMerch}
+                type='merch'
+              />
             </li>
           ))}
         </section>
