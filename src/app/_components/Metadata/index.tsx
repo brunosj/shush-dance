@@ -56,15 +56,13 @@ const siteMetadata: Metadata = {
 
   // Icons
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.icon',
-    // apple: '/apple-touch-icon.png',
-    // other: [
-    //   {
-    //     rel: 'apple-touch-icon-precomposed',
-    //     url: '/apple-touch-icon-precomposed.png',
-    //   },
-    // ],
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
 
   // Manifest
