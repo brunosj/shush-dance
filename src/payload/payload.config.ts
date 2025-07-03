@@ -76,7 +76,7 @@ export default buildConfig({
   email: {
     fromName: 'SHUSH',
     fromAddress: 'hello@shush.dance',
-    logMockCredentials: true,
+    logMockCredentials: false,
     transportOptions: {
       host: process.env.SMTP_HOST,
       port: 587,

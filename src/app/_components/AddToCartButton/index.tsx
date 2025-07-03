@@ -83,6 +83,8 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
               ? item.isDigital
               : false
             ).toString(),
+            // Store item type for shipping calculations
+            itemType: type === 'merch' ? (item as Merch).itemType : 'vinyl',
             // Store shipping prices for cart-level calculation
             shippingPrices: JSON.stringify(
               'shippingPrices' in item ? item.shippingPrices : {}

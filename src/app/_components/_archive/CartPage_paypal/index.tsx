@@ -113,6 +113,8 @@ const CartPageV2 = () => {
         shippingPrices,
         quantity: item?.quantity || 1,
         isDigital: metadata.isDigital === 'true',
+        type: metadata.type || 'merch', // 'release' or 'merch'
+        itemType: metadata.itemType || 'other', // 'vinyl', 'clothing', 'prints', 'other'
       };
     });
   };
@@ -180,13 +182,6 @@ const CartPageV2 = () => {
       ).toFixed(2);
 
       items[0].unit_amount.value = adjustedPrice;
-
-      console.log('PayPal Items Adjustment:', {
-        originalSum: itemsSum.toFixed(2),
-        expectedTotal: expectedItemTotal.toFixed(2),
-        difference: difference.toFixed(2),
-        adjustedFirstItemPrice: adjustedPrice,
-      });
     }
 
     return items;
@@ -208,19 +203,6 @@ const CartPageV2 = () => {
     const shippingValue = (shippingCost / 100).toFixed(2);
     const taxValue = (totalVAT / 100).toFixed(2);
     const totalValue = (finalTotal / 100).toFixed(2);
-
-    // Debug logging to ensure breakdown adds up
-    console.log('PayPal Breakdown Debug:', {
-      itemTotal: itemTotalValue,
-      shipping: shippingValue,
-      tax: taxValue,
-      calculatedTotal: (
-        parseFloat(itemTotalValue) +
-        parseFloat(shippingValue) +
-        parseFloat(taxValue)
-      ).toFixed(2),
-      expectedTotal: totalValue,
-    });
 
     return actions.order.create({
       intent: 'CAPTURE',
@@ -347,6 +329,8 @@ const CartPageV2 = () => {
                 shippingPrices,
                 quantity,
                 isDigital,
+                type: metadata.type || 'merch',
+                itemType: metadata.itemType || 'other',
               },
             ],
             selectedRegion
@@ -564,7 +548,7 @@ const CartPageV2 = () => {
             <div className='ml-auto flex items-center gap-2 space-x-3'>
               <button
                 onClick={() => decrementItem(key)}
-                className='bg-gray-200 text-black px-2 py-1'
+                className='bg-white border border-gray-300 text-black px-2 py-1'
                 disabled={item?.quantity <= 1}
               >
                 -
@@ -572,7 +556,7 @@ const CartPageV2 = () => {
               <span className='text-sm lg:text-base'>{item?.quantity}</span>
               <button
                 onClick={() => incrementItem(key)}
-                className='bg-gray-200 text-black px-2 py-1'
+                className='bg-white border border-gray-300 text-black px-2 py-1'
               >
                 +
               </button>

@@ -99,6 +99,8 @@ const CartPage = () => {
         shippingPrices,
         quantity: item?.quantity || 1,
         isDigital: metadata.isDigital === 'true',
+        type: metadata.type || 'merch', // 'release' or 'merch'
+        itemType: metadata.itemType || 'other', // 'vinyl', 'clothing', 'prints', 'other'
       };
     });
   };
@@ -182,8 +184,6 @@ const CartPage = () => {
         regionLabel={getRegionLabel()}
         selectedRegion={selectedRegion}
         shippingRegion={selectedRegion}
-        onPaymentStart={() => setPaymentProcessing(true)}
-        onPaymentComplete={() => setPaymentProcessing(false)}
       />
     );
   }

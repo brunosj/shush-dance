@@ -22,8 +22,6 @@ interface StripeCheckoutButtonProps {
     total: number;
   };
   shippingRegion?: string;
-  onPaymentStart?: () => void;
-  onPaymentComplete?: () => void;
 }
 
 // Payment form component that uses Stripe Elements
@@ -33,17 +31,7 @@ const CheckoutForm: React.FC<{
   shippingRegion: string;
   onSuccess: () => void;
   onError: (error: string) => void;
-  onPaymentStart?: () => void;
-  onPaymentComplete?: () => void;
-}> = ({
-  customerData,
-  orderTotals,
-  shippingRegion,
-  onSuccess,
-  onError,
-  onPaymentStart,
-  onPaymentComplete,
-}) => {
+}> = ({ customerData, orderTotals, shippingRegion, onSuccess, onError }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
@@ -53,18 +41,15 @@ const CheckoutForm: React.FC<{
     event.preventDefault();
 
     if (!stripe || !elements) {
-      onError('Payment system not ready. Please try again.');
       return;
     }
 
     setIsLoading(true);
-    onPaymentStart?.(); // Notify parent that payment is starting
 
     try {
       const { error: submitError } = await elements.submit();
       if (submitError) {
         onError(submitError.message || 'Payment failed');
-        onPaymentComplete?.(); // Notify parent that payment is complete (failed)
         setIsLoading(false);
         return;
       }
@@ -79,17 +64,14 @@ const CheckoutForm: React.FC<{
 
       if (error) {
         onError(error.message || 'Payment failed');
-        onPaymentComplete?.(); // Notify parent that payment is complete (failed)
       } else {
         // Payment succeeded - create order and sales records
         await createOrderAndSalesRecords();
         await clearCart();
-        onPaymentComplete?.(); // Notify parent that payment is complete (succeeded)
         onSuccess();
       }
     } catch (err: any) {
       onError(err.message || 'An unexpected error occurred');
-      onPaymentComplete?.(); // Notify parent that payment is complete (failed)
     } finally {
       setIsLoading(false);
     }
@@ -123,41 +105,7 @@ const CheckoutForm: React.FC<{
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
-
-      // Create sales records for each item
-      if (cartDetails) {
-        const salesPromises = Object.values(cartDetails).map(async (item) => {
-          const productData = item?.product_data as any;
-          const metadata = productData?.metadata;
-
-          if (!metadata) return;
-
-          const salesData = {
-            itemId: metadata.itemId,
-            itemType: metadata.type,
-            itemName: item?.name || 'Unknown Item',
-            quantity: item?.quantity || 1,
-            basePrice: parseFloat(metadata.basePrice || '0'),
-            shippingPrice:
-              orderTotals.shipping / Object.keys(cartDetails).length, // Distribute shipping
-            vatAmount: orderTotals.vat / Object.keys(cartDetails).length, // Distribute VAT
-            totalAmount: orderTotals.total / Object.keys(cartDetails).length, // Distribute total
-            currency: 'EUR',
-            paymentMethod: 'stripe',
-            shippingRegion,
-            transactionId,
-            customerEmail: customerData?.email,
-          };
-
-          await fetch('/api/create-sale', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(salesData),
-          });
-        });
-
-        await Promise.all(salesPromises);
-      }
+      // Note: Sales records are now created automatically by the create-order endpoint
     } catch (error) {
       console.error('Error creating order/sales records:', error);
     }
@@ -180,8 +128,6 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   customerData,
   orderTotals,
   shippingRegion,
-  onPaymentStart,
-  onPaymentComplete,
 }) => {
   const [clientSecret, setClientSecret] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -193,12 +139,6 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
 
     const createPaymentIntent = async () => {
       try {
-        console.log('Creating payment intent with data:', {
-          amount: orderTotals.total,
-          currency: 'eur',
-          customerData,
-        });
-
         const response = await fetch('/api/create-payment-intent', {
           method: 'POST',
           headers: {
@@ -210,8 +150,6 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             customerData,
           }),
         });
-
-        console.log('Payment intent response status:', response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -226,9 +164,6 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
         }
 
         const data = await response.json();
-        console.log('Payment intent data received:', {
-          hasClientSecret: !!data.clientSecret,
-        });
 
         if (data.error) {
           setError(data.error);
@@ -303,8 +238,6 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
         shippingRegion={shippingRegion || 'eu'}
         onSuccess={handleSuccess}
         onError={handleError}
-        onPaymentStart={onPaymentStart}
-        onPaymentComplete={onPaymentComplete}
       />
     </Elements>
   );

@@ -5,8 +5,6 @@ export const createOrderEndpoint: Endpoint = {
   method: 'post',
   handler: async (req, res) => {
     try {
-      console.log('Payload endpoint: POST /api/create-order called');
-
       const {
         orderNumber,
         customerData,
@@ -17,13 +15,6 @@ export const createOrderEndpoint: Endpoint = {
         transactionId,
       } = req.body;
 
-      console.log('Request data:', {
-        hasOrderNumber: !!orderNumber,
-        hasCustomerData: !!customerData,
-        itemCount: cartItems?.length || 0,
-        paymentMethod,
-      });
-
       // Validate required fields
       if (!orderNumber || !customerData || !cartItems || !totals) {
         console.error('Missing required fields');
@@ -31,8 +22,6 @@ export const createOrderEndpoint: Endpoint = {
           error: 'Missing required order data',
         });
       }
-
-      console.log('Creating online order...');
 
       // Create the online order
       const order = await req.payload.create({
@@ -73,10 +62,7 @@ export const createOrderEndpoint: Endpoint = {
         },
       });
 
-      console.log('Order created successfully:', order.id);
-
       // Send confirmation emails
-      console.log('Sending confirmation emails...');
       try {
         // Format order items for email
         const itemsList = cartItems
@@ -94,10 +80,10 @@ Email: ${customerData.email}
 Items:
 ${itemsList}
 
-Subtotal: €${(totals.subtotal / 100).toFixed(2)}
-Shipping: €${(totals.shipping / 100).toFixed(2)}
-VAT: €${(totals.vat / 100).toFixed(2)}
-Total: €${(totals.total / 100).toFixed(2)}
+Subtotal: €${totals.subtotal.toFixed(2)}
+Shipping: €${totals.shipping.toFixed(2)}
+VAT: €${totals.vat.toFixed(2)}
+Total: €${totals.total.toFixed(2)}
 
 Shipping Address:
 ${customerData.firstName} ${customerData.lastName}
@@ -109,7 +95,8 @@ ${customerData.country}
         // Send confirmation email to customer
         await req.payload.sendEmail({
           to: customerData.email,
-          from: 'hello@shush.dance',
+          from: `SHUSH <${process.env.SMTP_USER}>`, // Display as SHUSH but use SMTP user
+          replyTo: 'SHUSH <hello@shush.dance>',
           subject: `Order Confirmation - ${orderNumber}`,
           html: `
             <h2>Thank you for your order!</h2>
@@ -121,13 +108,13 @@ ${customerData.country}
             <p>- SHUSH crew</p>
           `,
         });
-        console.log('Customer confirmation email sent');
 
         // Send notification email to merch team
         await req.payload.sendEmail({
           to: 'merch@shush.dance',
-          from: 'hello@shush.dance',
-          subject: `New Order - ${orderNumber}`,
+          from: `SHUSH <${process.env.SMTP_USER}>`, // Display as SHUSH but use SMTP user
+          replyTo: 'SHUSH <hello@shush.dance>',
+          subject: `New Order  - ${orderNumber}`,
           html: `
             <h2>New Order Received</h2>
             <p>A new order has been placed:</p>
@@ -137,46 +124,65 @@ ${customerData.country}
             ${customerData.customerNotes ? `<p>Customer Notes: ${customerData.customerNotes}</p>` : ''}
           `,
         });
-        console.log('Merch team notification email sent');
       } catch (emailError) {
         console.error('Failed to send emails:', emailError);
         // Don't fail the order creation if emails fail
       }
 
-      // Create a sale record for tracking
-      console.log('Creating sale record...');
-      let sale = null;
-      try {
-        sale = await req.payload.create({
-          collection: 'sales',
-          data: {
-            itemName: `Order ${orderNumber}`,
-            quantity: cartItems.reduce(
-              (sum: number, item: any) => sum + item.quantity,
-              0
-            ),
-            itemPrice: totals.subtotal,
-            shipping: totals.shipping,
-            sellerTax: totals.vat,
-            netAmount: totals.total,
-            currency: 'EUR',
-            pointOfSale: paymentMethod,
+      // Create individual sale records for each cart item
+      const saleRecords = [];
+
+      // Calculate per-item shipping and VAT proportionally
+      const totalItemsValue = cartItems.reduce(
+        (sum: number, item: any) => sum + item.lineTotal,
+        0
+      );
+
+      for (const item of cartItems) {
+        try {
+          // Calculate proportional shipping and VAT for this item
+          const itemProportion = item.lineTotal / totalItemsValue;
+          const itemShipping = totals.shipping * itemProportion;
+          const itemVAT = totals.vat * itemProportion;
+
+          const saleData: any = {
+            itemName: item.name,
+            type: item.type === 'release' ? 'record' : 'merch',
+            pointOfSale: paymentMethod === 'stripe' ? 'stripe' : 'paypal',
             soldAt: new Date().toISOString(),
+            itemPrice: item.unitPrice / 100, // Convert from cents to euros
+            quantity: item.quantity,
+            currency: 'EUR',
+            subTotal: item.lineTotal / 100, // Convert from cents to euros
+            shipping: itemShipping,
+            sellerTax: itemVAT,
+            netAmount: item.lineTotal / 100 + itemShipping + itemVAT,
             buyerEmail: customerData.email,
-            type: 'record', // Default type
-            transactionId: transactionId || orderNumber,
-          },
-        });
-        console.log('Sale record created successfully:', sale.id);
-      } catch (saleError) {
-        console.error('Failed to create sale record:', saleError);
-        console.error('Order was created successfully, but sale record failed');
+            bandcampTransactionId: transactionId || orderNumber,
+            regionOrState: shippingRegion,
+          };
+
+          // Note: No longer adding cmsItem relationship since we have the item name
+
+          const sale = await req.payload.create({
+            collection: 'sales',
+            data: saleData,
+          });
+
+          saleRecords.push(sale.id);
+        } catch (saleError) {
+          console.error(
+            `Failed to create sale record for item ${item.name}:`,
+            saleError
+          );
+          // Continue with other items even if one fails
+        }
       }
 
       return res.status(200).json({
         success: true,
         order: order.id,
-        sale: sale?.id || null,
+        saleRecords: saleRecords,
         orderNumber,
       });
     } catch (error: any) {

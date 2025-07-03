@@ -2,10 +2,10 @@ import React from 'react';
 
 const EmptyCartState: React.FC = () => {
   return (
-    <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12 text-center'>
-      <h2 className='text-2xl font-bold mb-4'>Your cart is empty</h2>
+    <div className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-3'>
+      <h2 className='text-2xl font-bold'>Your cart is empty</h2>
       <p className='text-gray-600'>
-        Add some items to your cart to see them here.
+        Check out our releases and merch to add some items to your cart.
       </p>
     </div>
   );

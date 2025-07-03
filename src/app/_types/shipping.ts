@@ -44,6 +44,8 @@ export const calculateCartShipping = (
     shippingPrices: ShippingPrices;
     quantity: number;
     isDigital: boolean;
+    type: string; // 'release' or 'merch'
+    itemType?: string; // For merch: 'clothing', 'prints', 'other'
   }>,
   region: ShippingRegion
 ): number => {
@@ -52,46 +54,120 @@ export const calculateCartShipping = (
 
   if (physicalItems.length === 0) return 0;
 
-  // Group items by their shipping price structure
-  const shippingGroups = new Map<
-    string,
-    { items: typeof physicalItems; totalQuantity: number }
-  >();
+  // Categorize items based on shipping combination rules
+  const vinyl: typeof physicalItems = [];
+  const shirts: typeof physicalItems = [];
+  const prints: typeof physicalItems = [];
+  const other: typeof physicalItems = [];
 
   physicalItems.forEach((item) => {
-    // Create a unique key based on shipping prices for this region
-    const firstPrice = item.shippingPrices[region] || 0;
-    const additionalPrice =
-      item.shippingPrices[`${region}Additional` as keyof ShippingPrices] || 0;
-    const shippingKey = `${firstPrice}-${additionalPrice}`;
-
-    if (!shippingGroups.has(shippingKey)) {
-      shippingGroups.set(shippingKey, { items: [], totalQuantity: 0 });
+    if (item.type === 'release') {
+      vinyl.push(item);
+    } else if (item.type === 'merch') {
+      if (item.itemType === 'clothing') {
+        shirts.push(item);
+      } else if (item.itemType === 'prints') {
+        prints.push(item);
+      } else {
+        other.push(item);
+      }
+    } else {
+      other.push(item);
     }
-
-    const group = shippingGroups.get(shippingKey)!;
-    group.items.push(item);
-    group.totalQuantity += item.quantity;
   });
 
-  // Calculate shipping cost for each group and sum them up
   let totalShippingCost = 0;
 
-  shippingGroups.forEach((group) => {
-    // Use the first item's shipping structure for this group (they're all the same)
-    const shippingStructure = group.items[0].shippingPrices;
-    const firstUnitPrice = shippingStructure[region] || 0;
-    const additionalUnitPrice =
-      shippingStructure[`${region}Additional` as keyof ShippingPrices] || 0;
+  // Helper function to calculate shipping for a group using higher shipping price logic
+  const calculateGroupShippingWithHigherPrice = (
+    items: typeof physicalItems
+  ): number => {
+    if (items.length === 0) return 0;
 
-    // Calculate shipping for this group: first unit + (total quantity - 1) * additional unit price
-    if (group.totalQuantity === 1) {
-      totalShippingCost += firstUnitPrice;
+    // Find the highest shipping price structure among all items
+    let highestFirstPrice = 0;
+    let highestAdditionalPrice = 0;
+    let highestShippingStructure: ShippingPrices | null = null;
+
+    items.forEach((item) => {
+      const firstPrice = item.shippingPrices[region] || 0;
+      const additionalPrice =
+        item.shippingPrices[`${region}Additional` as keyof ShippingPrices] || 0;
+
+      if (firstPrice > highestFirstPrice) {
+        highestFirstPrice = firstPrice;
+        highestAdditionalPrice = additionalPrice;
+        highestShippingStructure = item.shippingPrices;
+      }
+    });
+
+    if (!highestShippingStructure) return 0;
+
+    // Calculate total quantity
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Apply the highest shipping price structure to the total quantity
+    if (totalQuantity === 1) {
+      return highestFirstPrice;
     } else {
-      totalShippingCost +=
-        firstUnitPrice + additionalUnitPrice * (group.totalQuantity - 1);
+      return highestFirstPrice + highestAdditionalPrice * (totalQuantity - 1);
     }
-  });
+  };
+
+  // Helper function to calculate shipping for a group by adding each item's shipping
+  const calculateGroupShippingAdditive = (
+    items: typeof physicalItems
+  ): number => {
+    return items.reduce((total, item) => {
+      const firstPrice = item.shippingPrices[region] || 0;
+      const additionalPrice =
+        item.shippingPrices[`${region}Additional` as keyof ShippingPrices] || 0;
+
+      if (item.quantity === 1) {
+        return total + firstPrice;
+      } else {
+        return total + firstPrice + additionalPrice * (item.quantity - 1);
+      }
+    }, 0);
+  };
+
+  // Apply combination rules:
+
+  // 1. Vinyl and shirts can be combined (use higher shipping price)
+  if (vinyl.length > 0 && shirts.length > 0) {
+    const combinedVinylShirts = [...vinyl, ...shirts];
+    totalShippingCost +=
+      calculateGroupShippingWithHigherPrice(combinedVinylShirts);
+  } else {
+    // Handle separately if only one type
+    if (vinyl.length > 0) {
+      totalShippingCost += calculateGroupShippingWithHigherPrice(vinyl);
+    }
+    if (shirts.length > 0) {
+      totalShippingCost += calculateGroupShippingWithHigherPrice(shirts);
+    }
+  }
+
+  // 2. Prints and shirts can be combined (use higher shipping price)
+  // But only if shirts haven't been combined with vinyl already
+  if (prints.length > 0) {
+    if (vinyl.length === 0 && shirts.length > 0) {
+      // Combine prints with shirts (vinyl not present)
+      const combinedPrintsShirts = [...prints, ...shirts];
+      // Subtract the shirts shipping we already counted
+      totalShippingCost -= calculateGroupShippingWithHigherPrice(shirts);
+      totalShippingCost +=
+        calculateGroupShippingWithHigherPrice(combinedPrintsShirts);
+    } else {
+      // 3. Prints and vinyl cannot be combined, add their shipping prices
+      totalShippingCost += calculateGroupShippingAdditive(prints);
+    }
+  }
+
+  // Handle other items separately
+  if (other.length > 0) {
+    totalShippingCost += calculateGroupShippingAdditive(other);
+  }
 
   return totalShippingCost;
 };

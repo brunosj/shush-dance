@@ -51,7 +51,7 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
             <div className='ml-auto flex items-center gap-2 space-x-3'>
               <button
                 onClick={() => decrementItem(key)}
-                className='bg-gray-200 text-black px-2 py-1'
+                className='bg-gray-50 text-black px-2 py-1'
                 disabled={item?.quantity <= 1}
               >
                 -
@@ -59,7 +59,7 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
               <span className='text-sm lg:text-base'>{item?.quantity}</span>
               <button
                 onClick={() => incrementItem(key)}
-                className='bg-gray-200 text-black px-2 py-1'
+                className='bg-gray-50 text-black px-2 py-1'
               >
                 +
               </button>

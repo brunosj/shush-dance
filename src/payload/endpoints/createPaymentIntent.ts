@@ -6,8 +6,6 @@ export const createPaymentIntentEndpoint: Endpoint = {
   method: 'post',
   handler: async (req, res) => {
     try {
-      console.log('Payload endpoint: POST /api/create-payment-intent called');
-
       // Check environment variable
       if (!process.env.STRIPE_SECRET_KEY) {
         console.error('STRIPE_SECRET_KEY not found');
@@ -16,16 +14,13 @@ export const createPaymentIntentEndpoint: Endpoint = {
         });
       }
 
+      // Log if we're in test mode
+      const isTestMode = process.env.STRIPE_SECRET_KEY.startsWith('sk_test_');
+
       // Initialize Stripe
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
       const { amount, currency = 'eur', customerData } = req.body;
-
-      console.log('Request data:', {
-        hasAmount: !!amount,
-        amount: amount,
-        currency: currency,
-      });
 
       // Validate required fields
       if (!amount || typeof amount !== 'number' || amount <= 0) {
@@ -35,32 +30,52 @@ export const createPaymentIntentEndpoint: Endpoint = {
         });
       }
 
+      // Convert amount to cents and ensure it's an integer
+      const amountInCents = Math.round(amount * 100);
+
       // Create payment intent
-      console.log('Creating Stripe payment intent...');
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
+      const paymentIntentData: Stripe.PaymentIntentCreateParams = {
+        amount: amountInCents,
         currency: currency.toLowerCase(),
-        automatic_payment_methods: {
-          enabled: true,
-        },
         metadata: {
           customerEmail: customerData?.email || '',
           customerName:
             `${customerData?.firstName || ''} ${customerData?.lastName || ''}`.trim(),
+          testMode: isTestMode.toString(),
         },
-      });
+      };
 
-      console.log('Payment intent created successfully:', paymentIntent.id);
+      // For test mode, use simpler configuration
+      if (isTestMode) {
+        paymentIntentData.automatic_payment_methods = {
+          enabled: true,
+        };
+      } else {
+        paymentIntentData.automatic_payment_methods = {
+          enabled: true,
+        };
+      }
+
+      const paymentIntent =
+        await stripe.paymentIntents.create(paymentIntentData);
 
       return res.status(200).json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
       });
     } catch (error: any) {
-      console.error('Stripe payment intent error:', error);
+      console.error('Stripe payment intent error details:', {
+        message: error.message,
+        type: error.type,
+        code: error.code,
+        stack: error.stack,
+      });
+
       return res.status(500).json({
         error: 'Failed to create payment intent',
         details: error.message,
+        type: error.type || 'unknown',
+        code: error.code || 'unknown',
       });
     }
   },

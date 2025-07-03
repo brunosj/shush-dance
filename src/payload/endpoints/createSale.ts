@@ -5,8 +5,6 @@ export const createSaleEndpoint: Endpoint = {
   method: 'post',
   handler: async (req, res) => {
     try {
-      console.log('Payload endpoint: POST /api/create-sale called');
-
       const {
         itemId,
         itemType,
@@ -23,13 +21,6 @@ export const createSaleEndpoint: Endpoint = {
         transactionId,
       } = req.body;
 
-      console.log('Request data:', {
-        hasItemName: !!itemName,
-        itemType,
-        quantity,
-        paymentMethod,
-      });
-
       // Validate required fields
       if (
         !itemName ||
@@ -44,32 +35,32 @@ export const createSaleEndpoint: Endpoint = {
         });
       }
 
-      console.log('Creating sale record...');
+      // Prepare the sale data
+      const saleData: any = {
+        itemName: itemName,
+        type: itemType === 'release' ? 'record' : 'merch',
+        pointOfSale: paymentMethod === 'stripe' ? 'stripe' : 'paypal',
+        soldAt: new Date().toISOString(),
+        itemPrice: basePrice,
+        quantity: quantity,
+        currency: currency,
+        subTotal: basePrice * quantity,
+        shipping: shippingPrice,
+        sellerTax: vatAmount,
+        netAmount: totalAmount,
+        buyerEmail: customerEmail,
+        // Store additional metadata in appropriate fields
+        bandcampTransactionId: transactionId,
+        regionOrState: shippingRegion,
+      };
+
+      // Note: No longer adding cmsItem relationship since we have the item name
 
       // Create sales record directly via Payload
       const sale = await req.payload.create({
         collection: 'sales',
-        data: {
-          itemName: itemName,
-          cmsItem: itemId,
-          type: itemType === 'release' ? 'record' : 'merch',
-          pointOfSale: paymentMethod === 'stripe' ? 'stripe' : 'paypal',
-          soldAt: new Date().toISOString(),
-          itemPrice: basePrice,
-          quantity: quantity,
-          currency: currency,
-          subTotal: basePrice * quantity,
-          shipping: shippingPrice,
-          sellerTax: vatAmount,
-          netAmount: totalAmount,
-          buyerEmail: customerEmail,
-          // Store additional metadata in appropriate fields
-          bandcampTransactionId: transactionId,
-          regionOrState: shippingRegion,
-        },
+        data: saleData,
       });
-
-      console.log('Sale record created successfully:', sale.id);
 
       return res.status(200).json({
         success: true,

@@ -13,7 +13,7 @@ const ShippingLocationSelector: React.FC = () => {
       <select
         value={selectedRegion}
         onChange={(e) => setSelectedRegion(e.target.value as any)}
-        className='w-full p-2 border border-gray-300 rounded-md bg-white text-sm lg:text-base'
+        className='w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-sm lg:text-base'
       >
         {SHIPPING_LOCATIONS.map((location) => (
           <option key={location.region} value={location.region}>

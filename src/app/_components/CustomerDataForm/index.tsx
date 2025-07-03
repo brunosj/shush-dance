@@ -106,7 +106,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               name='firstName'
               value={formData.firstName}
               onChange={handleInputChange}
-              className={`w-full p-3 border rounded-md ${
+              className={`bg-pri w-full p-3 border rounded-md ${
                 errors.firstName ? 'border-red-500' : 'border-gray-300'
               } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               disabled={isSubmitting}
@@ -129,7 +129,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               name='lastName'
               value={formData.lastName}
               onChange={handleInputChange}
-              className={`w-full p-3 border rounded-md ${
+              className={`bg-pri w-full p-3 border rounded-md ${
                 errors.lastName ? 'border-red-500' : 'border-gray-300'
               } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               disabled={isSubmitting}
@@ -155,7 +155,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               name='email'
               value={formData.email}
               onChange={handleInputChange}
-              className={`w-full p-3 border rounded-md ${
+              className={`bg-pri w-full p-3 border rounded-md ${
                 errors.email ? 'border-red-500' : 'border-gray-300'
               } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               disabled={isSubmitting}
@@ -178,7 +178,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               name='phone'
               value={formData.phone}
               onChange={handleInputChange}
-              className='w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+              className='bg-pri w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
               disabled={isSubmitting}
             />
           </div>
@@ -198,7 +198,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
             name='street'
             value={formData.street}
             onChange={handleInputChange}
-            className={`w-full p-3 border rounded-md ${
+            className={`bg-pri w-full p-3 border rounded-md ${
               errors.street ? 'border-red-500' : 'border-gray-300'
             } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
             disabled={isSubmitting}
@@ -222,7 +222,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               name='city'
               value={formData.city}
               onChange={handleInputChange}
-              className={`w-full p-3 border rounded-md ${
+              className={`bg-pri w-full p-3 border rounded-md ${
                 errors.city ? 'border-red-500' : 'border-gray-300'
               } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               disabled={isSubmitting}
@@ -245,7 +245,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               name='postalCode'
               value={formData.postalCode}
               onChange={handleInputChange}
-              className={`w-full p-3 border rounded-md ${
+              className={`bg-pri w-full p-3 border rounded-md ${
                 errors.postalCode ? 'border-red-500' : 'border-gray-300'
               } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               disabled={isSubmitting}
@@ -268,7 +268,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               name='country'
               value={formData.country}
               onChange={handleInputChange}
-              className={`w-full p-3 border rounded-md ${
+              className={`bg-pri w-full p-3 border rounded-md ${
                 errors.country ? 'border-red-500' : 'border-gray-300'
               } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               disabled={isSubmitting}
@@ -293,7 +293,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
             value={formData.customerNotes}
             onChange={handleInputChange}
             rows={3}
-            className='text-sm w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+            className='text-sm bg-pri   w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
             placeholder='Any special instructions or notes for your order...'
             disabled={isSubmitting}
           />
