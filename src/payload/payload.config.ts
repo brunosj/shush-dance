@@ -24,6 +24,7 @@ import { syncBandcampEndpoint } from './endpoints/syncBandcamp';
 import { createOrderEndpoint } from './endpoints/createOrder';
 import { createPaymentIntentEndpoint } from './endpoints/createPaymentIntent';
 import { createSaleEndpoint } from './endpoints/createSale';
+import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
 import { Settings } from './globals/settings';
 
 dotenv.config({
@@ -72,6 +73,7 @@ export default buildConfig({
     createOrderEndpoint,
     createPaymentIntentEndpoint,
     createSaleEndpoint,
+    monitorPaymentSystemEndpoint,
   ],
   email: {
     fromName: 'SHUSH',
