@@ -2,32 +2,71 @@ import { Endpoint } from 'payload/config';
 
 interface MonitoringResult {
   timestamp: string;
+  health: {
+    uptime: string;
+    memory: any;
+    nodeVersion: string;
+    hasStripeKey: boolean;
+    stripeKeyPrefix: string;
+    pid: number;
+    platform: string;
+    arch: string;
+  };
   stripe: { success: boolean; error?: string; paymentIntentId?: string };
   order: { success: boolean; error?: string; orderNumber?: string };
   overall: boolean;
 }
 
-// Test Stripe payment intent creation
+// Get server health metrics
+const getServerHealth = () => {
+  const memoryUsage = process.memoryUsage();
+  const uptime = process.uptime();
+
+  return {
+    uptime: `${Math.floor(uptime)}s`,
+    memory: {
+      used: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+      total: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
+      external: `${Math.round(memoryUsage.external / 1024 / 1024)}MB`,
+    },
+    nodeVersion: process.version,
+    hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+    stripeKeyPrefix:
+      process.env.STRIPE_SECRET_KEY?.substring(0, 8) || 'missing',
+    pid: process.pid,
+    platform: process.platform,
+    arch: process.arch,
+  };
+};
+
+// Test Stripe payment intent creation with enhanced error handling
 const testStripePaymentIntent = async (): Promise<{
   success: boolean;
   error?: string;
   paymentIntentId?: string;
 }> => {
+  const testId = `monitor-${Date.now()}`;
+
   try {
-    console.log('Testing Stripe payment intent creation...');
+    console.log(`[${testId}] 🧪 Testing Stripe payment intent creation...`);
 
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error('STRIPE_SECRET_KEY not configured');
     }
 
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      maxNetworkRetries: 2,
+      timeout: 10000, // 10 second timeout
+    });
 
     const testCustomerData = {
       email: 'monitor@shush.dance',
       firstName: 'Monitor',
       lastName: 'Test',
     };
+
+    console.log(`[${testId}] 🔄 Creating Stripe payment intent...`);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 100, // €1.00 in cents
@@ -37,28 +76,40 @@ const testStripePaymentIntent = async (): Promise<{
         customerEmail: testCustomerData.email,
         testMode: 'true',
         monitoring: 'true',
+        testId,
+        timestamp: new Date().toISOString(),
       },
     });
 
     console.log(
-      `✅ Stripe payment intent created successfully (ID: ${paymentIntent.id})`
+      `[${testId}] ✅ Stripe payment intent created successfully (ID: ${paymentIntent.id})`
     );
     return {
       success: true,
       paymentIntentId: paymentIntent.id,
     };
   } catch (error: any) {
-    console.error(`❌ Stripe payment intent test failed: ${error.message}`);
-    return { success: false, error: error.message };
+    console.error(`[${testId}] ❌ Stripe payment intent test failed:`, {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      statusCode: error.statusCode,
+    });
+    return {
+      success: false,
+      error: `${error.type || 'Unknown'}: ${error.message}`,
+    };
   }
 };
 
-// Test order creation
+// Test order creation with enhanced error handling
 const testOrderCreation = async (
   payload: any
 ): Promise<{ success: boolean; error?: string; orderNumber?: string }> => {
+  const testId = `monitor-order-${Date.now()}`;
+
   try {
-    console.log('Testing order creation...');
+    console.log(`[${testId}] 🧪 Testing order creation...`);
 
     const testCustomerData = {
       email: 'monitor@shush.dance',
@@ -72,6 +123,8 @@ const testOrderCreation = async (
 
     const orderNumber = `MONITOR-TEST-${Date.now()}`;
 
+    console.log(`[${testId}] 🔄 Creating test order: ${orderNumber}`);
+
     const order = await payload.create({
       collection: 'online-orders',
       data: {
@@ -79,7 +132,7 @@ const testOrderCreation = async (
         status: 'pending',
         paymentMethod: 'stripe',
         paymentStatus: 'paid',
-        transactionId: 'MONITOR-TEST-TRANSACTION',
+        transactionId: `MONITOR-TEST-TRANSACTION-${Date.now()}`,
         customerEmail: testCustomerData.email,
         customerPhone: '',
         firstName: testCustomerData.firstName,
@@ -97,7 +150,7 @@ const testOrderCreation = async (
             quantity: 1,
             unitPrice: 1.0,
             lineTotal: 1.0,
-            cartItemId: 'test-item',
+            cartItemId: `test-item-${Date.now()}`,
             cartItemName: 'Monitor Test Item',
             cartItemDescription: 'Test item for monitoring',
           },
@@ -108,17 +161,22 @@ const testOrderCreation = async (
           vat: 0.0,
           total: 1.0,
         },
-        customerNotes: 'Automated monitoring test order',
+        customerNotes: `Automated monitoring test order - ${new Date().toISOString()}`,
       },
     });
 
-    console.log(`✅ Order creation test successful (Order: ${orderNumber})`);
+    console.log(
+      `[${testId}] ✅ Order creation test successful (Order: ${orderNumber})`
+    );
     return {
       success: true,
       orderNumber,
     };
   } catch (error: any) {
-    console.error(`❌ Order creation test failed: ${error.message}`);
+    console.error(`[${testId}] ❌ Order creation test failed:`, {
+      message: error.message,
+      stack: error.stack,
+    });
     return { success: false, error: error.message };
   }
 };
@@ -177,24 +235,39 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
       });
     }
 
-    console.log('🔍 Starting payment system monitoring...');
+    const monitorId = `monitor-${Date.now()}`;
+    console.log(`[${monitorId}] 🔍 Starting payment system monitoring...`);
 
     const results: MonitoringResult = {
       timestamp: new Date().toISOString(),
+      health: getServerHealth(),
       stripe: { success: false },
       order: { success: false },
       overall: true,
     };
 
+    // Log health status
+    console.log(`[${monitorId}] 🏥 Server health:`, {
+      uptime: results.health.uptime,
+      memory: results.health.memory.used,
+      hasStripeKey: results.health.hasStripeKey,
+      nodeVersion: results.health.nodeVersion,
+    });
+
     try {
       // Test Stripe payment intent
+      console.log(`[${monitorId}] 🧪 Running Stripe test...`);
       results.stripe = await testStripePaymentIntent();
       if (!results.stripe.success) {
         results.overall = false;
+        console.log(
+          `[${monitorId}] ❌ Stripe test failed, skipping order test`
+        );
       }
 
       // Test order creation (only if Stripe works)
       if (results.stripe.success) {
+        console.log(`[${monitorId}] 🧪 Running order creation test...`);
         results.order = await testOrderCreation(req.payload);
         if (!results.order.success) {
           results.overall = false;
@@ -206,18 +279,19 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
 
       // Handle results
       if (results.overall) {
-        console.log('✅ All payment system tests passed');
+        console.log(`[${monitorId}] ✅ All payment system tests passed`);
 
-        // For Uptime Kuma: simple success response
+        // For Uptime Kuma: simple success response with health info
         return res.status(200).json({
           status: 'ok',
           message: 'Payment system healthy',
           stripe: results.stripe.success ? 'ok' : 'fail',
           order: results.order.success ? 'ok' : 'fail',
+          health: results.health,
           timestamp: results.timestamp,
         });
       } else {
-        console.error('❌ Payment system tests failed');
+        console.error(`[${monitorId}] ❌ Payment system tests failed`);
 
         // Compile error details
         const errors = [];
@@ -240,11 +314,14 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           message: `Payment system failure: ${errorMessage}`,
           stripe: results.stripe.success ? 'ok' : 'fail',
           order: results.order.success ? 'ok' : 'fail',
+          health: results.health,
           timestamp: results.timestamp,
         });
       }
     } catch (error: any) {
-      console.error(`💥 Payment system monitoring failed: ${error.message}`);
+      console.error(
+        `[${monitorId}] 💥 Payment system monitoring failed: ${error.message}`
+      );
 
       await sendAlert(
         req.payload,
@@ -257,6 +334,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
         message: `Monitor crashed: ${error.message}`,
         stripe: 'unknown',
         order: 'unknown',
+        health: getServerHealth(),
         timestamp: new Date().toISOString(),
       });
     }
