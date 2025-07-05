@@ -13,6 +13,12 @@ interface MonitoringResult {
     arch: string;
   };
   stripe: { success: boolean; error?: string; paymentIntentId?: string };
+  endpoint: {
+    success: boolean;
+    error?: string;
+    paymentIntentId?: string;
+    responseTime?: number;
+  };
   order: { success: boolean; error?: string; orderNumber?: string };
   overall: boolean;
 }
@@ -98,6 +104,87 @@ const testStripePaymentIntent = async (): Promise<{
     return {
       success: false,
       error: `${error.type || 'Unknown'}: ${error.message}`,
+    };
+  }
+};
+
+// Test actual production endpoint
+const testPaymentIntentEndpoint = async (): Promise<{
+  success: boolean;
+  error?: string;
+  paymentIntentId?: string;
+  responseTime?: number;
+}> => {
+  const testId = `endpoint-${Date.now()}`;
+  const startTime = Date.now();
+
+  try {
+    console.log(`[${testId}] 🧪 Testing actual payment intent endpoint...`);
+
+    const testPayload = {
+      amount: 1.0, // €1.00 test payment
+      currency: 'eur',
+      customerData: {
+        email: 'monitor@shush.dance',
+        firstName: 'Monitor',
+        lastName: 'EndpointTest',
+      },
+    };
+
+    // Make HTTP request to the actual endpoint
+    const response = await fetch(
+      `${process.env.PAYLOAD_PUBLIC_SERVER_URL}/api/create-payment-intent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'SHUSH-Monitor/1.0',
+        },
+        body: JSON.stringify(testPayload),
+      }
+    );
+
+    const responseTime = Date.now() - startTime;
+    const responseData = await response.json();
+
+    console.log(`[${testId}] 📊 Endpoint response:`, {
+      status: response.status,
+      responseTime: `${responseTime}ms`,
+      hasClientSecret: !!responseData.clientSecret,
+      hasPaymentIntentId: !!responseData.paymentIntentId,
+    });
+
+    if (response.ok && responseData.clientSecret) {
+      console.log(
+        `[${testId}] ✅ Payment intent endpoint test successful (${responseTime}ms)`
+      );
+      return {
+        success: true,
+        paymentIntentId: responseData.paymentIntentId,
+        responseTime,
+      };
+    } else {
+      const error = `HTTP ${response.status}: ${responseData.error || 'Unknown error'}`;
+      console.log(
+        `[${testId}] ❌ Payment intent endpoint test failed: ${error}`
+      );
+      return {
+        success: false,
+        error,
+        responseTime,
+      };
+    }
+  } catch (error: any) {
+    const responseTime = Date.now() - startTime;
+    console.error(`[${testId}] ❌ Payment intent endpoint test error:`, {
+      message: error.message,
+      type: error.constructor.name,
+      responseTime: `${responseTime}ms`,
+    });
+    return {
+      success: false,
+      error: `${error.constructor.name}: ${error.message}`,
+      responseTime,
     };
   }
 };
@@ -242,6 +329,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
       timestamp: new Date().toISOString(),
       health: getServerHealth(),
       stripe: { success: false },
+      endpoint: { success: false },
       order: { success: false },
       overall: true,
     };
@@ -255,48 +343,72 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
     });
 
     try {
-      // Test Stripe payment intent
-      console.log(`[${monitorId}] 🧪 Running Stripe test...`);
+      // Test 1: Direct Stripe API
+      console.log(`[${monitorId}] 🧪 Running direct Stripe API test...`);
       results.stripe = await testStripePaymentIntent();
       if (!results.stripe.success) {
         results.overall = false;
-        console.log(
-          `[${monitorId}] ❌ Stripe test failed, skipping order test`
-        );
+        console.log(`[${monitorId}] ❌ Direct Stripe test failed`);
       }
 
-      // Test order creation (only if Stripe works)
-      if (results.stripe.success) {
+      // Test 2: Actual production endpoint
+      console.log(`[${monitorId}] 🧪 Running production endpoint test...`);
+      results.endpoint = await testPaymentIntentEndpoint();
+      if (!results.endpoint.success) {
+        results.overall = false;
+        console.log(`[${monitorId}] ❌ Production endpoint test failed`);
+      }
+
+      // Test 3: Order creation (only if at least one payment test works)
+      if (results.stripe.success || results.endpoint.success) {
         console.log(`[${monitorId}] 🧪 Running order creation test...`);
         results.order = await testOrderCreation(req.payload);
         if (!results.order.success) {
           results.overall = false;
         }
       } else {
-        results.order = { success: false, error: 'Stripe not working' };
+        results.order = { success: false, error: 'No payment system working' };
         results.overall = false;
       }
 
       // Handle results
       if (results.overall) {
-        console.log(`[${monitorId}] ✅ All payment system tests passed`);
+        console.log(`[${monitorId}] ✅ All payment system tests passed`, {
+          stripeAPI: results.stripe.success ? '✅' : '❌',
+          endpoint: results.endpoint.success ? '✅' : '❌',
+          endpointTime: results.endpoint.responseTime
+            ? `${results.endpoint.responseTime}ms`
+            : 'N/A',
+          order: results.order.success ? '✅' : '❌',
+        });
 
         // For Uptime Kuma: simple success response with health info
         return res.status(200).json({
           status: 'ok',
           message: 'Payment system healthy',
           stripe: results.stripe.success ? 'ok' : 'fail',
+          endpoint: results.endpoint.success ? 'ok' : 'fail',
           order: results.order.success ? 'ok' : 'fail',
           health: results.health,
+          responseTime: results.endpoint.responseTime,
           timestamp: results.timestamp,
         });
       } else {
-        console.error(`[${monitorId}] ❌ Payment system tests failed`);
+        console.error(`[${monitorId}] ❌ Payment system tests failed`, {
+          stripeAPI: results.stripe.success ? '✅' : '❌',
+          endpoint: results.endpoint.success ? '✅' : '❌',
+          endpointTime: results.endpoint.responseTime
+            ? `${results.endpoint.responseTime}ms`
+            : 'N/A',
+          order: results.order.success ? '✅' : '❌',
+        });
 
         // Compile error details
         const errors = [];
         if (!results.stripe.success)
-          errors.push(`Stripe: ${results.stripe.error}`);
+          errors.push(`Stripe API: ${results.stripe.error}`);
+        if (!results.endpoint.success)
+          errors.push(`Endpoint: ${results.endpoint.error}`);
         if (!results.order.success)
           errors.push(`Order Creation: ${results.order.error}`);
 
@@ -313,8 +425,10 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           status: 'error',
           message: `Payment system failure: ${errorMessage}`,
           stripe: results.stripe.success ? 'ok' : 'fail',
+          endpoint: results.endpoint.success ? 'ok' : 'fail',
           order: results.order.success ? 'ok' : 'fail',
           health: results.health,
+          responseTime: results.endpoint.responseTime,
           timestamp: results.timestamp,
         });
       }
@@ -333,6 +447,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
         status: 'error',
         message: `Monitor crashed: ${error.message}`,
         stripe: 'unknown',
+        endpoint: 'unknown',
         order: 'unknown',
         health: getServerHealth(),
         timestamp: new Date().toISOString(),
