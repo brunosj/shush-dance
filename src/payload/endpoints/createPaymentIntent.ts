@@ -1,21 +1,57 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
 
-// Cache Stripe instance to avoid creating new ones on every request
+// Cache Stripe instance with proper cleanup and health checks
 let stripeInstance: Stripe | null = null;
 let instanceCreatedAt: number = 0;
-const INSTANCE_TTL = 30 * 60 * 1000; // 30 minutes
+let instanceRequestCount: number = 0;
+const INSTANCE_TTL = 10 * 60 * 1000; // 10 minutes (reduced from 30)
+const MAX_REQUESTS_PER_INSTANCE = 100; // Force refresh after 100 requests
+
+const cleanupStripeInstance = () => {
+  if (stripeInstance) {
+    try {
+      // Clear any internal timers/connections if possible
+      // Note: Stripe doesn't expose cleanup methods, but we can null the reference
+      console.log('🧹 Cleaning up old Stripe instance');
+      stripeInstance = null;
+      instanceCreatedAt = 0;
+      instanceRequestCount = 0;
+    } catch (error) {
+      console.error('⚠️ Error cleaning up Stripe instance:', error);
+    }
+  }
+};
 
 const getStripeInstance = (): Stripe => {
   const now = Date.now();
+  const age = stripeInstance ? now - instanceCreatedAt : 0;
 
-  // Refresh instance if it's too old or doesn't exist
-  if (!stripeInstance || now - instanceCreatedAt > INSTANCE_TTL) {
-    console.log('Creating new Stripe instance...', {
+  // Force refresh if:
+  // 1. Instance doesn't exist
+  // 2. Instance is too old (TTL exceeded)
+  // 3. Instance has processed too many requests
+  const shouldRefresh =
+    !stripeInstance ||
+    age > INSTANCE_TTL ||
+    instanceRequestCount >= MAX_REQUESTS_PER_INSTANCE;
+
+  if (shouldRefresh) {
+    console.log('🔄 Refreshing Stripe instance...', {
       exists: !!stripeInstance,
-      age: stripeInstance ? now - instanceCreatedAt : 0,
-      ttl: INSTANCE_TTL,
+      age: `${Math.floor(age / 1000)}s`,
+      ttl: `${INSTANCE_TTL / 1000}s`,
+      requestCount: instanceRequestCount,
+      maxRequests: MAX_REQUESTS_PER_INSTANCE,
+      reason: !stripeInstance
+        ? 'missing'
+        : age > INSTANCE_TTL
+          ? 'expired'
+          : 'max-requests',
     });
+
+    // Clean up old instance
+    cleanupStripeInstance();
 
     if (!process.env.STRIPE_SECRET_KEY) {
       console.error('STRIPE_SECRET_KEY missing from environment');
@@ -23,32 +59,60 @@ const getStripeInstance = (): Stripe => {
     }
 
     try {
+      // Create fresh instance with aggressive settings
       stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        maxNetworkRetries: 3,
-        timeout: 10000, // 10 second timeout
+        maxNetworkRetries: 2, // Reduced from 3
+        timeout: 8000, // Reduced from 10000
+        telemetry: false, // Disable telemetry to reduce overhead
+        appInfo: {
+          name: 'SHUSH-Dance',
+          version: '1.0.0',
+        },
       });
+
       instanceCreatedAt = now;
-      console.log('✅ Stripe instance created successfully');
+      instanceRequestCount = 0;
+      console.log('✅ Fresh Stripe instance created successfully');
     } catch (error: any) {
       console.error('❌ Failed to create Stripe instance:', error);
       throw new Error(`Failed to initialize Stripe: ${error.message}`);
     }
   }
 
+  // Increment request counter
+  instanceRequestCount++;
+
   return stripeInstance;
 };
+
+// Clean up Stripe instance on process exit
+process.on('SIGTERM', () => {
+  console.log('🔄 SIGTERM received, cleaning up Stripe instance...');
+  cleanupStripeInstance();
+});
+
+process.on('SIGINT', () => {
+  console.log('🔄 SIGINT received, cleaning up Stripe instance...');
+  cleanupStripeInstance();
+});
+
+// Clean up on uncaught exceptions (though this should be rare)
+process.on('uncaughtException', (error) => {
+  console.error('🔥 Uncaught exception, cleaning up Stripe instance:', error);
+  cleanupStripeInstance();
+});
 
 const createPaymentIntentWithRetry = async (
   paymentIntentData: Stripe.PaymentIntentCreateParams,
   maxRetries = 3,
   requestId = 'unknown'
 ): Promise<Stripe.PaymentIntent> => {
-  const stripe = getStripeInstance();
+  let stripe = getStripeInstance();
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(
-        `[${requestId}] 🔄 Stripe API call attempt ${attempt}/${maxRetries}`
+        `[${requestId}] 🔄 Stripe API call attempt ${attempt}/${maxRetries} (instance age: ${Math.floor((Date.now() - instanceCreatedAt) / 1000)}s, requests: ${instanceRequestCount})`
       );
       return await stripe.paymentIntents.create(paymentIntentData);
     } catch (error: any) {
@@ -59,8 +123,26 @@ const createPaymentIntentWithRetry = async (
           type: error.type,
           code: error.code,
           attempt,
+          instanceAge: Math.floor((Date.now() - instanceCreatedAt) / 1000),
+          instanceRequests: instanceRequestCount,
         }
       );
+
+      // Check if this might be a stale instance issue
+      const isConnectionError =
+        error.code === 'ECONNRESET' ||
+        error.code === 'ECONNREFUSED' ||
+        error.code === 'ETIMEDOUT' ||
+        error.message?.includes('timeout') ||
+        error.message?.includes('connection');
+
+      if (isConnectionError && attempt < maxRetries) {
+        console.log(
+          `[${requestId}] 🔄 Connection error detected, forcing fresh Stripe instance...`
+        );
+        cleanupStripeInstance();
+        stripe = getStripeInstance(); // Get fresh instance
+      }
 
       // Don't retry on client errors (4xx)
       if (
@@ -95,6 +177,13 @@ export const createPaymentIntentEndpoint: Endpoint = {
     console.log(`[${requestId}] 🚀 Payment intent request started`, {
       userAgent: req.headers['user-agent'],
       ip: req.ip || req.connection?.remoteAddress,
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      contentType: req.headers['content-type'],
+      contentLength: req.headers['content-length'],
+      xForwardedFor: req.headers['x-forwarded-for'],
+      xRealIp: req.headers['x-real-ip'],
+      isMonitor: req.headers['user-agent']?.includes('SHUSH-Monitor'),
       timestamp: new Date().toISOString(),
     });
 

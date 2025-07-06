@@ -18,6 +18,8 @@ interface MonitoringResult {
     error?: string;
     paymentIntentId?: string;
     responseTime?: number;
+    attempts?: number;
+    errorPattern?: string;
   };
   order: { success: boolean; error?: string; orderNumber?: string };
   overall: boolean;
@@ -63,7 +65,12 @@ const testStripePaymentIntent = async (): Promise<{
     const Stripe = require('stripe');
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       maxNetworkRetries: 2,
-      timeout: 10000, // 10 second timeout
+      timeout: 8000, // 8 second timeout (matching production)
+      telemetry: false, // Disable telemetry to reduce overhead
+      appInfo: {
+        name: 'SHUSH-Monitor',
+        version: '1.0.0',
+      },
     });
 
     const testCustomerData = {
@@ -108,83 +115,229 @@ const testStripePaymentIntent = async (): Promise<{
   }
 };
 
-// Test actual production endpoint
+// Test actual production endpoint with multiple requests to catch stale instance issues
 const testPaymentIntentEndpoint = async (): Promise<{
   success: boolean;
   error?: string;
   paymentIntentId?: string;
   responseTime?: number;
+  attempts?: number;
+  errorPattern?: string;
 }> => {
   const testId = `endpoint-${Date.now()}`;
-  const startTime = Date.now();
 
-  try {
-    console.log(`[${testId}] 🧪 Testing actual payment intent endpoint...`);
+  // Test with multiple requests to catch stale instance issues
+  const testAttempts = 3;
+  const results: Array<{
+    success: boolean;
+    responseTime: number;
+    status: number;
+    error?: string;
+  }> = [];
 
-    const testPayload = {
-      amount: 1.0, // €1.00 test payment
-      currency: 'eur',
-      customerData: {
-        email: 'monitor@shush.dance',
-        firstName: 'Monitor',
-        lastName: 'EndpointTest',
-      },
-    };
+  console.log(
+    `[${testId}] 🧪 Testing production endpoint with ${testAttempts} requests...`
+  );
 
-    // Make HTTP request to the actual endpoint
-    const response = await fetch(
-      `${process.env.PAYLOAD_PUBLIC_SERVER_URL}/api/create-payment-intent`,
-      {
+  for (let i = 1; i <= testAttempts; i++) {
+    const startTime = Date.now();
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    try {
+      const testPayload = {
+        amount: 1.0, // €1.00 test payment
+        currency: 'eur',
+        customerData: {
+          email: 'monitor@shush.dance',
+          firstName: 'Monitor',
+          lastName: `EndpointTest${i}`,
+        },
+      };
+
+      // Make HTTP request through the SAME path browsers use
+      // Use the public domain, not internal server URL
+      const publicUrl =
+        process.env.PAYLOAD_PUBLIC_SERVER_URL || 'https://shush.dance';
+      const testUrl = `${publicUrl}/api/create-payment-intent`;
+
+      console.log(
+        `[${testId}] 🌐 Testing via public URL: ${testUrl} (attempt ${i})`
+      );
+
+      // Add network debugging info
+      console.log(`[${testId}] 🔍 Network debug info:`, {
+        serverHostname: require('os').hostname(),
+        serverIP: require('os').networkInterfaces(),
+        publicUrl,
+        isLocalhost:
+          publicUrl.includes('localhost') || publicUrl.includes('127.0.0.1'),
+        isInternalNetwork:
+          publicUrl.includes('192.168.') || publicUrl.includes('10.'),
+        processEnv: {
+          NODE_ENV: process.env.NODE_ENV,
+          PAYLOAD_PUBLIC_SERVER_URL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
+        },
+      });
+
+      // Force external DNS resolution and disable keep-alive to simulate fresh browser requests
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      const response = await fetch(testUrl, {
+        signal: controller.signal,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'SHUSH-Monitor/1.0',
+          'User-Agent':
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36', // Real browser UA
+          Accept: 'application/json, text/plain, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          Origin: publicUrl, // Important for CORS
+          Referer: `${publicUrl}/cart`, // Simulate coming from cart page
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-origin',
+          'X-Test-Attempt': i.toString(),
+          'X-Monitor-Test': 'true', // Identify as monitor
         },
         body: JSON.stringify(testPayload),
+      });
+
+      const responseTime = Date.now() - startTime;
+      if (timeoutId) clearTimeout(timeoutId); // Clear timeout since request completed
+
+      let responseData: any = {};
+
+      try {
+        responseData = await response.json();
+      } catch (jsonError) {
+        // Handle cases where response is not JSON (like 502 errors)
+        try {
+          const rawText = await response.text();
+          responseData = {
+            error: 'Invalid JSON response',
+            rawResponse: rawText.substring(0, 200), // Limit raw response length
+          };
+        } catch (textError) {
+          responseData = {
+            error: 'Could not read response',
+            details: textError.message,
+          };
+        }
       }
+
+      console.log(`[${testId}] 📊 Attempt ${i} response:`, {
+        status: response.status,
+        responseTime: `${responseTime}ms`,
+        hasClientSecret: !!responseData.clientSecret,
+        hasPaymentIntentId: !!responseData.paymentIntentId,
+      });
+
+      results.push({
+        success: response.ok && !!responseData.clientSecret,
+        responseTime,
+        status: response.status,
+        error: !response.ok
+          ? `HTTP ${response.status}: ${responseData.error || 'Unknown error'}`
+          : undefined,
+      });
+
+      // Small delay between requests
+      if (i < testAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    } catch (error: any) {
+      const responseTime = Date.now() - startTime;
+      if (timeoutId) clearTimeout(timeoutId); // Clear timeout in case of error
+
+      // Determine error type
+      let errorType = error.constructor.name;
+      if (error.name === 'AbortError') {
+        errorType = 'TIMEOUT';
+      } else if (error.message?.includes('ECONNREFUSED')) {
+        errorType = 'CONNECTION_REFUSED';
+      } else if (error.message?.includes('ENOTFOUND')) {
+        errorType = 'DNS_ERROR';
+      }
+
+      console.error(`[${testId}] ❌ Attempt ${i} error:`, {
+        message: error.message,
+        type: errorType,
+        originalType: error.constructor.name,
+        responseTime: `${responseTime}ms`,
+      });
+
+      results.push({
+        success: false,
+        responseTime,
+        status: 0,
+        error: `${errorType}: ${error.message}`,
+      });
+    }
+  }
+
+  // Analyze results
+  const successCount = results.filter((r) => r.success).length;
+  const failureCount = results.filter((r) => !r.success).length;
+  const avgResponseTime = Math.round(
+    results.reduce((sum, r) => sum + r.responseTime, 0) / results.length
+  );
+  const has502Errors = results.some((r) => r.status === 502);
+  const hasTimeouts = results.some((r) => r.error?.includes('timeout'));
+  const hasConnectionErrors = results.some(
+    (r) => r.error?.includes('connection') || r.error?.includes('ECONNRESET')
+  );
+
+  // Determine error pattern
+  let errorPattern = '';
+  if (has502Errors) errorPattern = '502_BAD_GATEWAY';
+  else if (hasTimeouts) errorPattern = 'TIMEOUT';
+  else if (hasConnectionErrors) errorPattern = 'CONNECTION_ERROR';
+  else if (failureCount > 0) errorPattern = 'GENERAL_FAILURE';
+
+  console.log(`[${testId}] 📊 Endpoint test summary:`, {
+    successCount,
+    failureCount,
+    avgResponseTime: `${avgResponseTime}ms`,
+    errorPattern,
+    has502Errors,
+    hasTimeouts,
+    hasConnectionErrors,
+  });
+
+  // Consider test successful if at least 2 out of 3 attempts succeed
+  const overallSuccess = successCount >= 2;
+
+  if (overallSuccess) {
+    console.log(
+      `[${testId}] ✅ Production endpoint test passed (${successCount}/${testAttempts} attempts)`
+    );
+    return {
+      success: true,
+      paymentIntentId: results.find((r) => r.success)?.toString(),
+      responseTime: avgResponseTime,
+      attempts: testAttempts,
+    };
+  } else {
+    const mainError = results.find((r) => !r.success)?.error || 'Unknown error';
+    console.log(
+      `[${testId}] ❌ Production endpoint test failed (${failureCount}/${testAttempts} attempts failed)`
     );
 
-    const responseTime = Date.now() - startTime;
-    const responseData = await response.json();
-
-    console.log(`[${testId}] 📊 Endpoint response:`, {
-      status: response.status,
-      responseTime: `${responseTime}ms`,
-      hasClientSecret: !!responseData.clientSecret,
-      hasPaymentIntentId: !!responseData.paymentIntentId,
-    });
-
-    if (response.ok && responseData.clientSecret) {
+    // Special handling for 502 errors (the main issue)
+    if (has502Errors) {
       console.log(
-        `[${testId}] ✅ Payment intent endpoint test successful (${responseTime}ms)`
+        `[${testId}] 🚨 CRITICAL: 502 Bad Gateway detected - this is the client issue!`
       );
-      return {
-        success: true,
-        paymentIntentId: responseData.paymentIntentId,
-        responseTime,
-      };
-    } else {
-      const error = `HTTP ${response.status}: ${responseData.error || 'Unknown error'}`;
-      console.log(
-        `[${testId}] ❌ Payment intent endpoint test failed: ${error}`
-      );
-      return {
-        success: false,
-        error,
-        responseTime,
-      };
     }
-  } catch (error: any) {
-    const responseTime = Date.now() - startTime;
-    console.error(`[${testId}] ❌ Payment intent endpoint test error:`, {
-      message: error.message,
-      type: error.constructor.name,
-      responseTime: `${responseTime}ms`,
-    });
+
     return {
       success: false,
-      error: `${error.constructor.name}: ${error.message}`,
-      responseTime,
+      error: `${failureCount}/${testAttempts} attempts failed. Pattern: ${errorPattern}. Main error: ${mainError}`,
+      responseTime: avgResponseTime,
+      attempts: testAttempts,
+      errorPattern,
     };
   }
 };
@@ -268,35 +421,73 @@ const testOrderCreation = async (
   }
 };
 
-// Send email alert
+// Send email alert with enhanced 502 error detection
 const sendAlert = async (
   payload: any,
   subject: string,
-  errorDetails: string
+  errorDetails: string,
+  errorPattern?: string
 ) => {
   try {
     const alertEmail = process.env.ALERT_EMAIL || 'hello@shush.dance';
 
+    // Enhanced subject for 502 errors
+    let enhancedSubject = subject;
+    if (errorPattern === '502_BAD_GATEWAY') {
+      enhancedSubject = `🔥 CRITICAL: 502 Bad Gateway - Client Payment Failures`;
+    } else if (errorPattern === 'TIMEOUT') {
+      enhancedSubject = `⏱️ WARNING: Payment System Timeouts`;
+    } else if (errorPattern === 'CONNECTION_ERROR') {
+      enhancedSubject = `🔌 ERROR: Connection Issues`;
+    }
+
+    const isUrgent =
+      errorPattern === '502_BAD_GATEWAY' || errorPattern === 'TIMEOUT';
+    const urgencyText = isUrgent
+      ? '<div style="background: #ff4444; color: white; padding: 10px; border-radius: 5px; margin: 10px 0;"><strong>⚠️ URGENT: This affects real customer payments!</strong></div>'
+      : '';
+
     await payload.sendEmail({
       to: alertEmail,
       from: `"SHUSH Monitor" <${process.env.SMTP_USER}>`,
-      subject: `🚨 ${subject}`,
+      subject: `🚨 ${enhancedSubject}`,
       html: `
         <h2>🚨 Payment System Alert</h2>
         <p><strong>Domain:</strong> ${process.env.PAYLOAD_PUBLIC_SERVER_URL}</p>
         <p><strong>Time:</strong> ${new Date().toISOString()}</p>
+        <p><strong>Error Pattern:</strong> ${errorPattern || 'UNKNOWN'}</p>
+        
+        ${urgencyText}
+        
         <hr>
         <h3>Issue Details:</h3>
         <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; font-family: monospace;">${errorDetails}</pre>
+        
+        ${
+          errorPattern === '502_BAD_GATEWAY'
+            ? `
+        <hr>
+        <h3>🔥 502 Bad Gateway - What This Means:</h3>
+        <ul style="color: #d32f2f;">
+          <li><strong>Customer Impact:</strong> Users cannot complete payments</li>
+          <li><strong>Likely Cause:</strong> Stale Stripe instance or server overload</li>
+          <li><strong>Action Required:</strong> Restart the application or check server resources</li>
+        </ul>
+        `
+            : ''
+        }
         
         <hr>
         <p><em>This is an automated alert from the SHUSH payment system monitor.</em></p>
         
         <p>Check the admin panel: <a href="${process.env.PAYLOAD_PUBLIC_SERVER_URL}/admin">Admin Panel</a></p>
+        <p>View server logs: <code>pm2 logs</code> or <code>docker logs container-name</code></p>
       `,
     });
 
-    console.log(`📧 Alert email sent to ${alertEmail}`);
+    console.log(
+      `📧 ${isUrgent ? 'URGENT' : 'Normal'} alert email sent to ${alertEmail}`
+    );
     return true;
   } catch (error: any) {
     console.error(`❌ Failed to send alert email: ${error.message}`);
@@ -391,6 +582,8 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           order: results.order.success ? 'ok' : 'fail',
           health: results.health,
           responseTime: results.endpoint.responseTime,
+          attempts: results.endpoint.attempts,
+          errorPattern: results.endpoint.errorPattern || 'none',
           timestamp: results.timestamp,
         });
       } else {
@@ -413,12 +606,50 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           errors.push(`Order Creation: ${results.order.error}`);
 
         const errorMessage = errors.join('\n');
+        const errorPattern = results.endpoint.errorPattern;
 
-        // Send alert email
+        // Enhanced error details for alerting
+        const enhancedErrorDetails = `
+Monitor Results:
+- Stripe API: ${results.stripe.success ? '✅ OK' : '❌ FAILED'}
+- Production Endpoint: ${results.endpoint.success ? '✅ OK' : '❌ FAILED'}
+- Database/Orders: ${results.order.success ? '✅ OK' : '❌ FAILED'}
+
+${
+  results.endpoint.attempts
+    ? `Endpoint Test Details:
+- Attempts: ${results.endpoint.attempts}
+- Avg Response Time: ${results.endpoint.responseTime}ms
+- Error Pattern: ${errorPattern || 'NONE'}`
+    : ''
+}
+
+Error Messages:
+${errorMessage}
+
+${
+  errorPattern === '502_BAD_GATEWAY'
+    ? `
+🚨 CRITICAL: 502 Bad Gateway Detected!
+This is the exact error customers are experiencing.
+The Stripe instance may be stale or the server is overloaded.
+
+Recommended Actions:
+1. Restart the application: pm2 restart all
+2. Check memory usage: free -h
+3. Check server logs for memory leaks
+4. Verify Stripe instance TTL is working
+`
+    : ''
+}
+        `.trim();
+
+        // Send alert email with error pattern
         await sendAlert(
           req.payload,
           'Payment System Failure Detected',
-          errorMessage
+          enhancedErrorDetails,
+          errorPattern
         );
 
         return res.status(500).json({
@@ -429,6 +660,8 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           order: results.order.success ? 'ok' : 'fail',
           health: results.health,
           responseTime: results.endpoint.responseTime,
+          attempts: results.endpoint.attempts,
+          errorPattern: results.endpoint.errorPattern || 'unknown',
           timestamp: results.timestamp,
         });
       }

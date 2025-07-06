@@ -25,6 +25,7 @@ import { createOrderEndpoint } from './endpoints/createOrder';
 import { createPaymentIntentEndpoint } from './endpoints/createPaymentIntent';
 import { createSaleEndpoint } from './endpoints/createSale';
 import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
+import { clientErrorReportEndpoint } from './endpoints/clientErrorReport';
 import { Settings } from './globals/settings';
 
 dotenv.config({
@@ -74,6 +75,7 @@ export default buildConfig({
     createPaymentIntentEndpoint,
     createSaleEndpoint,
     monitorPaymentSystemEndpoint,
+    clientErrorReportEndpoint,
   ],
   email: {
     fromName: 'SHUSH',
