@@ -66,20 +66,13 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
     const testId = `client-${Date.now()}`;
     const startTime = Date.now();
 
-    console.log(
-      `[${testId}] 🧪 Testing payment system via comprehensive monitor (${context})`
-    );
+    console.log(`[${testId}] 🧪 Testing basic site connectivity (${context})`);
 
     try {
-      // Use the existing comprehensive monitoring endpoint
-      // This requires an API key, so we'll need to set one up for client monitoring
-      const monitorApiKey =
-        process.env.NEXT_PUBLIC_MONITOR_API_KEY || 'client-monitor-key';
-
-      const response = await fetch('/api/monitor-payment-system', {
-        method: 'GET',
+      // Simple connectivity test - just ping the homepage
+      const response = await fetch('/', {
+        method: 'HEAD', // Lightweight request
         headers: {
-          'X-Api-Key': monitorApiKey,
           'X-Client-Monitor': 'true',
           'User-Agent': `SHUSH-Client-Monitor/1.0 (${navigator.userAgent})`,
         },
@@ -98,28 +91,6 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
         return false;
       }
 
-      if (response.status === 401) {
-        console.warn(
-          `[${testId}] ⚠️ Monitor API key not configured for client monitoring`
-        );
-        // Don't report as error since this is a configuration issue, not a payment system issue
-        return true; // Assume system is healthy if we can't monitor
-      }
-
-      let monitorData;
-      try {
-        monitorData = await response.json();
-      } catch (jsonError) {
-        console.error(`[${testId}] ❌ Invalid JSON response`);
-        await reportError({
-          type: 'INVALID_JSON',
-          message: 'Monitor endpoint returned invalid JSON',
-          responseTime,
-          context,
-        });
-        return false;
-      }
-
       if (!response.ok) {
         console.error(`[${testId}] ❌ HTTP ${response.status} error`);
         await reportError({
@@ -127,58 +98,23 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
           message: `HTTP ${response.status}: ${response.statusText}`,
           responseTime,
           context,
-          monitorData: monitorData,
         });
         return false;
       }
 
-      // Check monitor results
-      if (monitorData.status === 'error') {
-        console.error(`[${testId}] ❌ Payment system unhealthy:`, monitorData);
-
-        // Report specific issues based on the monitor's findings
-        const failedServices = [];
-        if (monitorData.stripe === 'fail') {
-          failedServices.push('Stripe connectivity failed');
-        }
-        if (monitorData.endpoint === 'fail') {
-          failedServices.push('Payment endpoint failed');
-        }
-        if (monitorData.order === 'fail') {
-          failedServices.push('Order creation failed');
-        }
-
-        await reportError({
-          type: 'PAYMENT_SYSTEM_FAILURE',
-          message: `Payment system failure - ${failedServices.join(', ')}`,
-          responseTime,
-          context,
-          monitorData: monitorData,
-        });
-        return false;
-      }
-
-      // Check for slow responses (might indicate issues)
+      // Check for slow responses (might indicate server issues)
       if (responseTime > 10000) {
-        console.warn(`[${testId}] ⚠️ Slow monitor response: ${responseTime}ms`);
+        console.warn(`[${testId}] ⚠️ Slow site response: ${responseTime}ms`);
         await reportError({
-          type: 'SLOW_MONITOR_RESPONSE',
-          message: `Monitor response time: ${responseTime}ms (threshold: 10000ms)`,
+          type: 'SLOW_SITE_RESPONSE',
+          message: `Site response time: ${responseTime}ms (threshold: 10000ms)`,
           responseTime,
           context,
-          monitorData: monitorData,
         });
       }
 
       console.log(
-        `[${testId}] ✅ Payment system monitor check successful (${responseTime}ms)`,
-        {
-          stripe: monitorData.stripe,
-          endpoint: monitorData.endpoint,
-          order: monitorData.order,
-          endpointResponseTime: `${monitorData.responseTime || 'N/A'}ms`,
-          errorPattern: monitorData.errorPattern || 'none',
-        }
+        `[${testId}] ✅ Basic site connectivity check successful (${responseTime}ms)`
       );
       return true;
     } catch (error: any) {

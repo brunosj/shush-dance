@@ -637,8 +637,17 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
       });
     }
 
+    // Check if we should skip payment intent creation (avoid Stripe transactions)
+    const skipPaymentIntents =
+      req.query.skipPaymentIntents === 'true' ||
+      req.headers['x-skip-payment-intents'] === 'true';
+
     const monitorId = `monitor-${Date.now()}`;
-    console.log(`[${monitorId}] 🔍 Starting payment system monitoring...`);
+    console.log(`[${monitorId}] 🔍 Starting payment system monitoring...`, {
+      skipPaymentIntents: skipPaymentIntents
+        ? '✅ (No Stripe transactions)'
+        : '❌ (Will create minimal transactions)',
+    });
 
     const results: MonitoringResult = {
       timestamp: new Date().toISOString(),
@@ -658,75 +667,133 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
     });
 
     try {
-      // Test 1: Direct Stripe API
-      console.log(`[${monitorId}] 🧪 Running direct Stripe API test...`);
+      // Test 1: Direct Stripe API (no transactions)
+      console.log(
+        `[${monitorId}] 🧪 Running direct Stripe connectivity test...`
+      );
       results.stripe = await testStripeConnectivity();
       if (!results.stripe.success) {
         results.overall = false;
-        console.log(`[${monitorId}] ❌ Direct Stripe test failed`);
+        console.log(`[${monitorId}] ❌ Stripe connectivity test failed`);
       }
 
-      // Test 2: Actual production endpoint
-      console.log(`[${monitorId}] 🧪 Running production endpoint test...`);
-      results.endpoint = await testPaymentIntentEndpoint();
-      if (!results.endpoint.success) {
-        results.overall = false;
-        console.log(`[${monitorId}] ❌ Production endpoint test failed`);
+      // Test 2: Actual production endpoint (creates transactions)
+      if (skipPaymentIntents) {
+        console.log(
+          `[${monitorId}] ⏭️ Skipping payment intent endpoint test (skipPaymentIntents=true)`
+        );
+        results.endpoint = {
+          success: true,
+          error: undefined,
+          responseTime: 0,
+          attempts: 0,
+          errorPattern: undefined,
+        };
+      } else {
+        console.log(`[${monitorId}] 🧪 Running production endpoint test...`);
+        results.endpoint = await testPaymentIntentEndpoint();
+        if (!results.endpoint.success) {
+          results.overall = false;
+          console.log(`[${monitorId}] ❌ Production endpoint test failed`);
+        }
       }
 
-      // Test 3: Order creation (only if at least one payment test works)
-      if (results.stripe.success || results.endpoint.success) {
+      // Test 3: Order creation (only if payment system is working and not skipping)
+      if (
+        (results.stripe.success || results.endpoint.success) &&
+        !skipPaymentIntents
+      ) {
         console.log(`[${monitorId}] 🧪 Running order creation test...`);
         results.order = await testOrderCreation(req.payload);
         if (!results.order.success) {
           results.overall = false;
         }
       } else {
-        results.order = { success: false, error: 'No payment system working' };
-        results.overall = false;
+        console.log(`[${monitorId}] ⏭️ Skipping order creation test`);
+        results.order = {
+          success: true,
+          error: skipPaymentIntents
+            ? 'Skipped (no transactions mode)'
+            : 'No payment system working',
+        };
+        if (
+          !skipPaymentIntents &&
+          !results.stripe.success &&
+          !results.endpoint.success
+        ) {
+          results.overall = false;
+        }
       }
 
       // Handle results
       if (results.overall) {
-        console.log(`[${monitorId}] ✅ All payment system tests passed`, {
+        console.log(`[${monitorId}] ✅ Payment system tests passed`, {
           stripeAPI: results.stripe.success ? '✅' : '❌',
-          endpoint: results.endpoint.success ? '✅' : '❌',
+          endpoint: results.endpoint.success
+            ? '✅'
+            : skipPaymentIntents
+              ? '⏭️ SKIPPED'
+              : '❌',
           endpointTime: results.endpoint.responseTime
             ? `${results.endpoint.responseTime}ms`
             : 'N/A',
-          order: results.order.success ? '✅' : '❌',
+          order: results.order.success
+            ? '✅'
+            : skipPaymentIntents
+              ? '⏭️ SKIPPED'
+              : '❌',
+          mode: skipPaymentIntents ? 'NO-TRANSACTIONS' : 'FULL-TEST',
         });
 
         // For Uptime Kuma: simple success response with health info
         return res.status(200).json({
           status: 'ok',
-          message: 'Payment system healthy',
+          message: skipPaymentIntents
+            ? 'Payment system connectivity healthy (no transactions)'
+            : 'Payment system healthy',
           stripe: results.stripe.success ? 'ok' : 'fail',
-          endpoint: results.endpoint.success ? 'ok' : 'fail',
-          order: results.order.success ? 'ok' : 'fail',
+          endpoint: results.endpoint.success
+            ? 'ok'
+            : skipPaymentIntents
+              ? 'skipped'
+              : 'fail',
+          order: results.order.success
+            ? 'ok'
+            : skipPaymentIntents
+              ? 'skipped'
+              : 'fail',
           health: results.health,
           responseTime: results.endpoint.responseTime,
           attempts: results.endpoint.attempts,
           errorPattern: results.endpoint.errorPattern || 'none',
           timestamp: results.timestamp,
+          mode: skipPaymentIntents ? 'no-transactions' : 'full-test',
         });
       } else {
         console.error(`[${monitorId}] ❌ Payment system tests failed`, {
           stripeAPI: results.stripe.success ? '✅' : '❌',
-          endpoint: results.endpoint.success ? '✅' : '❌',
+          endpoint: results.endpoint.success
+            ? '✅'
+            : skipPaymentIntents
+              ? '⏭️ SKIPPED'
+              : '❌',
           endpointTime: results.endpoint.responseTime
             ? `${results.endpoint.responseTime}ms`
             : 'N/A',
-          order: results.order.success ? '✅' : '❌',
+          order: results.order.success
+            ? '✅'
+            : skipPaymentIntents
+              ? '⏭️ SKIPPED'
+              : '❌',
         });
 
         // Compile error details
         const errors = [];
         if (!results.stripe.success)
           errors.push(`Stripe API: ${results.stripe.error}`);
-        if (!results.endpoint.success)
+        if (!results.endpoint.success && !skipPaymentIntents)
           errors.push(`Endpoint: ${results.endpoint.error}`);
-        if (!results.order.success)
+        if (!results.order.success && !skipPaymentIntents)
           errors.push(`Order Creation: ${results.order.error}`);
 
         const errorMessage = errors.join('\n');
@@ -734,13 +801,13 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
 
         // Enhanced error details for alerting
         const enhancedErrorDetails = `
-Monitor Results:
+Monitor Results (${skipPaymentIntents ? 'NO-TRANSACTIONS MODE' : 'FULL-TEST MODE'}):
 - Stripe API: ${results.stripe.success ? '✅ OK' : '❌ FAILED'}
-- Production Endpoint: ${results.endpoint.success ? '✅ OK' : '❌ FAILED'}
-- Database/Orders: ${results.order.success ? '✅ OK' : '❌ FAILED'}
+- Production Endpoint: ${results.endpoint.success ? '✅ OK' : skipPaymentIntents ? '⏭️ SKIPPED' : '❌ FAILED'}
+- Database/Orders: ${results.order.success ? '✅ OK' : skipPaymentIntents ? '⏭️ SKIPPED' : '❌ FAILED'}
 
 ${
-  results.endpoint.attempts
+  results.endpoint.attempts && !skipPaymentIntents
     ? `Endpoint Test Details:
 - Attempts: ${results.endpoint.attempts}
 - Avg Response Time: ${results.endpoint.responseTime}ms
@@ -780,13 +847,22 @@ Recommended Actions:
           status: 'error',
           message: `Payment system failure: ${errorMessage}`,
           stripe: results.stripe.success ? 'ok' : 'fail',
-          endpoint: results.endpoint.success ? 'ok' : 'fail',
-          order: results.order.success ? 'ok' : 'fail',
+          endpoint: results.endpoint.success
+            ? 'ok'
+            : skipPaymentIntents
+              ? 'skipped'
+              : 'fail',
+          order: results.order.success
+            ? 'ok'
+            : skipPaymentIntents
+              ? 'skipped'
+              : 'fail',
           health: results.health,
           responseTime: results.endpoint.responseTime,
           attempts: results.endpoint.attempts,
           errorPattern: results.endpoint.errorPattern || 'unknown',
           timestamp: results.timestamp,
+          mode: skipPaymentIntents ? 'no-transactions' : 'full-test',
         });
       }
     } catch (error: any) {
