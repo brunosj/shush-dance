@@ -12,7 +12,7 @@ interface MonitoringResult {
     platform: string;
     arch: string;
   };
-  stripe: { success: boolean; error?: string; paymentIntentId?: string };
+  stripe: { success: boolean; error?: string; responseTime?: number };
   endpoint: {
     success: boolean;
     error?: string;
@@ -47,16 +47,18 @@ const getServerHealth = () => {
   };
 };
 
-// Test Stripe payment intent creation with enhanced error handling
-const testStripePaymentIntent = async (): Promise<{
+// Test Stripe connectivity without creating payment intents
+const testStripeConnectivity = async (): Promise<{
   success: boolean;
   error?: string;
-  paymentIntentId?: string;
+  responseTime?: number;
 }> => {
-  const testId = `monitor-${Date.now()}`;
+  const testId = `stripe-connectivity-${Date.now()}`;
 
   try {
-    console.log(`[${testId}] 🧪 Testing Stripe payment intent creation...`);
+    console.log(
+      `[${testId}] 🧪 Testing Stripe connectivity (no payment intents)...`
+    );
 
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error('STRIPE_SECRET_KEY not configured');
@@ -73,36 +75,24 @@ const testStripePaymentIntent = async (): Promise<{
       },
     });
 
-    const testCustomerData = {
-      email: 'monitor@shush.dance',
-      firstName: 'Monitor',
-      lastName: 'Test',
-    };
+    console.log(`[${testId}] 🔄 Testing Stripe API connectivity...`);
 
-    console.log(`[${testId}] 🔄 Creating Stripe payment intent...`);
+    const startTime = Date.now();
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: 100, // €1.00 in cents
-      currency: 'eur',
-      automatic_payment_methods: { enabled: true },
-      metadata: {
-        customerEmail: testCustomerData.email,
-        testMode: 'true',
-        monitoring: 'true',
-        testId,
-        timestamp: new Date().toISOString(),
-      },
-    });
+    // Use lightweight API call that doesn't create anything
+    await stripe.accounts.list({ limit: 1 });
+
+    const responseTime = Date.now() - startTime;
 
     console.log(
-      `[${testId}] ✅ Stripe payment intent created successfully (ID: ${paymentIntent.id})`
+      `[${testId}] ✅ Stripe connectivity test successful (${responseTime}ms)`
     );
     return {
       success: true,
-      paymentIntentId: paymentIntent.id,
+      responseTime,
     };
   } catch (error: any) {
-    console.error(`[${testId}] ❌ Stripe payment intent test failed:`, {
+    console.error(`[${testId}] ❌ Stripe connectivity test failed:`, {
       message: error.message,
       type: error.type,
       code: error.code,
@@ -126,8 +116,9 @@ const testPaymentIntentEndpoint = async (): Promise<{
 }> => {
   const testId = `endpoint-${Date.now()}`;
 
-  // Test with multiple requests to catch stale instance issues
-  const testAttempts = 3;
+  // Reduced to 1 request for regular monitoring to minimize transaction pollution
+  // Use multiple requests only if the first one fails (indicating potential stale instance issues)
+  const testAttempts = 1;
   const results: Array<{
     success: boolean;
     responseTime: number;
@@ -136,7 +127,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
   }> = [];
 
   console.log(
-    `[${testId}] 🧪 Testing production endpoint with ${testAttempts} requests...`
+    `[${testId}] 🧪 Testing production endpoint (${testAttempts} initial request)...`
   );
 
   for (let i = 1; i <= testAttempts; i++) {
@@ -145,7 +136,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
 
     try {
       const testPayload = {
-        amount: 1.0, // €1.00 test payment
+        amount: 0.01, // €0.01 minimal test payment (reduced from €1.00)
         currency: 'eur',
         customerData: {
           email: 'monitor@shush.dance',
@@ -277,6 +268,132 @@ const testPaymentIntentEndpoint = async (): Promise<{
     }
   }
 
+  // If the first attempt failed with potential stale instance issues, do additional tests
+  const firstResult = results[0];
+  if (
+    !firstResult.success &&
+    (firstResult.status === 502 ||
+      firstResult.error?.includes('timeout') ||
+      firstResult.error?.includes('connection') ||
+      firstResult.error?.includes('ECONNRESET'))
+  ) {
+    console.log(
+      `[${testId}] ⚠️ First attempt failed with potential stale instance issue, doing 2 more attempts...`
+    );
+
+    // Do 2 more attempts to confirm the issue
+    for (let i = 2; i <= 3; i++) {
+      const startTime = Date.now();
+      let timeoutId: NodeJS.Timeout | null = null;
+
+      try {
+        const testPayload = {
+          amount: 0.01, // €0.01 minimal test payment
+          currency: 'eur',
+          customerData: {
+            email: 'monitor@shush.dance',
+            firstName: 'Monitor',
+            lastName: `EndpointTest${i}`,
+          },
+        };
+
+        const publicUrl =
+          process.env.PAYLOAD_PUBLIC_SERVER_URL || 'https://shush.dance';
+        const testUrl = `${publicUrl}/api/create-payment-intent`;
+
+        const controller = new AbortController();
+        timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(testUrl, {
+          signal: controller.signal,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent':
+              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            Accept: 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            Origin: publicUrl,
+            Referer: `${publicUrl}/cart`,
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'X-Test-Attempt': i.toString(),
+            'X-Monitor-Test': 'true',
+          },
+          body: JSON.stringify(testPayload),
+        });
+
+        const responseTime = Date.now() - startTime;
+        if (timeoutId) clearTimeout(timeoutId);
+
+        let responseData: any = {};
+        try {
+          responseData = await response.json();
+        } catch (jsonError) {
+          try {
+            const rawText = await response.text();
+            responseData = {
+              error: 'Invalid JSON response',
+              rawResponse: rawText.substring(0, 200),
+            };
+          } catch (textError) {
+            responseData = {
+              error: 'Could not read response',
+              details: textError.message,
+            };
+          }
+        }
+
+        console.log(`[${testId}] 📊 Follow-up attempt ${i} response:`, {
+          status: response.status,
+          responseTime: `${responseTime}ms`,
+          hasClientSecret: !!responseData.clientSecret,
+        });
+
+        results.push({
+          success: response.ok && !!responseData.clientSecret,
+          responseTime,
+          status: response.status,
+          error: !response.ok
+            ? `HTTP ${response.status}: ${responseData.error || 'Unknown error'}`
+            : undefined,
+        });
+
+        // Small delay between requests
+        if (i < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      } catch (error: any) {
+        const responseTime = Date.now() - startTime;
+        if (timeoutId) clearTimeout(timeoutId);
+
+        let errorType = error.constructor.name;
+        if (error.name === 'AbortError') {
+          errorType = 'TIMEOUT';
+        } else if (error.message?.includes('ECONNREFUSED')) {
+          errorType = 'CONNECTION_REFUSED';
+        } else if (error.message?.includes('ENOTFOUND')) {
+          errorType = 'DNS_ERROR';
+        }
+
+        console.error(`[${testId}] ❌ Follow-up attempt ${i} error:`, {
+          message: error.message,
+          type: errorType,
+          responseTime: `${responseTime}ms`,
+        });
+
+        results.push({
+          success: false,
+          responseTime,
+          status: 0,
+          error: `${errorType}: ${error.message}`,
+        });
+      }
+    }
+  }
+
   // Analyze results
   const successCount = results.filter((r) => r.success).length;
   const failureCount = results.filter((r) => !r.success).length;
@@ -297,6 +414,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
   else if (failureCount > 0) errorPattern = 'GENERAL_FAILURE';
 
   console.log(`[${testId}] 📊 Endpoint test summary:`, {
+    totalAttempts: results.length,
     successCount,
     failureCount,
     avgResponseTime: `${avgResponseTime}ms`,
@@ -306,23 +424,29 @@ const testPaymentIntentEndpoint = async (): Promise<{
     hasConnectionErrors,
   });
 
-  // Consider test successful if at least 2 out of 3 attempts succeed
-  const overallSuccess = successCount >= 2;
+  // Success criteria:
+  // - If only 1 attempt (normal case): must succeed
+  // - If multiple attempts (failure detection): at least 50% must succeed
+  const totalAttempts = results.length;
+  const overallSuccess =
+    totalAttempts === 1
+      ? successCount === 1
+      : successCount >= Math.ceil(totalAttempts / 2);
 
   if (overallSuccess) {
     console.log(
-      `[${testId}] ✅ Production endpoint test passed (${successCount}/${testAttempts} attempts)`
+      `[${testId}] ✅ Production endpoint test passed (${successCount}/${totalAttempts} attempts)`
     );
     return {
       success: true,
       paymentIntentId: results.find((r) => r.success)?.toString(),
       responseTime: avgResponseTime,
-      attempts: testAttempts,
+      attempts: totalAttempts,
     };
   } else {
     const mainError = results.find((r) => !r.success)?.error || 'Unknown error';
     console.log(
-      `[${testId}] ❌ Production endpoint test failed (${failureCount}/${testAttempts} attempts failed)`
+      `[${testId}] ❌ Production endpoint test failed (${failureCount}/${totalAttempts} attempts failed)`
     );
 
     // Special handling for 502 errors (the main issue)
@@ -334,9 +458,9 @@ const testPaymentIntentEndpoint = async (): Promise<{
 
     return {
       success: false,
-      error: `${failureCount}/${testAttempts} attempts failed. Pattern: ${errorPattern}. Main error: ${mainError}`,
+      error: `${failureCount}/${totalAttempts} attempts failed. Pattern: ${errorPattern}. Main error: ${mainError}`,
       responseTime: avgResponseTime,
-      attempts: testAttempts,
+      attempts: totalAttempts,
       errorPattern,
     };
   }
@@ -536,7 +660,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
     try {
       // Test 1: Direct Stripe API
       console.log(`[${monitorId}] 🧪 Running direct Stripe API test...`);
-      results.stripe = await testStripePaymentIntent();
+      results.stripe = await testStripeConnectivity();
       if (!results.stripe.success) {
         results.overall = false;
         console.log(`[${monitorId}] ❌ Direct Stripe test failed`);

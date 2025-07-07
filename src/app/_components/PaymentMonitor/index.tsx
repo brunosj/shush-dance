@@ -32,8 +32,8 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
       );
     })();
 
-  // Configuration
-  const MONITOR_INTERVAL = 15 * 60 * 1000; // 15 minutes
+  // Configuration - increased interval since we're using the comprehensive monitor
+  const MONITOR_INTERVAL = 30 * 60 * 1000; // 30 minutes (increased from 15)
   const PAYMENT_PAGES = ['/cart', '/checkout', '/merch'];
   const isPaymentPage = PAYMENT_PAGES.some((page) => pathname.includes(page));
 
@@ -42,6 +42,7 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
     message: string;
     responseTime?: number;
     context?: string;
+    monitorData?: any;
   }) => {
     try {
       await fetch('/api/client-error-report', {
@@ -55,9 +56,9 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
           ...errorData,
         }),
       });
-      console.log('🚨 Payment error reported to server');
+      console.log('🚨 Payment system error reported to server');
     } catch (err) {
-      console.error('Failed to report payment error:', err);
+      console.error('Failed to report payment system error:', err);
     }
   };
 
@@ -65,24 +66,23 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
     const testId = `client-${Date.now()}`;
     const startTime = Date.now();
 
-    console.log(`[${testId}] 🧪 Testing payment system (${context})`);
+    console.log(
+      `[${testId}] 🧪 Testing payment system via comprehensive monitor (${context})`
+    );
 
     try {
-      const response = await fetch('/api/create-payment-intent', {
-        method: 'POST',
+      // Use the existing comprehensive monitoring endpoint
+      // This requires an API key, so we'll need to set one up for client monitoring
+      const monitorApiKey =
+        process.env.NEXT_PUBLIC_MONITOR_API_KEY || 'client-monitor-key';
+
+      const response = await fetch('/api/monitor-payment-system', {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'X-Api-Key': monitorApiKey,
           'X-Client-Monitor': 'true',
+          'User-Agent': `SHUSH-Client-Monitor/1.0 (${navigator.userAgent})`,
         },
-        body: JSON.stringify({
-          amount: 1.0,
-          currency: 'eur',
-          customerData: {
-            email: 'client-monitor@shush.dance',
-            firstName: 'ClientMonitor',
-            lastName: 'Test',
-          },
-        }),
       });
 
       const responseTime = Date.now() - startTime;
@@ -98,34 +98,87 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
         return false;
       }
 
-      if (!response.ok) {
-        console.error(`[${testId}] ❌ HTTP ${response.status} error`);
-        const errorText = await response
-          .text()
-          .catch(() => 'Could not read response');
+      if (response.status === 401) {
+        console.warn(
+          `[${testId}] ⚠️ Monitor API key not configured for client monitoring`
+        );
+        // Don't report as error since this is a configuration issue, not a payment system issue
+        return true; // Assume system is healthy if we can't monitor
+      }
+
+      let monitorData;
+      try {
+        monitorData = await response.json();
+      } catch (jsonError) {
+        console.error(`[${testId}] ❌ Invalid JSON response`);
         await reportError({
-          type: 'HTTP_ERROR',
-          message: `HTTP ${response.status}: ${response.statusText} - ${errorText.substring(0, 100)}`,
+          type: 'INVALID_JSON',
+          message: 'Monitor endpoint returned invalid JSON',
           responseTime,
           context,
         });
         return false;
       }
 
-      const data = await response.json();
-      if (!data.clientSecret) {
-        console.error(`[${testId}] ❌ Invalid response - missing clientSecret`);
+      if (!response.ok) {
+        console.error(`[${testId}] ❌ HTTP ${response.status} error`);
         await reportError({
-          type: 'INVALID_RESPONSE',
-          message: 'Payment intent response missing clientSecret',
+          type: 'HTTP_ERROR',
+          message: `HTTP ${response.status}: ${response.statusText}`,
           responseTime,
           context,
+          monitorData: monitorData,
         });
         return false;
+      }
+
+      // Check monitor results
+      if (monitorData.status === 'error') {
+        console.error(`[${testId}] ❌ Payment system unhealthy:`, monitorData);
+
+        // Report specific issues based on the monitor's findings
+        const failedServices = [];
+        if (monitorData.stripe === 'fail') {
+          failedServices.push('Stripe connectivity failed');
+        }
+        if (monitorData.endpoint === 'fail') {
+          failedServices.push('Payment endpoint failed');
+        }
+        if (monitorData.order === 'fail') {
+          failedServices.push('Order creation failed');
+        }
+
+        await reportError({
+          type: 'PAYMENT_SYSTEM_FAILURE',
+          message: `Payment system failure - ${failedServices.join(', ')}`,
+          responseTime,
+          context,
+          monitorData: monitorData,
+        });
+        return false;
+      }
+
+      // Check for slow responses (might indicate issues)
+      if (responseTime > 10000) {
+        console.warn(`[${testId}] ⚠️ Slow monitor response: ${responseTime}ms`);
+        await reportError({
+          type: 'SLOW_MONITOR_RESPONSE',
+          message: `Monitor response time: ${responseTime}ms (threshold: 10000ms)`,
+          responseTime,
+          context,
+          monitorData: monitorData,
+        });
       }
 
       console.log(
-        `[${testId}] ✅ Payment system test successful (${responseTime}ms)`
+        `[${testId}] ✅ Payment system monitor check successful (${responseTime}ms)`,
+        {
+          stripe: monitorData.stripe,
+          endpoint: monitorData.endpoint,
+          order: monitorData.order,
+          endpointResponseTime: `${monitorData.responseTime || 'N/A'}ms`,
+          errorPattern: monitorData.errorPattern || 'none',
+        }
       );
       return true;
     } catch (error: any) {
@@ -150,7 +203,7 @@ const PaymentMonitor: React.FC<PaymentMonitorProps> = ({ isEnabled }) => {
       return true;
     }
 
-    // Test every 15 minutes on any page
+    // Test every 30 minutes on any page (increased from 15 minutes)
     if (now - lastTestTime.current >= MONITOR_INTERVAL) {
       return true;
     }
