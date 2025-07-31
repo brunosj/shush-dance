@@ -157,8 +157,6 @@ const testPaymentIntentEndpoint = async (): Promise<{
 
       // Add network debugging info
       console.log(`[${testId}] 🔍 Network debug info:`, {
-        serverHostname: require('os').hostname(),
-        serverIP: require('os').networkInterfaces(),
         publicUrl,
         isLocalhost:
           publicUrl.includes('localhost') || publicUrl.includes('127.0.0.1'),
