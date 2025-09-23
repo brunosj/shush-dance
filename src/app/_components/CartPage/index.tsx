@@ -98,9 +98,9 @@ const CartPage = () => {
       return {
         shippingPrices,
         quantity: item?.quantity || 1,
-        isDigital: metadata.isDigital === 'true',
-        type: metadata.type || 'merch', // 'release' or 'merch'
-        itemType: metadata.itemType || 'other', // 'vinyl', 'clothing', 'prints', 'other'
+        isDigital: metadata.isDigital === 'true' || metadata.type === 'ticket',
+        type: metadata.type || 'merch', // 'release', 'merch', or 'ticket'
+        itemType: metadata.itemType || 'other', // 'vinyl', 'clothing', 'prints', 'ticket', 'other'
       };
     });
   };
@@ -122,8 +122,26 @@ const CartPage = () => {
   const shippingCost = Math.round(shippingCostEuros * 100);
   const vatRate = getVATRate();
 
+  // Separate taxable and non-taxable items for VAT calculation
+  const getTaxableSubtotal = () => {
+    if (!cartDetails) return 0;
+
+    return Object.values(cartDetails).reduce((total: number, item: any) => {
+      const productData = item?.product_data as any;
+      const metadata = productData?.metadata || {};
+      const isTicket = metadata.type === 'ticket';
+
+      // Only include non-ticket items in taxable subtotal
+      if (!isTicket) {
+        return total + (item.value || 0);
+      }
+      return total;
+    }, 0);
+  };
+
+  const taxableSubtotal = getTaxableSubtotal();
   const subtotalVAT = Math.round(
-    calculateVAT(subtotalExclVAT / 100, vatRate) * 100
+    calculateVAT(taxableSubtotal / 100, vatRate) * 100
   );
   const shippingVAT = Math.round(
     calculateVAT(shippingCost / 100, vatRate) * 100
@@ -132,12 +150,24 @@ const CartPage = () => {
 
   const finalTotal = subtotalExclVAT + shippingCost + totalVAT;
 
+  // Check if cart contains only tickets
+  const isTicketOnlyCart = () => {
+    if (!cartDetails) return false;
+
+    return Object.values(cartDetails).every((item: any) => {
+      const productData = item?.product_data as any;
+      const metadata = productData?.metadata || {};
+      return metadata.type === 'ticket';
+    });
+  };
+
   const handleCustomerDataSubmit = (data: CustomerData) => {
     setCustomerData(data);
     setCheckoutStep('payment');
   };
 
   const handleProceedToCheckout = () => {
+    // Always go to customer-info step, but it will show different form for tickets
     setCheckoutStep('customer-info');
   };
 
@@ -166,6 +196,7 @@ const CartPage = () => {
         onSubmit={handleCustomerDataSubmit}
         isProcessing={isProcessing}
         customerData={customerData}
+        isTicketOnlyCart={isTicketOnlyCart()}
       />
     );
   }
@@ -177,6 +208,7 @@ const CartPage = () => {
         completedSteps={getCompletedSteps()}
         onStepNavigation={handleStepNavigation}
         customerData={customerData}
+        cartDetails={cartDetails}
         subtotalExclVAT={subtotalExclVAT}
         shippingCost={shippingCost}
         totalVAT={totalVAT}
@@ -184,6 +216,7 @@ const CartPage = () => {
         regionLabel={getRegionLabel()}
         selectedRegion={selectedRegion}
         shippingRegion={selectedRegion}
+        isTicketOnlyCart={isTicketOnlyCart()}
       />
     );
   }
@@ -205,6 +238,7 @@ const CartPage = () => {
       regionLabel={getRegionLabel()}
       selectedRegion={selectedRegion}
       onProceedToCheckout={handleProceedToCheckout}
+      isTicketOnlyCart={isTicketOnlyCart()}
     />
   );
 };

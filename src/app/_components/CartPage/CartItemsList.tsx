@@ -30,7 +30,7 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
         return (
           <li
             key={key}
-            className='flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray'
+            className='flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray last:border-b-0 '
           >
             <div className='flex flex-col'>
               <h4 className='font-bold '>{item?.name || 'Product'}</h4>

@@ -41,6 +41,13 @@ const EventListing: React.FC<EventListingProps> = ({
         value: tier.price * 100,
         currency: 'EUR',
       },
+      product_data: {
+        metadata: {
+          isDigital: 'true',
+          type: 'ticket',
+          itemType: 'ticket',
+        },
+      },
     };
     addItem(item, { count: item.quantity });
     toast.success('Added to cart!');

@@ -1,6 +1,7 @@
 import React from 'react';
 import StepIndicator from '../StepIndicator';
 import OrderSummary from './OrderSummary';
+import ReviewOrderItems from './ReviewOrderItems';
 import ShippingAddressDisplay from './ShippingAddressDisplay';
 import PaymentSection from './PaymentSection';
 import { CustomerData } from '../../_providers/CheckoutProvider';
@@ -13,6 +14,7 @@ interface PaymentStepProps {
   completedSteps: CheckoutStep[];
   onStepNavigation: (step: CheckoutStep) => void;
   customerData: CustomerData | null;
+  cartDetails: any;
   subtotalExclVAT: number;
   shippingCost: number;
   totalVAT: number;
@@ -20,6 +22,7 @@ interface PaymentStepProps {
   regionLabel: string;
   selectedRegion: string;
   shippingRegion: ShippingRegion;
+  isTicketOnlyCart?: boolean;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({
@@ -27,6 +30,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   completedSteps,
   onStepNavigation,
   customerData,
+  cartDetails,
   subtotalExclVAT,
   shippingCost,
   totalVAT,
@@ -34,6 +38,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   regionLabel,
   selectedRegion,
   shippingRegion,
+  isTicketOnlyCart = false,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -49,22 +54,30 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
         </p>
       </div>
 
-      {/* First Row - Order Summary & Shipping Address */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-8'>
-        <OrderSummary
-          subtotalExclVAT={subtotalExclVAT}
-          shippingCost={shippingCost}
-          totalVAT={totalVAT}
-          finalTotal={finalTotal}
-          regionLabel={regionLabel}
-          selectedRegion={selectedRegion}
-        />
-
-        <ShippingAddressDisplay
-          customerData={customerData}
-          onEditCustomerInfo={() => onStepNavigation('customer-info')}
-        />
+      {/* Order Items */}
+      <div className='mb-6'>
+        <ReviewOrderItems cartDetails={cartDetails} />
       </div>
+
+      {/* First Row - Order Summary & Shipping Address */}
+      {!isTicketOnlyCart && (
+        <div className={`grid gap-6 mb-8 'grid-cols-1 md:grid-cols-2'`}>
+          <OrderSummary
+            subtotalExclVAT={subtotalExclVAT}
+            shippingCost={shippingCost}
+            totalVAT={totalVAT}
+            finalTotal={finalTotal}
+            regionLabel={regionLabel}
+            selectedRegion={selectedRegion}
+            title={'Order Summary'}
+          />
+
+          <ShippingAddressDisplay
+            customerData={customerData}
+            onEditCustomerInfo={() => onStepNavigation('customer-info')}
+          />
+        </div>
+      )}
 
       {/* Second Row - Payment */}
       <PaymentSection

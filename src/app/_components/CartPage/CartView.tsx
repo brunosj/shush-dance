@@ -21,6 +21,7 @@ interface CartViewProps {
   regionLabel: string;
   selectedRegion: string;
   onProceedToCheckout: () => void;
+  isTicketOnlyCart?: boolean;
 }
 
 const CartView: React.FC<CartViewProps> = ({
@@ -38,6 +39,7 @@ const CartView: React.FC<CartViewProps> = ({
   regionLabel,
   selectedRegion,
   onProceedToCheckout,
+  isTicketOnlyCart = false,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -54,10 +56,12 @@ const CartView: React.FC<CartViewProps> = ({
         removeItem={removeItem}
       />
 
-      {/* Shipping Location Selector - moved below cart items */}
-      <div className='mt-6 mb-6'>
-        <ShippingLocationSelector />
-      </div>
+      {/* Shipping Location Selector - only show for physical items */}
+      {!isTicketOnlyCart && (
+        <div className='mt-6 mb-6'>
+          <ShippingLocationSelector />
+        </div>
+      )}
 
       {/* Cart Summary */}
       <OrderSummary
@@ -69,6 +73,7 @@ const CartView: React.FC<CartViewProps> = ({
         selectedRegion={selectedRegion}
         onProceedToCheckout={onProceedToCheckout}
         showProceedButton={true}
+        isTicketOnlyCart={isTicketOnlyCart}
       />
     </div>
   );

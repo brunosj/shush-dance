@@ -44,13 +44,15 @@ export const calculateCartShipping = (
     shippingPrices: ShippingPrices;
     quantity: number;
     isDigital: boolean;
-    type: string; // 'release' or 'merch'
-    itemType?: string; // For merch: 'clothing', 'prints', 'other'
+    type: string; // 'release', 'merch', or 'ticket'
+    itemType?: string; // For merch: 'clothing', 'prints', 'other'; For tickets: 'ticket'
   }>,
   region: ShippingRegion
 ): number => {
-  // Filter out digital items as they don't require shipping
-  const physicalItems = cartItems.filter((item) => !item.isDigital);
+  // Filter out digital items (including tickets) as they don't require shipping
+  const physicalItems = cartItems.filter(
+    (item) => !item.isDigital && item.type !== 'ticket'
+  );
 
   if (physicalItems.length === 0) return 0;
 

@@ -12,6 +12,7 @@ interface OrderSummaryProps {
   showProceedButton?: boolean;
   title?: string;
   className?: string;
+  isTicketOnlyCart?: boolean;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -25,13 +26,16 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   showProceedButton = false,
   title = 'Order Summary',
   className = '',
+  isTicketOnlyCart = false,
 }) => {
   return (
     <div className={`bg-gray-50 p-6 rounded-lg ${className}`}>
       <h4 className='font-semibold mb-4'>{title}</h4>
       <div className='space-y-2 text-sm lg:text-base'>
         <div className='flex justify-between'>
-          <span>Subtotal (excl. VAT):</span>
+          <span>
+            {isTicketOnlyCart ? 'Subtotal:' : 'Subtotal (excl. VAT):'}
+          </span>
           <span>
             {formatCurrencyString({
               value: subtotalExclVAT,
@@ -39,21 +43,25 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             })}
           </span>
         </div>
-        <div className='flex justify-between'>
-          <span>Shipping ({regionLabel}):</span>
-          <span>
-            {formatCurrencyString({
-              value: shippingCost,
-              currency: 'EUR',
-            })}
-          </span>
-        </div>
-        <div className='flex justify-between'>
-          <span>VAT ({selectedRegion === 'germany' ? '19%' : '0%'}):</span>
-          <span>
-            {formatCurrencyString({ value: totalVAT, currency: 'EUR' })}
-          </span>
-        </div>
+        {!isTicketOnlyCart && (
+          <>
+            <div className='flex justify-between'>
+              <span>Shipping ({regionLabel}):</span>
+              <span>
+                {formatCurrencyString({
+                  value: shippingCost,
+                  currency: 'EUR',
+                })}
+              </span>
+            </div>
+            <div className='flex justify-between'>
+              <span>VAT ({selectedRegion === 'germany' ? '19%' : '0%'}):</span>
+              <span>
+                {formatCurrencyString({ value: totalVAT, currency: 'EUR' })}
+              </span>
+            </div>
+          </>
+        )}
         <hr className='my-2' />
         <div className='flex justify-between font-semibold text-sm lg:text-lg'>
           <span>Total:</span>
