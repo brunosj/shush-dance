@@ -133,12 +133,55 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!orderTotals || !customerData) return;
+    // Validate all required data is present
+    if (!orderTotals || !customerData) {
+      console.log('StripeCheckoutButton: Missing required data', {
+        hasOrderTotals: !!orderTotals,
+        hasCustomerData: !!customerData,
+      });
+      return;
+    }
 
-    const createPaymentIntent = async () => {
+    // Validate orderTotals structure
+    if (typeof orderTotals.total !== 'number' || orderTotals.total <= 0) {
+      console.error('StripeCheckoutButton: Invalid order total', orderTotals);
+      setError('Invalid order total');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate customerData structure
+    if (!customerData.email || !customerData.firstName) {
+      console.error('StripeCheckoutButton: Invalid customer data', {
+        hasEmail: !!customerData.email,
+        hasFirstName: !!customerData.firstName,
+      });
+      setError('Invalid customer information');
+      setIsLoading(false);
+      return;
+    }
+
+    const createPaymentIntent = async (retryCount = 0) => {
+      const maxRetries = 3;
+      const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff
+
+      // Cancel any existing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create new abort controller for this request
+      abortControllerRef.current = new AbortController();
+
       try {
+        console.log(
+          `StripeCheckoutButton: Creating payment intent (attempt ${retryCount + 1}/${maxRetries + 1})`
+        );
+
         const response = await fetch('/api/create-payment-intent', {
           method: 'POST',
           headers: {
@@ -149,6 +192,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             currency: 'eur',
             customerData,
           }),
+          signal: abortControllerRef.current.signal,
         });
 
         if (!response.ok) {
@@ -158,6 +202,24 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             response.status,
             errorText
           );
+
+          // Retry on 502, 503, 504 errors (server errors)
+          if (
+            (response.status === 502 ||
+              response.status === 503 ||
+              response.status === 504) &&
+            retryCount < maxRetries
+          ) {
+            console.log(
+              `Retrying payment intent creation in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`
+            );
+            timeoutRef.current = setTimeout(
+              () => createPaymentIntent(retryCount + 1),
+              retryDelay
+            );
+            return;
+          }
+
           throw new Error(
             `API responded with ${response.status}: ${errorText}`
           );
@@ -169,18 +231,57 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           setError(data.error);
         } else if (data.clientSecret) {
           setClientSecret(data.clientSecret);
+          setError(''); // Clear any previous errors
         } else {
           setError('No client secret received');
         }
       } catch (err: any) {
+        // Don't show errors if the request was aborted (component unmounted)
+        if (err.name === 'AbortError') {
+          console.log('StripeCheckoutButton: Payment intent request aborted');
+          return;
+        }
+
         console.error('Payment intent creation failed:', err);
+
+        // Retry on network errors
+        if (
+          retryCount < maxRetries &&
+          (err.name === 'TypeError' || err.message.includes('fetch'))
+        ) {
+          console.log(
+            `Retrying payment intent creation in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`
+          );
+          timeoutRef.current = setTimeout(
+            () => createPaymentIntent(retryCount + 1),
+            retryDelay
+          );
+          return;
+        }
+
         setError(err.message || 'Failed to initialize payment');
       } finally {
-        setIsLoading(false);
+        // Only set loading to false if this isn't a retry attempt
+        if (retryCount === 0 || retryCount === maxRetries) {
+          setIsLoading(false);
+        }
       }
     };
 
-    createPaymentIntent();
+    // Add a small delay to ensure component is fully mounted and data is stable
+    timeoutRef.current = setTimeout(() => createPaymentIntent(), 100);
+
+    // Cleanup function to cancel requests when component unmounts or dependencies change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
   }, [orderTotals, customerData]);
 
   const handleSuccess = () => {

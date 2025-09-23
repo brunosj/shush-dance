@@ -4,6 +4,7 @@ import OrderSummary from './OrderSummary';
 import ReviewOrderItems from './ReviewOrderItems';
 import ShippingAddressDisplay from './ShippingAddressDisplay';
 import PaymentSection from './PaymentSection';
+import PaymentErrorBoundary from './PaymentErrorBoundary';
 import { CustomerData } from '../../_providers/CheckoutProvider';
 import { type ShippingRegion } from '../../_types/shipping';
 
@@ -80,16 +81,18 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
       )}
 
       {/* Second Row - Payment */}
-      <PaymentSection
-        customerData={customerData}
-        orderTotals={{
-          subtotal: subtotalExclVAT / 100,
-          shipping: shippingCost / 100,
-          vat: totalVAT / 100,
-          total: finalTotal / 100,
-        }}
-        shippingRegion={shippingRegion}
-      />
+      <PaymentErrorBoundary onRetry={() => window.location.reload()}>
+        <PaymentSection
+          customerData={customerData}
+          orderTotals={{
+            subtotal: subtotalExclVAT / 100,
+            shipping: shippingCost / 100,
+            vat: totalVAT / 100,
+            total: finalTotal / 100,
+          }}
+          shippingRegion={shippingRegion}
+        />
+      </PaymentErrorBoundary>
     </div>
   );
 };
