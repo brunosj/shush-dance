@@ -107,6 +107,7 @@ const EventListing: React.FC<EventListingProps> = ({
         </div>
 
         {/* Tickets */}
+
         {!isPastEvent && (
           <div className='space-y-1 relative z-20'>
             {event.ticketsAvailable &&
@@ -114,8 +115,13 @@ const EventListing: React.FC<EventListingProps> = ({
                 <div key={tier.id}>
                   {tier.visible && (
                     <Button
-                      onClick={() => handleAddToCart(tier)}
+                      onClick={
+                        !tier.strikeThrough
+                          ? () => handleAddToCart(tier)
+                          : undefined
+                      }
                       label={`${tier.tierName} - €${tier.price}`}
+                      disabled={tier.strikeThrough}
                     />
                   )}
                 </div>

@@ -18,12 +18,13 @@ const Button: React.FC<ButtonProps> = ({
   onClick,
   disabled = false,
 }) => {
+  const strikeThroughStyles = 'line-through';
   return (
     <>
       {onClick ? (
         <button
           onClick={onClick}
-          className={` py-3 px-4 lg:px-6 hover:bg-black hover:text-pri text-black border-black border-[1px] bg-transparent duration-200 ease-in-out ${textStyles} `}
+          className={` py-3 px-4 lg:px-6  text-black border-black border-[1px] bg-transparent duration-200 ease-in-out ${textStyles} ${!disabled ? 'hover:bg-black hover:text-pri' : 'line-through'}`}
           disabled={disabled}
         >
           {label}

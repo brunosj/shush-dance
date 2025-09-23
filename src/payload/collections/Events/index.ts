@@ -95,6 +95,12 @@ export const Events: CollectionConfig = {
           defaultValue: true,
         },
         {
+          name: 'strikeThrough',
+          type: 'checkbox',
+          label: 'Strike Through',
+          defaultValue: false,
+        },
+        {
           name: 'stripePriceId',
           type: 'text',
           label: 'Stripe Price ID',

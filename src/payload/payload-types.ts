@@ -50,6 +50,7 @@ export interface Event {
         tierName: string;
         price: string;
         visible?: boolean | null;
+        strikeThrough?: boolean | null;
         stripePriceId: string;
         ticketLink?: string | null;
         id?: string | null;
@@ -132,7 +133,6 @@ export interface Release {
   };
   stockQuantity?: number | null;
   isDigital?: boolean | null;
-  buyLink?: string | null;
   artwork: string | Media;
   images?:
     | {
@@ -186,7 +186,7 @@ export interface Audio {
 export interface Merch {
   id: string;
   title: string;
-  itemType: string;
+  itemType: 'clothing' | 'prints' | 'other';
   description?:
     | {
         [k: string]: unknown;
@@ -204,7 +204,6 @@ export interface Merch {
   };
   stockQuantity?: number | null;
   isDigital?: boolean | null;
-  buyLink?: string | null;
   mainImage: string | Media;
   images?:
     | {
@@ -270,7 +269,7 @@ export interface Sale {
         relationTo: 'merch';
         value: string | Merch;
       } | null);
-  pointOfSale: 'bandcamp' | 'paypal' | 'in-person' | 'promo';
+  pointOfSale: 'bandcamp' | 'stripe' | 'paypal' | 'in-person' | 'promo';
   type: 'record' | 'merch' | 'digital';
   itemType?: string | null;
   package?: string | null;
@@ -331,15 +330,18 @@ export interface OnlineOrder {
     shippingRegion: 'germany' | 'eu' | 'restOfWorld';
   };
   items: {
-    product:
-      | {
+    product?:
+      | ({
           relationTo: 'releases';
           value: string | Release;
-        }
-      | {
+        } | null)
+      | ({
           relationTo: 'merch';
           value: string | Merch;
-        };
+        } | null);
+    cartItemId?: string | null;
+    cartItemName?: string | null;
+    cartItemDescription?: string | null;
     quantity: number;
     unitPrice: number;
     lineTotal: number;
