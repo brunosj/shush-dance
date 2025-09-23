@@ -18,7 +18,6 @@ const Button: React.FC<ButtonProps> = ({
   onClick,
   disabled = false,
 }) => {
-  const strikeThroughStyles = 'line-through';
   return (
     <>
       {onClick ? (

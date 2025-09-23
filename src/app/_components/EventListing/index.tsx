@@ -115,11 +115,7 @@ const EventListing: React.FC<EventListingProps> = ({
                 <div key={tier.id}>
                   {tier.visible && (
                     <Button
-                      onClick={
-                        !tier.strikeThrough
-                          ? () => handleAddToCart(tier)
-                          : undefined
-                      }
+                      onClick={() => handleAddToCart(tier)}
                       label={`${tier.tierName} - €${tier.price}`}
                       disabled={tier.strikeThrough}
                     />
