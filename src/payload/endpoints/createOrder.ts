@@ -62,17 +62,32 @@ export const createOrderEndpoint: Endpoint = {
         },
       });
 
-      // Send confirmation emails
-      try {
-        // Format order items for email
-        const itemsList = cartItems
-          .map(
-            (item: any) =>
-              `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
-          )
-          .join('\n');
+      // Send confirmation emails for physical items (excluding tickets which get separate emails)
+      const physicalItems = cartItems.filter(
+        (item: any) =>
+          item.type !== 'ticket' &&
+          (!item.metadata || item.metadata.type !== 'ticket')
+      );
 
-        const orderSummary = `
+      if (physicalItems.length > 0) {
+        try {
+          // Format order items for email (excluding tickets)
+          const itemsList = physicalItems
+            .map(
+              (item: any) =>
+                `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
+            )
+            .join('\n');
+
+          // Calculate totals for physical items only
+          const physicalSubtotal =
+            physicalItems.reduce(
+              (sum: number, item: any) => sum + item.lineTotal,
+              0
+            ) / 100;
+          const physicalTotal = physicalSubtotal + totals.shipping + totals.vat;
+
+          const orderSummary = `
 Order Number: ${orderNumber}
 Customer: ${customerData.firstName} ${customerData.lastName}
 Email: ${customerData.email}
@@ -80,102 +95,247 @@ Email: ${customerData.email}
 Items:
 ${itemsList}
 
-Subtotal: €${totals.subtotal.toFixed(2)}
+Subtotal: €${physicalSubtotal.toFixed(2)}
 Shipping: €${totals.shipping.toFixed(2)}
 VAT: €${totals.vat.toFixed(2)}
-Total: €${totals.total.toFixed(2)}
+Total: €${physicalTotal.toFixed(2)}
 
 Shipping Address:
 ${customerData.firstName} ${customerData.lastName}
 ${customerData.street}
 ${customerData.city}, ${customerData.postalCode}
 ${customerData.country}
-        `;
+          `;
 
-        // Send confirmation email to customer
-        await req.payload.sendEmail({
-          to: customerData.email,
-          from: `SHUSH <${process.env.SMTP_USER}>`, // Display as SHUSH but use SMTP user
-          replyTo: 'SHUSH <hello@shush.dance>',
-          subject: `Order Confirmation - ${orderNumber}`,
-          html: `
-            <h2>Thank you for your order!</h2>
-            <p>Hi ${customerData.firstName},</p>
-            <p>We've received your order and it's being processed. Here are the details:</p>
-            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${orderSummary}</pre>
-            <p>We'll notify you by email when your order is shipped.</p>
-            <p>Thanks for supporting us and what we do!</p>
-            <p>- SHUSH crew</p>
-          `,
-        });
-
-        // Send notification email to merch team
-        await req.payload.sendEmail({
-          to: 'merch@shush.dance',
-          from: `SHUSH <${process.env.SMTP_USER}>`, // Display as SHUSH but use SMTP user
-          replyTo: 'SHUSH <hello@shush.dance>',
-          subject: `New Order  - ${orderNumber}`,
-          html: `
-            <h2>New Order Received</h2>
-            <p>A new order has been placed:</p>
-            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${orderSummary}</pre>
-            <p>Payment Method: ${paymentMethod}</p>
-            <p>Transaction ID: ${transactionId || 'Pending'}</p>
-            ${customerData.customerNotes ? `<p>Customer Notes: ${customerData.customerNotes}</p>` : ''}
-          `,
-        });
-      } catch (emailError) {
-        console.error('Failed to send emails:', emailError);
-        // Don't fail the order creation if emails fail
-      }
-
-      // Create individual sale records for each cart item
-      const saleRecords = [];
-
-      // Calculate per-item shipping and VAT proportionally
-      const totalItemsValue = cartItems.reduce(
-        (sum: number, item: any) => sum + item.lineTotal,
-        0
-      );
-
-      for (const item of cartItems) {
-        try {
-          // Calculate proportional shipping and VAT for this item
-          const itemProportion = item.lineTotal / totalItemsValue;
-          const itemShipping = totals.shipping * itemProportion;
-          const itemVAT = totals.vat * itemProportion;
-
-          const saleData: any = {
-            itemName: item.name,
-            type: item.type === 'release' ? 'record' : 'merch',
-            pointOfSale: paymentMethod === 'stripe' ? 'stripe' : 'paypal',
-            soldAt: new Date().toISOString(),
-            itemPrice: item.unitPrice / 100, // Convert from cents to euros
-            quantity: item.quantity,
-            currency: 'EUR',
-            subTotal: item.lineTotal / 100, // Convert from cents to euros
-            shipping: itemShipping,
-            sellerTax: itemVAT,
-            netAmount: item.lineTotal / 100 + itemShipping + itemVAT,
-            buyerEmail: customerData.email,
-            bandcampTransactionId: transactionId || orderNumber,
-            regionOrState: shippingRegion,
-          };
-
-          // Note: No longer adding cmsItem relationship since we have the item name
-
-          const sale = await req.payload.create({
-            collection: 'sales',
-            data: saleData,
+          // Send confirmation email to customer
+          await req.payload.sendEmail({
+            to: customerData.email,
+            from: `SHUSH <${process.env.SMTP_USER}>`,
+            replyTo: 'SHUSH <hello@shush.dance>',
+            subject: `Order Confirmation - ${orderNumber}`,
+            html: `
+              <h2>Thank you for your order!</h2>
+              <p>Hi ${customerData.firstName},</p>
+              <p>We've received your order and it's being processed. Here are the details:</p>
+              <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${orderSummary}</pre>
+              <p>We'll notify you by email when your order is shipped.</p>
+              <p>Thanks for supporting us and what we do!</p>
+              <p>- SHUSH crew</p>
+            `,
           });
 
-          saleRecords.push(sale.id);
-        } catch (saleError) {
+          // Send notification email to merch team
+          await req.payload.sendEmail({
+            to: 'merch@shush.dance',
+            from: `SHUSH <${process.env.SMTP_USER}>`,
+            replyTo: 'SHUSH <hello@shush.dance>',
+            subject: `New Order - ${orderNumber}`,
+            html: `
+              <h2>New Order Received</h2>
+              <p>A new order has been placed:</p>
+              <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${orderSummary}</pre>
+              <p>Payment Method: ${paymentMethod}</p>
+              <p>Transaction ID: ${transactionId || 'Pending'}</p>
+              ${customerData.customerNotes ? `<p>Customer Notes: ${customerData.customerNotes}</p>` : ''}
+            `,
+          });
+        } catch (emailError) {
+          console.error('Failed to send order emails:', emailError);
+          // Don't fail the order creation if emails fail
+        }
+      }
+
+      // Create individual sale records for each cart item and ticket sales for tickets
+      const saleRecords = [];
+      const ticketSaleRecords = [];
+
+      // Check if there are any tickets in the cart
+      const ticketItems = cartItems.filter((item: any) => {
+        // Check if this is a ticket item based on metadata or type
+        return (
+          item.type === 'ticket' ||
+          (item.metadata && item.metadata.type === 'ticket')
+        );
+      });
+
+      // If there are tickets, create a ticket sale record
+      if (ticketItems.length > 0) {
+        try {
+          const ticketNumber = `TICKET-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+          // Calculate ticket totals
+          const ticketSubtotal =
+            ticketItems.reduce(
+              (sum: number, item: any) => sum + item.lineTotal,
+              0
+            ) / 100;
+          const ticketVAT = 0; // Tickets are typically VAT-exempt
+          const ticketTotal = ticketSubtotal + ticketVAT;
+
+          const ticketSaleData = {
+            ticketNumber,
+            status: 'active',
+            event: null, // Would need to be populated based on ticket data
+            ticketTier: ticketItems[0]?.name || 'General Admission',
+            paymentMethod,
+            paymentStatus: transactionId ? 'paid' : 'pending',
+            transactionId,
+            customerEmail: customerData.email,
+            customerPhone: customerData.phone || '',
+            firstName: customerData.firstName,
+            lastName: customerData.lastName,
+            tickets: ticketItems.map((item: any) => ({
+              cartItemId: item.id,
+              ticketName: item.name,
+              ticketDescription: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice / 100,
+              lineTotal: item.lineTotal / 100,
+              stripePriceId: item.stripePriceId || '',
+            })),
+            ticketTotals: {
+              subtotal: ticketSubtotal,
+              vat: ticketVAT,
+              total: ticketTotal,
+            },
+            // Copy event details if available (would need to be enhanced)
+            eventDate: null,
+            eventLocation: null,
+            eventTitle: ticketItems[0]?.parentItem || null,
+            customerNotes: customerData.customerNotes || '',
+          };
+
+          const ticketSale = await req.payload.create({
+            collection: 'ticket-sales',
+            data: ticketSaleData,
+          });
+
+          ticketSaleRecords.push(ticketSale.id);
+
+          // Send ticket confirmation emails
+          try {
+            // Format ticket items for email
+            const ticketsList = ticketItems
+              .map(
+                (item: any) =>
+                  `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
+              )
+              .join('\n');
+
+            const ticketSummary = `
+Ticket Number: ${ticketNumber}
+Customer: ${customerData.firstName} ${customerData.lastName}
+Email: ${customerData.email}
+Event: ${ticketItems[0]?.parentItem || 'Event TBA'}
+
+Tickets:
+${ticketsList}
+
+Total: €${ticketTotal.toFixed(2)}
+Payment Method: ${paymentMethod}
+Transaction ID: ${transactionId}
+            `;
+
+            // Send ticket confirmation email to customer
+            await req.payload.sendEmail({
+              to: customerData.email,
+              from: `SHUSH <${process.env.SMTP_USER}>`,
+              replyTo: 'SHUSH <hello@shush.dance>',
+              subject: `Ticket Confirmation - ${ticketNumber}`,
+              html: `
+                <h2>Your tickets are confirmed! 🎉</h2>
+                <p>Hi ${customerData.firstName},</p>
+                <p>Thank you for purchasing tickets! Here are your ticket details:</p>
+                <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${ticketSummary}</pre>
+                <p><strong>Important:</strong></p>
+                <ul>
+                  <li>Please bring a valid ID to the event</li>
+                  <li>Save this email as your ticket confirmation</li>
+                  <li>Arrive early to avoid queues</li>
+                </ul>
+                <p>We can't wait to see you there!</p>
+                <p>- SHUSH crew</p>
+              `,
+            });
+
+            // Send notification email to events team
+            await req.payload.sendEmail({
+              to: 'hello@shush.dance',
+              from: `SHUSH <${process.env.SMTP_USER}>`,
+              replyTo: 'SHUSH <hello@shush.dance>',
+              subject: `New Ticket Sale - ${ticketNumber}`,
+              html: `
+                <h2>New Ticket Sale</h2>
+                <p>New tickets have been sold:</p>
+                <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${ticketSummary}</pre>
+                ${customerData.customerNotes ? `<p>Customer Notes: ${customerData.customerNotes}</p>` : ''}
+              `,
+            });
+          } catch (emailError) {
+            console.error('Failed to send ticket emails:', emailError);
+            // Don't fail the ticket creation if emails fail
+          }
+        } catch (ticketSaleError) {
           console.error(
-            `Failed to create sale record for item ${item.name}:`,
-            saleError
+            'Failed to create ticket sale record:',
+            ticketSaleError
           );
-          // Continue with other items even if one fails
+          // Continue with order creation even if ticket sale fails
+        }
+      }
+
+      // Calculate per-item shipping and VAT proportionally for non-ticket items
+      const nonTicketItems = cartItems.filter(
+        (item: any) =>
+          item.type !== 'ticket' &&
+          (!item.metadata || item.metadata.type !== 'ticket')
+      );
+
+      if (nonTicketItems.length > 0) {
+        const totalItemsValue = nonTicketItems.reduce(
+          (sum: number, item: any) => sum + item.lineTotal,
+          0
+        );
+
+        for (const item of nonTicketItems) {
+          try {
+            // Calculate proportional shipping and VAT for this item
+            const itemProportion = item.lineTotal / totalItemsValue;
+            const itemShipping = totals.shipping * itemProportion;
+            const itemVAT = totals.vat * itemProportion;
+
+            const saleData: any = {
+              itemName: item.name,
+              type: item.type === 'release' ? 'record' : 'merch',
+              pointOfSale: paymentMethod === 'stripe' ? 'stripe' : 'paypal',
+              soldAt: new Date().toISOString(),
+              itemPrice: item.unitPrice / 100, // Convert from cents to euros
+              quantity: item.quantity,
+              currency: 'EUR',
+              subTotal: item.lineTotal / 100, // Convert from cents to euros
+              shipping: itemShipping,
+              sellerTax: itemVAT,
+              netAmount: item.lineTotal / 100 + itemShipping + itemVAT,
+              buyerEmail: customerData.email,
+              bandcampTransactionId: transactionId || orderNumber,
+              regionOrState: shippingRegion,
+            };
+
+            // Note: No longer adding cmsItem relationship since we have the item name
+
+            const sale = await req.payload.create({
+              collection: 'sales',
+              data: saleData,
+            });
+
+            saleRecords.push(sale.id);
+          } catch (saleError) {
+            console.error(
+              `Failed to create sale record for item ${item.name}:`,
+              saleError
+            );
+            // Continue with other items even if one fails
+          }
         }
       }
 
@@ -183,6 +343,7 @@ ${customerData.country}
         success: true,
         order: order.id,
         saleRecords: saleRecords,
+        ticketSaleRecords: ticketSaleRecords,
         orderNumber,
       });
     } catch (error: any) {

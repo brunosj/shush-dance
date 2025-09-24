@@ -85,14 +85,23 @@ const CheckoutForm: React.FC<{
     const orderData = {
       orderNumber,
       customerData,
-      cartItems: Object.entries(cartDetails || {}).map(([key, item]) => ({
-        id: key,
-        name: item.name,
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        lineTotal: item.price * item.quantity,
-      })),
+      cartItems: Object.entries(cartDetails || {}).map(([key, item]) => {
+        const productData = item?.product_data as any;
+        const metadata = productData?.metadata || {};
+
+        return {
+          id: key,
+          name: item.name,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          lineTotal: item.price * item.quantity,
+          type: metadata.type || 'merch',
+          metadata: metadata,
+          parentItem: item.parentItem || null, // For tickets, this contains the event title
+          stripePriceId: item.id.includes('price_') ? item.id : null, // Extract Stripe price ID if present
+        };
+      }),
       totals: orderTotals,
       shippingRegion,
       paymentMethod: 'stripe',

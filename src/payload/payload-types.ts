@@ -19,6 +19,7 @@ export interface Config {
     users: User;
     sales: Sale;
     'online-orders': OnlineOrder;
+    'ticket-sales': TicketSale;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
@@ -353,6 +354,46 @@ export interface OnlineOrder {
     vat: number;
     total: number;
   };
+  customerNotes?: string | null;
+  internalNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ticket-sales".
+ */
+export interface TicketSale {
+  id: string;
+  ticketNumber: string;
+  status: 'active' | 'used' | 'cancelled' | 'refunded';
+  event: string | Event;
+  ticketTier: string;
+  paymentMethod: 'stripe' | 'paypal';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  transactionId?: string | null;
+  customerEmail: string;
+  customerPhone?: string | null;
+  firstName: string;
+  lastName: string;
+  tickets: {
+    cartItemId?: string | null;
+    ticketName: string;
+    ticketDescription?: string | null;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+    stripePriceId?: string | null;
+    id?: string | null;
+  }[];
+  ticketTotals: {
+    subtotal: number;
+    vat: number;
+    total: number;
+  };
+  eventDate?: string | null;
+  eventLocation?: string | null;
+  eventTitle?: string | null;
   customerNotes?: string | null;
   internalNotes?: string | null;
   updatedAt: string;

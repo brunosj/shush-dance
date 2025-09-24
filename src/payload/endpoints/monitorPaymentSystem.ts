@@ -464,78 +464,28 @@ const testPaymentIntentEndpoint = async (): Promise<{
   }
 };
 
-// Test order creation with enhanced error handling
-const testOrderCreation = async (
+// Test database connectivity without creating orders
+const testDatabaseConnectivity = async (
   payload: any
-): Promise<{ success: boolean; error?: string; orderNumber?: string }> => {
-  const testId = `monitor-order-${Date.now()}`;
+): Promise<{ success: boolean; error?: string }> => {
+  const testId = `database-${Date.now()}`;
 
   try {
-    console.log(`[${testId}] 🧪 Testing order creation...`);
+    console.log(`[${testId}] 🧪 Testing database connectivity...`);
 
-    const testCustomerData = {
-      email: 'monitor@shush.dance',
-      firstName: 'Monitor',
-      lastName: 'Test',
-      street: 'Test Street 1',
-      city: 'Test City',
-      postalCode: '12345',
-      country: 'Germany',
-    };
-
-    const orderNumber = `MONITOR-TEST-${Date.now()}`;
-
-    console.log(`[${testId}] 🔄 Creating test order: ${orderNumber}`);
-
-    const order = await payload.create({
+    // Simple read-only test - just count existing orders
+    const orderCount = await payload.count({
       collection: 'online-orders',
-      data: {
-        orderNumber,
-        status: 'pending',
-        paymentMethod: 'stripe',
-        paymentStatus: 'paid',
-        transactionId: `MONITOR-TEST-TRANSACTION-${Date.now()}`,
-        customerEmail: testCustomerData.email,
-        customerPhone: '',
-        firstName: testCustomerData.firstName,
-        lastName: testCustomerData.lastName,
-        shippingAddress: {
-          street: testCustomerData.street,
-          city: testCustomerData.city,
-          postalCode: testCustomerData.postalCode,
-          country: testCustomerData.country,
-          shippingRegion: 'eu',
-        },
-        items: [
-          {
-            product: null,
-            quantity: 1,
-            unitPrice: 1.0,
-            lineTotal: 1.0,
-            cartItemId: `test-item-${Date.now()}`,
-            cartItemName: 'Monitor Test Item',
-            cartItemDescription: 'Test item for monitoring',
-          },
-        ],
-        orderTotals: {
-          subtotal: 1.0,
-          shipping: 0.0,
-          vat: 0.0,
-          total: 1.0,
-        },
-        customerNotes: `Automated monitoring test order - ${new Date().toISOString()}`,
-      },
     });
 
     console.log(
-      `[${testId}] ✅ Order creation test successful (Order: ${orderNumber})`
+      `[${testId}] ✅ Database connectivity test successful (${orderCount.totalDocs} orders in system)`
     );
     return {
       success: true,
-      orderNumber,
     };
   } catch (error: any) {
-    console.error(`[${testId}] ❌ Order creation test failed:`, {
+    console.error(`[${testId}] ❌ Database connectivity test failed:`, {
       message: error.message,
       stack: error.stack,
     });
@@ -696,31 +646,12 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
         }
       }
 
-      // Test 3: Order creation (only if payment system is working and not skipping)
-      if (
-        (results.stripe.success || results.endpoint.success) &&
-        !skipPaymentIntents
-      ) {
-        console.log(`[${monitorId}] 🧪 Running order creation test...`);
-        results.order = await testOrderCreation(req.payload);
-        if (!results.order.success) {
-          results.overall = false;
-        }
-      } else {
-        console.log(`[${monitorId}] ⏭️ Skipping order creation test`);
-        results.order = {
-          success: true,
-          error: skipPaymentIntents
-            ? 'Skipped (no transactions mode)'
-            : 'No payment system working',
-        };
-        if (
-          !skipPaymentIntents &&
-          !results.stripe.success &&
-          !results.endpoint.success
-        ) {
-          results.overall = false;
-        }
+      // Test 3: Database connectivity (read-only test)
+      console.log(`[${monitorId}] 🧪 Running database connectivity test...`);
+      results.order = await testDatabaseConnectivity(req.payload);
+      if (!results.order.success) {
+        results.overall = false;
+        console.log(`[${monitorId}] ❌ Database connectivity test failed`);
       }
 
       // Handle results
@@ -735,11 +666,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           endpointTime: results.endpoint.responseTime
             ? `${results.endpoint.responseTime}ms`
             : 'N/A',
-          order: results.order.success
-            ? '✅'
-            : skipPaymentIntents
-              ? '⏭️ SKIPPED'
-              : '❌',
+          database: results.order.success ? '✅' : '❌',
           mode: skipPaymentIntents ? 'NO-TRANSACTIONS' : 'FULL-TEST',
         });
 
@@ -755,11 +682,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
             : skipPaymentIntents
               ? 'skipped'
               : 'fail',
-          order: results.order.success
-            ? 'ok'
-            : skipPaymentIntents
-              ? 'skipped'
-              : 'fail',
+          database: results.order.success ? 'ok' : 'fail',
           health: results.health,
           responseTime: results.endpoint.responseTime,
           attempts: results.endpoint.attempts,
@@ -778,11 +701,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           endpointTime: results.endpoint.responseTime
             ? `${results.endpoint.responseTime}ms`
             : 'N/A',
-          order: results.order.success
-            ? '✅'
-            : skipPaymentIntents
-              ? '⏭️ SKIPPED'
-              : '❌',
+          database: results.order.success ? '✅' : '❌',
         });
 
         // Compile error details
@@ -791,8 +710,8 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           errors.push(`Stripe API: ${results.stripe.error}`);
         if (!results.endpoint.success && !skipPaymentIntents)
           errors.push(`Endpoint: ${results.endpoint.error}`);
-        if (!results.order.success && !skipPaymentIntents)
-          errors.push(`Order Creation: ${results.order.error}`);
+        if (!results.order.success)
+          errors.push(`Database Connectivity: ${results.order.error}`);
 
         const errorMessage = errors.join('\n');
         const errorPattern = results.endpoint.errorPattern;
@@ -802,7 +721,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
 Monitor Results (${skipPaymentIntents ? 'NO-TRANSACTIONS MODE' : 'FULL-TEST MODE'}):
 - Stripe API: ${results.stripe.success ? '✅ OK' : '❌ FAILED'}
 - Production Endpoint: ${results.endpoint.success ? '✅ OK' : skipPaymentIntents ? '⏭️ SKIPPED' : '❌ FAILED'}
-- Database/Orders: ${results.order.success ? '✅ OK' : skipPaymentIntents ? '⏭️ SKIPPED' : '❌ FAILED'}
+- Database Connectivity: ${results.order.success ? '✅ OK' : '❌ FAILED'}
 
 ${
   results.endpoint.attempts && !skipPaymentIntents
@@ -850,11 +769,7 @@ Recommended Actions:
             : skipPaymentIntents
               ? 'skipped'
               : 'fail',
-          order: results.order.success
-            ? 'ok'
-            : skipPaymentIntents
-              ? 'skipped'
-              : 'fail',
+          database: results.order.success ? 'ok' : 'fail',
           health: results.health,
           responseTime: results.endpoint.responseTime,
           attempts: results.endpoint.attempts,

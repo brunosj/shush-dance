@@ -16,6 +16,7 @@ import { Artists } from './collections/Artists';
 import { Releases } from './collections/Releases';
 import { Merch } from './collections/Merch';
 import { OnlineOrders } from './collections/OnlineOrders';
+import { TicketSales } from './collections/TicketSales';
 import Users from './collections/Users';
 import { Socials } from './globals/Socials';
 import { Sales } from './collections/Sales';
@@ -60,6 +61,7 @@ export default buildConfig({
     Users,
     Sales,
     OnlineOrders,
+    TicketSales,
   ],
   globals: [Socials, Settings],
   typescript: {
