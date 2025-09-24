@@ -23,52 +23,64 @@ export const createOrderEndpoint: Endpoint = {
         });
       }
 
-      // Create the online order
-      const order = await req.payload.create({
-        collection: 'online-orders',
-        data: {
-          orderNumber,
-          status: 'pending',
-          paymentMethod,
-          paymentStatus: transactionId ? 'paid' : 'pending',
-          transactionId,
-          customerEmail: customerData.email,
-          customerPhone: customerData.phone || '',
-          firstName: customerData.firstName,
-          lastName: customerData.lastName,
-          shippingAddress: {
-            street: customerData.street,
-            city: customerData.city,
-            postalCode: customerData.postalCode,
-            country: customerData.country,
-            shippingRegion,
-          },
-          items: cartItems.map((item: any) => ({
-            product: null, // Optional: would map to actual CMS product in real scenario
-            quantity: item.quantity,
-            unitPrice: item.unitPrice / 100, // Convert from cents to euros
-            lineTotal: item.lineTotal / 100,
-            cartItemId: item.id,
-            cartItemName: item.name,
-            cartItemDescription: item.description,
-          })),
-          orderTotals: {
-            subtotal: totals.subtotal,
-            shipping: totals.shipping,
-            vat: totals.vat,
-            total: totals.total,
-          },
-          customerNotes: customerData.customerNotes || '',
-        },
+      // Separate ticket items from physical items
+      const ticketItems = cartItems.filter((item: any) => {
+        return (
+          item.type === 'ticket' ||
+          (item.metadata && item.metadata.type === 'ticket')
+        );
       });
 
-      // Send confirmation emails for physical items (excluding tickets which get separate emails)
       const physicalItems = cartItems.filter(
         (item: any) =>
           item.type !== 'ticket' &&
           (!item.metadata || item.metadata.type !== 'ticket')
       );
 
+      let order = null;
+
+      // Only create an online order if there are physical items that need shipping
+      if (physicalItems.length > 0) {
+        order = await req.payload.create({
+          collection: 'online-orders',
+          data: {
+            orderNumber,
+            status: 'pending',
+            paymentMethod,
+            paymentStatus: transactionId ? 'paid' : 'pending',
+            transactionId,
+            customerEmail: customerData.email,
+            customerPhone: customerData.phone || '',
+            firstName: customerData.firstName,
+            lastName: customerData.lastName,
+            shippingAddress: {
+              street: customerData.street || '',
+              city: customerData.city || '',
+              postalCode: customerData.postalCode || '',
+              country: customerData.country || '',
+              shippingRegion,
+            },
+            items: physicalItems.map((item: any) => ({
+              product: null, // Optional: would map to actual CMS product in real scenario
+              quantity: item.quantity,
+              unitPrice: item.unitPrice / 100, // Convert from cents to euros
+              lineTotal: item.lineTotal / 100,
+              cartItemId: item.id,
+              cartItemName: item.name,
+              cartItemDescription: item.description,
+            })),
+            orderTotals: {
+              subtotal: totals.subtotal,
+              shipping: totals.shipping,
+              vat: totals.vat,
+              total: totals.total,
+            },
+            customerNotes: customerData.customerNotes || '',
+          },
+        });
+      }
+
+      // Send confirmation emails for physical items (excluding tickets which get separate emails)
       if (physicalItems.length > 0) {
         try {
           // Format order items for email (excluding tickets)
@@ -126,7 +138,7 @@ ${customerData.country}
 
           // Send notification email to merch team
           await req.payload.sendEmail({
-            to: 'merch@shush.dance',
+            to: 'hello@shush.dance',
             from: `SHUSH <${process.env.SMTP_USER}>`,
             replyTo: 'SHUSH <hello@shush.dance>',
             subject: `New Order - ${orderNumber}`,
@@ -149,15 +161,6 @@ ${customerData.country}
       const saleRecords = [];
       const ticketSaleRecords = [];
 
-      // Check if there are any tickets in the cart
-      const ticketItems = cartItems.filter((item: any) => {
-        // Check if this is a ticket item based on metadata or type
-        return (
-          item.type === 'ticket' ||
-          (item.metadata && item.metadata.type === 'ticket')
-        );
-      });
-
       // If there are tickets, create a ticket sale record
       if (ticketItems.length > 0) {
         try {
@@ -172,11 +175,15 @@ ${customerData.country}
           const ticketVAT = 0; // Tickets are typically VAT-exempt
           const ticketTotal = ticketSubtotal + ticketVAT;
 
+          // Extract event information from the first ticket item
+          const firstTicket = ticketItems[0];
+          const eventMetadata = firstTicket?.metadata || {};
+
           const ticketSaleData = {
             ticketNumber,
             status: 'active',
-            event: null, // Would need to be populated based on ticket data
-            ticketTier: ticketItems[0]?.name || 'General Admission',
+            event: eventMetadata.eventId || null, // Use event ID from metadata if available
+            ticketTier: firstTicket?.name || 'General Admission',
             paymentMethod,
             paymentStatus: transactionId ? 'paid' : 'pending',
             transactionId,
@@ -198,10 +205,11 @@ ${customerData.country}
               vat: ticketVAT,
               total: ticketTotal,
             },
-            // Copy event details if available (would need to be enhanced)
-            eventDate: null,
-            eventLocation: null,
-            eventTitle: ticketItems[0]?.parentItem || null,
+            // Copy event details from metadata if available
+            eventDate: eventMetadata.eventDate || null,
+            eventLocation: eventMetadata.eventLocation || null,
+            eventTitle:
+              eventMetadata.eventTitle || firstTicket?.parentItem || null,
             customerNotes: customerData.customerNotes || '',
           };
 
@@ -243,24 +251,24 @@ Transaction ID: ${transactionId}
               replyTo: 'SHUSH <hello@shush.dance>',
               subject: `Ticket Confirmation - ${ticketNumber}`,
               html: `
-                <h2>Your tickets are confirmed! 🎉</h2>
+                <h2>SHUSH - Ticket Purchase Confirmation</h2>
                 <p>Hi ${customerData.firstName},</p>
                 <p>Thank you for purchasing tickets! Here are your ticket details:</p>
                 <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${ticketSummary}</pre>
                 <p><strong>Important:</strong></p>
                 <ul>
-                  <li>Please bring a valid ID to the event</li>
                   <li>Save this email as your ticket confirmation</li>
-                  <li>Arrive early to avoid queues</li>
+                  <li>Your name will be added to a list at the door</li>
+                  <li>Be mindful and respectful of the venue and other attendees</li>
                 </ul>
-                <p>We can't wait to see you there!</p>
+                <p>Thanks for supporting us and what we do. See you on the dance!</p>
                 <p>- SHUSH crew</p>
               `,
             });
 
             // Send notification email to events team
             await req.payload.sendEmail({
-              to: 'hello@shush.dance',
+              to: 'events@shush.dance',
               from: `SHUSH <${process.env.SMTP_USER}>`,
               replyTo: 'SHUSH <hello@shush.dance>',
               subject: `New Ticket Sale - ${ticketNumber}`,
@@ -285,19 +293,13 @@ Transaction ID: ${transactionId}
       }
 
       // Calculate per-item shipping and VAT proportionally for non-ticket items
-      const nonTicketItems = cartItems.filter(
-        (item: any) =>
-          item.type !== 'ticket' &&
-          (!item.metadata || item.metadata.type !== 'ticket')
-      );
-
-      if (nonTicketItems.length > 0) {
-        const totalItemsValue = nonTicketItems.reduce(
+      if (physicalItems.length > 0) {
+        const totalItemsValue = physicalItems.reduce(
           (sum: number, item: any) => sum + item.lineTotal,
           0
         );
 
-        for (const item of nonTicketItems) {
+        for (const item of physicalItems) {
           try {
             // Calculate proportional shipping and VAT for this item
             const itemProportion = item.lineTotal / totalItemsValue;
@@ -341,10 +343,12 @@ Transaction ID: ${transactionId}
 
       return res.status(200).json({
         success: true,
-        order: order.id,
+        order: order?.id || null,
         saleRecords: saleRecords,
         ticketSaleRecords: ticketSaleRecords,
         orderNumber,
+        hasPhysicalItems: physicalItems.length > 0,
+        hasTickets: ticketItems.length > 0,
       });
     } catch (error: any) {
       console.error('Create order error:', error);

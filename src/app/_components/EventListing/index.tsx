@@ -46,6 +46,10 @@ const EventListing: React.FC<EventListingProps> = ({
           isDigital: 'true',
           type: 'ticket',
           itemType: 'ticket',
+          eventId: event.id, // Add event ID for proper linking
+          eventTitle: event.title,
+          eventDate: event.date,
+          eventLocation: event.location,
         },
       },
     };

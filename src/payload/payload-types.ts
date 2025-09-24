@@ -323,12 +323,12 @@ export interface OnlineOrder {
   customerPhone?: string | null;
   firstName: string;
   lastName: string;
-  shippingAddress: {
-    street: string;
-    city: string;
-    postalCode: string;
-    country: string;
-    shippingRegion: 'germany' | 'eu' | 'restOfWorld';
+  shippingAddress?: {
+    street?: string | null;
+    city?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+    shippingRegion?: ('germany' | 'eu' | 'restOfWorld') | null;
   };
   items: {
     product?:
@@ -367,7 +367,7 @@ export interface TicketSale {
   id: string;
   ticketNumber: string;
   status: 'active' | 'used' | 'cancelled' | 'refunded';
-  event: string | Event;
+  event?: (string | null) | Event;
   ticketTier: string;
   paymentMethod: 'stripe' | 'paypal';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';

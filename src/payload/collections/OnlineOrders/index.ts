@@ -155,7 +155,7 @@ export const OnlineOrders: CollectionConfig = {
                   name: 'street',
                   type: 'text',
                   label: 'Street Address',
-                  required: true,
+                  required: false, // Made optional since tickets don't need shipping
                 },
                 {
                   type: 'row',
@@ -164,7 +164,7 @@ export const OnlineOrders: CollectionConfig = {
                       name: 'city',
                       type: 'text',
                       label: 'City',
-                      required: true,
+                      required: false, // Made optional since tickets don't need shipping
                       admin: {
                         width: '50%',
                       },
@@ -173,7 +173,7 @@ export const OnlineOrders: CollectionConfig = {
                       name: 'postalCode',
                       type: 'text',
                       label: 'Postal Code',
-                      required: true,
+                      required: false, // Made optional since tickets don't need shipping
                       admin: {
                         width: '50%',
                       },
@@ -187,7 +187,7 @@ export const OnlineOrders: CollectionConfig = {
                       name: 'country',
                       type: 'text',
                       label: 'Country',
-                      required: true,
+                      required: false, // Made optional since tickets don't need shipping
                       admin: {
                         width: '50%',
                       },
@@ -196,7 +196,7 @@ export const OnlineOrders: CollectionConfig = {
                       name: 'shippingRegion',
                       type: 'select',
                       label: 'Shipping Region',
-                      required: true,
+                      required: false, // Made optional since tickets don't need shipping
                       options: [
                         { label: 'Germany', value: 'germany' },
                         { label: 'European Union', value: 'eu' },

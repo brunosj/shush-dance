@@ -60,9 +60,10 @@ export const TicketSales: CollectionConfig = {
               type: 'relationship',
               relationTo: 'events',
               label: 'Event',
-              required: true,
+              required: false, // Made optional since we might not have event ID during checkout
               admin: {
-                description: 'The event this ticket is for',
+                description:
+                  'The event this ticket is for (can be set manually later)',
               },
             },
             {
