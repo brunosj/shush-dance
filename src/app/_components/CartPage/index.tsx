@@ -38,6 +38,7 @@ const CartPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [paymentRefreshKey, setPaymentRefreshKey] = useState(0);
 
   const router = useRouter();
 
@@ -72,6 +73,10 @@ const CartPage = () => {
       completedSteps.includes(targetStep) ||
       targetStep === checkoutStep
     ) {
+      // Force refresh payment when navigating back to payment step
+      if (targetStep === 'payment' && targetStep !== checkoutStep) {
+        setPaymentRefreshKey((prev) => prev + 1);
+      }
       setCheckoutStep(targetStep);
     }
   };
@@ -163,6 +168,8 @@ const CartPage = () => {
 
   const handleCustomerDataSubmit = (data: CustomerData) => {
     setCustomerData(data);
+    // Force refresh payment when proceeding to payment step
+    setPaymentRefreshKey((prev) => prev + 1);
     setCheckoutStep('payment');
   };
 
@@ -217,6 +224,7 @@ const CartPage = () => {
         selectedRegion={selectedRegion}
         shippingRegion={selectedRegion}
         isTicketOnlyCart={isTicketOnlyCart()}
+        paymentRefreshKey={paymentRefreshKey}
       />
     );
   }

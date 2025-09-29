@@ -24,6 +24,7 @@ interface PaymentStepProps {
   selectedRegion: string;
   shippingRegion: ShippingRegion;
   isTicketOnlyCart?: boolean;
+  paymentRefreshKey?: number;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({
@@ -40,6 +41,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   selectedRegion,
   shippingRegion,
   isTicketOnlyCart = false,
+  paymentRefreshKey = 0,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -83,6 +85,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
       {/* Second Row - Payment */}
       <PaymentErrorBoundary onRetry={() => window.location.reload()}>
         <PaymentSection
+          key={paymentRefreshKey}
           customerData={customerData}
           orderTotals={{
             subtotal: subtotalExclVAT / 100,
