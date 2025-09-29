@@ -1,10 +1,10 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useShoppingCart } from 'use-shopping-cart';
 import Button from '../../_components/Button';
 
-const SuccessPage: React.FC = () => {
+const SuccessPageContent: React.FC = () => {
   const searchParams = useSearchParams();
   const { clearCart } = useShoppingCart();
   const [showProcessing, setShowProcessing] = useState(true);
@@ -129,5 +129,23 @@ const SuccessPage: React.FC = () => {
     </article>
   );
 };
+
+const SuccessPage: React.FC = () => {
+  return (
+    <Suspense
+      fallback={
+        <article className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
+          <h1 className='font-bold text-xl'>Loading...</h1>
+        </article>
+      }
+    >
+      <SuccessPageContent />
+    </Suspense>
+  );
+};
+
+// Force dynamic rendering to avoid SSG prerender issues with useSearchParams
+export const dynamic = 'force-dynamic';
 
 export default SuccessPage;
