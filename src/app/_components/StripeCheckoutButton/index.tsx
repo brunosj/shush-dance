@@ -133,7 +133,11 @@ const CheckoutForm: React.FC<{
 
   return (
     <form onSubmit={handleSubmit} className='space-y-6'>
-      <PaymentElement />
+      <PaymentElement
+        options={{
+          paymentMethodOrder: ['card', 'paypal'],
+        }}
+      />
       <button
         disabled={isLoading || !stripe || !elements}
         className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors'
