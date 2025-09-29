@@ -175,6 +175,17 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   // Create a fresh Stripe instance whenever the component mounts or key data changes
   useEffect(() => {
     console.log('🔄 Creating fresh Stripe promise instance...');
+
+    // Cancel any existing request first
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     const freshStripePromise = createStripePromise();
     setStripePromise(freshStripePromise);
 
@@ -229,19 +240,31 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
     const createPaymentIntent = async (retryCount = 0) => {
       const maxRetries = 3;
       const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff
+      let timeoutId: NodeJS.Timeout | null = null;
 
       // Cancel any existing request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
 
+      // Add a small delay to ensure previous request is properly cancelled
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       // Create new abort controller for this request
       abortControllerRef.current = new AbortController();
 
       try {
         console.log(
-          `StripeCheckoutButton: Creating payment intent (attempt ${retryCount + 1}/${maxRetries + 1})`,
-          { paymentKey, retryCount }
+          `[${paymentKey}] Creating payment intent (attempt ${retryCount + 1}/${maxRetries + 1})`,
+          {
+            paymentKey,
+            retryCount,
+            browser: navigator.userAgent,
+            amount: orderTotals.total,
+            customerEmail: customerData?.email
+              ? '***@' + customerData.email.split('@')[1]
+              : 'missing',
+          }
         );
 
         // Prepare order data for webhook processing
@@ -270,12 +293,20 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           shippingRegion,
         };
 
+        // Add timeout to the fetch request
+        const controller = abortControllerRef.current;
+        timeoutId = setTimeout(() => {
+          controller?.abort();
+        }, 15000); // 15 second timeout
+
         const response = await fetch('/api/create-payment-intent', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             Pragma: 'no-cache',
+            'X-Request-ID': paymentKey, // Add request ID for debugging
+            'Idempotency-Key': `${paymentKey}-${retryCount}`, // Stripe idempotency key for safe retries
           },
           body: JSON.stringify({
             amount: orderTotals.total,
@@ -287,8 +318,12 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             paymentKey,
             retryAttempt: retryCount,
           }),
-          signal: abortControllerRef.current.signal,
+          signal: controller?.signal,
         });
+
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -298,15 +333,17 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             errorText
           );
 
-          // Retry on 502, 503, 504 errors (server errors)
-          if (
-            (response.status === 502 ||
-              response.status === 503 ||
-              response.status === 504) &&
-            retryCount < maxRetries
-          ) {
+          // Retry on server errors (502, 503, 504) and 429 (rate limit) as per Stripe docs
+          const shouldRetry =
+            (response.status === 502 || // Bad Gateway
+              response.status === 503 || // Service Unavailable
+              response.status === 504 || // Gateway Timeout
+              response.status === 429) && // Too Many Requests
+            retryCount < maxRetries;
+
+          if (shouldRetry) {
             console.log(
-              `Retrying payment intent creation in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`
+              `[${paymentKey}] Retrying payment intent creation due to ${response.status} error in ${retryDelay}ms (attempt ${retryCount + 2}/${maxRetries + 1})`
             );
             timeoutRef.current = setTimeout(
               () => createPaymentIntent(retryCount + 1),
@@ -331,21 +368,40 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           setError('No client secret received');
         }
       } catch (err: any) {
-        // Don't show errors if the request was aborted (component unmounted)
-        if (err.name === 'AbortError') {
-          console.log('StripeCheckoutButton: Payment intent request aborted');
+        // Clear timeout if it exists
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+
+        // Don't show errors if the request was aborted (component unmounted or cancelled)
+        if (
+          err.name === 'AbortError' ||
+          err.message?.includes('aborted') ||
+          err.message?.includes('cancelled')
+        ) {
+          console.log(
+            'StripeCheckoutButton: Payment intent request aborted/cancelled'
+          );
           return;
         }
 
         console.error('Payment intent creation failed:', err);
 
-        // Retry on network errors
-        if (
-          retryCount < maxRetries &&
-          (err.name === 'TypeError' || err.message.includes('fetch'))
-        ) {
+        // Retry on network errors and connection issues (common causes of 502 errors)
+        const isNetworkError =
+          err.name === 'TypeError' ||
+          err.message.includes('fetch') ||
+          err.message.includes('network') ||
+          err.message.includes('timeout') ||
+          err.message.includes('connection') ||
+          err.code === 'ECONNRESET' ||
+          err.code === 'ECONNREFUSED' ||
+          err.code === 'ETIMEDOUT';
+
+        if (retryCount < maxRetries && isNetworkError) {
           console.log(
-            `Retrying payment intent creation in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`
+            `[${paymentKey}] Retrying payment intent creation due to network error in ${retryDelay}ms (attempt ${retryCount + 2}/${maxRetries + 1})`,
+            { errorName: err.name, errorMessage: err.message }
           );
           timeoutRef.current = setTimeout(
             () => createPaymentIntent(retryCount + 1),
@@ -361,8 +417,8 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
       }
     };
 
-    // Add a small delay to ensure component is fully mounted and data is stable
-    timeoutRef.current = setTimeout(() => createPaymentIntent(), 100);
+    // Add a delay to ensure component is fully mounted and data is stable
+    timeoutRef.current = setTimeout(() => createPaymentIntent(), 250);
 
     // Cleanup function to cancel requests when component unmounts or dependencies change
     return () => {
