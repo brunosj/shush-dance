@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { useField } from 'payload/components/forms';
 import { Label } from 'payload/components/forms';

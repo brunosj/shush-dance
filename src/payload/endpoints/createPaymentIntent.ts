@@ -200,15 +200,17 @@ export const createPaymentIntentEndpoint: Endpoint = {
         });
       }
 
-      const { amount, currency = 'eur', customerData } = req.body;
+      const { amount, currency = 'eur', customerData, orderData } = req.body;
 
       console.log(`[${requestId}] 📋 Request payload:`, {
         amount,
         currency,
         hasCustomerData: !!customerData,
+        hasOrderData: !!orderData,
         customerEmail: customerData?.email
           ? '***@' + customerData.email.split('@')[1]
           : 'missing',
+        itemCount: orderData?.cartItems?.length || 0,
       });
 
       // Validate required fields
@@ -243,6 +245,50 @@ export const createPaymentIntentEndpoint: Endpoint = {
         `[${requestId}] 💳 Creating payment intent for €${amount} (${amountInCents} cents) - ${isTestMode ? 'TEST' : 'LIVE'} mode`
       );
 
+      // Prepare metadata with order data split into chunks (500 char limit per key)
+      const metadata: Record<string, string> = {
+        customerEmail: customerData.email,
+        customerName:
+          `${customerData.firstName || ''} ${customerData.lastName || ''}`.trim(),
+        testMode: isTestMode.toString(),
+        requestId,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Split order data into chunks if it exists
+      if (orderData) {
+        const orderDataString = JSON.stringify(orderData);
+        const chunkSize = 450; // Leave some buffer under 500 char limit
+
+        console.log(
+          `[${requestId}] 📦 Order data length: ${orderDataString.length} characters`
+        );
+
+        if (orderDataString.length <= chunkSize) {
+          metadata.orderData = orderDataString;
+          console.log(
+            `[${requestId}] ✅ Order data stored in single metadata key`
+          );
+        } else {
+          // Split into multiple chunks
+          const chunks = [];
+          for (let i = 0; i < orderDataString.length; i += chunkSize) {
+            chunks.push(orderDataString.substring(i, i + chunkSize));
+          }
+
+          // Store chunks in separate metadata keys
+          chunks.forEach((chunk, index) => {
+            metadata[`orderData_${index}`] = chunk;
+          });
+          metadata.orderDataChunks = chunks.length.toString();
+
+          console.log(
+            `[${requestId}] 📦 Order data split into ${chunks.length} chunks:`,
+            chunks.map((chunk, i) => `chunk_${i}: ${chunk.length} chars`)
+          );
+        }
+      }
+
       // Create payment intent data
       const paymentIntentData: Stripe.PaymentIntentCreateParams = {
         amount: amountInCents,
@@ -250,14 +296,7 @@ export const createPaymentIntentEndpoint: Endpoint = {
         automatic_payment_methods: {
           enabled: true,
         },
-        metadata: {
-          customerEmail: customerData.email,
-          customerName:
-            `${customerData.firstName || ''} ${customerData.lastName || ''}`.trim(),
-          testMode: isTestMode.toString(),
-          requestId,
-          timestamp: new Date().toISOString(),
-        },
+        metadata,
       };
 
       console.log(`[${requestId}] 🔄 Attempting to create payment intent...`);

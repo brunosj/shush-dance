@@ -54,7 +54,7 @@ const CheckoutForm: React.FC<{
         return;
       }
 
-      const { error } = await stripe.confirmPayment({
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/success`,
@@ -64,59 +64,69 @@ const CheckoutForm: React.FC<{
 
       if (error) {
         onError(error.message || 'Payment failed');
-      } else {
-        // Payment succeeded - create order and sales records
-        await createOrderAndSalesRecords();
-        await clearCart();
-        onSuccess();
+      } else if (paymentIntent) {
+        console.log('✅ Payment succeeded:', {
+          id: paymentIntent.id,
+          status: paymentIntent.status,
+          payment_method: paymentIntent.payment_method,
+        });
+
+        // Payment succeeded - webhook will handle order creation
+        console.log(
+          '🎉 Payment completed, webhook will process order creation'
+        );
+
+        // Prepare order data for potential fallback use
+        const orderNumber = `SHUSH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const orderData = {
+          orderNumber,
+          customerData,
+          cartItems: Object.entries(cartDetails || {}).map(([key, item]) => {
+            const productData = item?.product_data as any;
+            const metadata = productData?.metadata || {};
+
+            return {
+              id: key,
+              name: item.name,
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.price,
+              lineTotal: item.price * item.quantity,
+              type: metadata.type || 'merch',
+              metadata: metadata,
+              parentItem: item.parentItem || null, // For tickets, this contains the event title
+              stripePriceId: item.id.includes('price_') ? item.id : null, // Extract Stripe price ID if present
+            };
+          }),
+          totals: orderTotals,
+          shippingRegion,
+          paymentMethod: 'stripe',
+        };
+
+        // Store order data and payment intent for potential fallback
+        const fallbackData = {
+          paymentIntentId: paymentIntent.id,
+          orderData: orderData,
+        };
+
+        // Store in sessionStorage for fallback use
+        sessionStorage.setItem(
+          'fallbackOrderData',
+          JSON.stringify(fallbackData)
+        );
+
+        // Don't clear cart here - let success page handle it after processing timeout
+        // Add a brief delay to allow webhook processing and improve UX
+        setTimeout(() => {
+          console.log('✅ Redirecting to success page...');
+          // Redirect with payment intent ID for fallback mechanism
+          window.location.href = `/success?payment_intent=${paymentIntent.id}`;
+        }, 1000); // 1 second delay
       }
     } catch (err: any) {
       onError(err.message || 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const createOrderAndSalesRecords = async () => {
-    // Create order record
-    const orderNumber = `SHUSH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const transactionId = `SHUSH-stripe-${orderNumber}`;
-
-    const orderData = {
-      orderNumber,
-      customerData,
-      cartItems: Object.entries(cartDetails || {}).map(([key, item]) => {
-        const productData = item?.product_data as any;
-        const metadata = productData?.metadata || {};
-
-        return {
-          id: key,
-          name: item.name,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          lineTotal: item.price * item.quantity,
-          type: metadata.type || 'merch',
-          metadata: metadata,
-          parentItem: item.parentItem || null, // For tickets, this contains the event title
-          stripePriceId: item.id.includes('price_') ? item.id : null, // Extract Stripe price ID if present
-        };
-      }),
-      totals: orderTotals,
-      shippingRegion,
-      paymentMethod: 'stripe',
-      transactionId,
-    };
-
-    try {
-      await fetch('/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
-      });
-      // Note: Sales records are now created automatically by the create-order endpoint
-    } catch (error) {
-      console.error('Error creating order/sales records:', error);
     }
   };
 
@@ -127,7 +137,14 @@ const CheckoutForm: React.FC<{
         disabled={isLoading || !stripe || !elements}
         className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors'
       >
-        {isLoading ? 'Processing...' : `Pay €${orderTotals.total.toFixed(2)}`}
+        {isLoading ? (
+          <div className='flex items-center justify-center'>
+            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+            Processing Payment...
+          </div>
+        ) : (
+          `Pay €${orderTotals.total.toFixed(2)}`
+        )}
       </button>
     </form>
   );
@@ -144,6 +161,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   const router = useRouter();
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const { cartDetails } = useShoppingCart(); // Add cartDetails here
 
   useEffect(() => {
     // Validate all required data is present
@@ -191,6 +209,32 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           `StripeCheckoutButton: Creating payment intent (attempt ${retryCount + 1}/${maxRetries + 1})`
         );
 
+        // Prepare order data for webhook processing
+        const orderDataForWebhook = {
+          customerData,
+          cartItems: Object.entries(cartDetails || {}).map(([key, item]) => {
+            const productData = (item as any)?.product_data as any;
+            const metadata = productData?.metadata || {};
+
+            return {
+              id: key,
+              name: (item as any).name,
+              description: (item as any).description,
+              quantity: (item as any).quantity,
+              unitPrice: (item as any).price,
+              lineTotal: (item as any).price * (item as any).quantity,
+              type: metadata.type || 'merch',
+              metadata: metadata,
+              parentItem: (item as any).parentItem || null,
+              stripePriceId: (item as any).id?.includes('price_')
+                ? (item as any).id
+                : null,
+            };
+          }),
+          totals: orderTotals,
+          shippingRegion,
+        };
+
         const response = await fetch('/api/create-payment-intent', {
           method: 'POST',
           headers: {
@@ -200,6 +244,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             amount: orderTotals.total,
             currency: 'eur',
             customerData,
+            orderData: orderDataForWebhook, // Add order data for webhook
           }),
           signal: abortControllerRef.current.signal,
         });

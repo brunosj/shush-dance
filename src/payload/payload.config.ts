@@ -27,6 +27,8 @@ import { createPaymentIntentEndpoint } from './endpoints/createPaymentIntent';
 import { createSaleEndpoint } from './endpoints/createSale';
 import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
 import { clientErrorReportEndpoint } from './endpoints/clientErrorReport';
+import { stripeWebhookEndpoint } from './endpoints/stripeWebhook';
+import { ensureOrderCreatedEndpoint } from './endpoints/ensureOrderCreated';
 import { Settings } from './globals/settings';
 
 dotenv.config({
@@ -78,6 +80,8 @@ export default buildConfig({
     createSaleEndpoint,
     monitorPaymentSystemEndpoint,
     clientErrorReportEndpoint,
+    stripeWebhookEndpoint,
+    ensureOrderCreatedEndpoint,
   ],
   email: {
     fromName: 'SHUSH',
