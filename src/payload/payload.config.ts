@@ -51,6 +51,12 @@ export default buildConfig({
     url: process.env.DATABASE_URI,
   }),
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
+  routes: {
+    api: '/api',
+    admin: '/admin',
+    graphQL: '/api/graphql',
+    graphQLPlayground: '/api/graphql-playground',
+  },
   collections: [
     Events,
     Releases,

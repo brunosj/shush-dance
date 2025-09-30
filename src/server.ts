@@ -55,8 +55,14 @@ const start = async (): Promise<void> => {
     next();
   });
 
-  // Let Next.js handle ALL routes, including API routes
-  app.use((req, res) => nextHandler(req, res));
+  // Let Next.js handle all other routes (non-API routes)
+  app.use((req, res) => {
+    // Skip API routes - let Payload handle them
+    if (req.url.startsWith('/api/')) {
+      return; // Don't handle API routes with Next.js
+    }
+    return nextHandler(req, res);
+  });
 
   nextApp.prepare().then(() => {
     payload.logger.info('Next.js started');
