@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Event } from '../../../payload/payload-types';
+import type { Event } from '../../../payload-types';
 import EventListing from '../EventListing';
 
 interface EventListProps {

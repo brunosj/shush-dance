@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Page, Release } from '../../../payload/payload-types';
+import { Page, Release } from '../../../payload-types';
 import ProductListing from '../ProductListing';
 import type { ExtendedRelease } from '../../_types/extended-payload-types';
 

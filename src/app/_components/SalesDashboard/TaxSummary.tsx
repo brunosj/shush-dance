@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { formatCurrency, formatNumber } from '../../_utilities/formatters';
-import type { Sale } from '../../../payload/payload-types';
+import type { Sale } from '../../../payload-types';
 
 interface TaxSummaryProps {
   sales: Sale[];

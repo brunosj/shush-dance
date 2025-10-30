@@ -1,6 +1,6 @@
 // Keep these in sync with the CSS variables in the `_css` directory
 
-module.exports = {
+export default {
   breakpoints: {
     s: 768,
     m: 1024,
@@ -14,4 +14,4 @@ module.exports = {
     base1000: 'rgb(0, 0, 0)',
     error500: 'rgb(255, 111, 118)',
   },
-}
+};

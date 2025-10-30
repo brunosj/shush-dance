@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss' layer(base);
+
+@import 'tailwindcss';
 
 /* * {
   outline: gray solid 1px;
@@ -8,7 +8,7 @@
 
 @layer base {
   body {
-    @apply bg-pri text-black;
+    @apply text-black;
   }
 
   h1 {
@@ -60,15 +60,19 @@
 }
 
 .container {
-  @apply max-w-screen-lg mx-auto;
+  @apply max-w-(--breakpoint-lg) mx-auto;
 }
 
 .layout {
   @apply px-2 lg:px-24 py-12 lg:py-32;
 }
 
-.textHover {
+/* .textHover {
   @apply hover:text-gray duration-300;
+} */
+
+.textHover {
+  @apply duration-300;
 }
 
 .filter-bottom {

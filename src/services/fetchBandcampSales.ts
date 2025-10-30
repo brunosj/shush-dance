@@ -1,5 +1,5 @@
 import payload from 'payload';
-import { fetchBands, fetchSalesForBand } from '../services/bandcamp';
+import { fetchBands, fetchSalesForBand } from './bandcamp';
 
 interface BandcampSaleItem {
   bandcamp_transaction_id: number;

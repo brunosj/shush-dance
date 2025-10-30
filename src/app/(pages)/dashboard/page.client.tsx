@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { SalesDashboard } from '../../_components/SalesDashboard';
 import { fetchSales } from '../../_api/fetchSales';
 import { useRouter } from 'next/navigation';
-import type { Sale } from '../../../payload/payload-types';
+import type { Sale } from '../../../payload-types';
 import Link from 'next/link';
 
 export function DashboardClient() {

@@ -1,4 +1,4 @@
-import type { Event } from '../../payload/payload-types';
+import type { Event } from '../../payload-types';
 
 export const fetchEvents = async (): Promise<Event[]> => {
   const eventsRes: {

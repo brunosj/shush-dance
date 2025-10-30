@@ -1,4 +1,4 @@
-import type { Sale } from '../../payload/payload-types';
+import type { Sale } from '../../payload-types';
 
 // First, let's create a function to check auth status
 export const checkAuth = async () => {

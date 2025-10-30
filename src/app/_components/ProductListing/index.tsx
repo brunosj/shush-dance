@@ -5,7 +5,7 @@ import type {
   Artist,
   Media,
   Merch,
-} from '../../../payload/payload-types';
+} from '../../../payload-types';
 import type {
   ExtendedMerch,
   ExtendedRelease,

@@ -1,12 +1,10 @@
-import { webpackBundler } from '@payloadcms/bundler-webpack';
 import { mongooseAdapter } from '@payloadcms/db-mongodb';
 import { slateEditor } from '@payloadcms/richtext-slate';
 import dotenv from 'dotenv';
 import path from 'path';
-import { buildConfig } from 'payload/config';
-import Logo from './components/Logo';
-import Icon from './components/Icon';
-
+import { fileURLToPath } from 'url';
+import { buildConfig } from 'payload';
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer';
 import { Media } from './collections/Media';
 import { Pages } from './collections/Pages';
 import Audio from './collections/Audio';
@@ -31,24 +29,25 @@ import { stripeWebhookEndpoint } from './endpoints/stripeWebhook';
 import { ensureOrderCreatedEndpoint } from './endpoints/ensureOrderCreated';
 import { Settings } from './globals/settings';
 
-dotenv.config({
-  path: path.resolve(__dirname, '../../.env'),
-});
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
 
 export default buildConfig({
   admin: {
     user: Users.slug,
-    bundler: webpackBundler(),
-    components: {
-      graphics: {
-        Logo,
-        Icon,
-      },
+    // components: {
+    //   graphics: {
+    //     Logo,
+    //     Icon,
+    //   },
+    // },
+    importMap: {
+      baseDir: path.resolve(dirname),
     },
   },
   editor: slateEditor({}),
   db: mongooseAdapter({
-    url: process.env.DATABASE_URI,
+    url: process.env.DATABASE_URI || '',
   }),
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
   routes: {
@@ -57,6 +56,7 @@ export default buildConfig({
     graphQL: '/api/graphql',
     graphQLPlayground: '/api/graphql-playground',
   },
+  secret: process.env.PAYLOAD_SECRET || '',
   collections: [
     Events,
     Releases,
@@ -73,8 +73,7 @@ export default buildConfig({
   ],
   globals: [Socials, Settings],
   typescript: {
-    outputFile: path.resolve(__dirname, 'payload-types.ts'),
-    declare: false,
+    outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   cors: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
   csrf: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
@@ -89,17 +88,16 @@ export default buildConfig({
     stripeWebhookEndpoint,
     ensureOrderCreatedEndpoint,
   ],
-  email: {
-    fromName: 'SHUSH',
-    fromAddress: 'hello@shush.dance',
-    logMockCredentials: false,
-    transportOptions: {
-      host: process.env.SMTP_HOST,
-      port: 587,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    },
-  },
+  // email: nodemailerAdapter({
+  //   defaultFromAddress: 'hello@shush.dance',
+  //   defaultFromName: 'SHUSH',
+  //   transport: await nodemailer.createTransport({
+  //     host: process.env.SMTP_HOST,
+  //     port: 587,
+  //     auth: {
+  //       user: process.env.SMTP_USER,
+  //       pass: process.env.SMTP_PASS,
+  //     },
+  //   }),
+  // }),
 });

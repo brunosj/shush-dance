@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Page, Merch } from '../../../payload/payload-types';
+import { Page, Merch } from '../../../payload-types';
 import ProductListing from '../ProductListing';
 import type { ExtendedMerch } from '../../_types/extended-payload-types';
 

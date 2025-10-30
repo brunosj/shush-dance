@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Page, Event, Release } from '../../../payload/payload-types';
+import { Page, Event, Release } from '../../../payload-types';
 import { RichText } from '../RichText';
 
 interface ImprintPageProps {

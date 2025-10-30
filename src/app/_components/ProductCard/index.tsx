@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Release, Merch } from '../../../payload/payload-types';
+import type { Release, Merch } from '../../../payload-types';
 import { RichText } from '../RichText';
 import Button from '../Button';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { formatCurrency, formatNumber } from '../../_utilities/formatters';
-import type { Sale } from '../../../payload/payload-types';
+import type { Sale } from '../../../payload-types';
 
 interface SalesTableProps {
   sales: Sale[];

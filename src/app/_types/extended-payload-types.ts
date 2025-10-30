@@ -1,7 +1,7 @@
 import type {
   Merch as BaseMerch,
   Release as BaseRelease,
-} from '../../payload/payload-types';
+} from '../../payload-types';
 import type { ShippingPrices } from './shipping';
 
 export interface ExtendedMerch extends BaseMerch {

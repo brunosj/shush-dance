@@ -6,7 +6,7 @@ import { formatCurrencyString } from 'use-shopping-cart';
 import { BsTrash3 } from 'react-icons/bs';
 import Link from 'next/link';
 import Button from '../../Button';
-import type { Page } from '../../../../payload/payload-types';
+import type { Page } from '../../../../payload-types';
 import { RichText } from '../../RichText';
 
 interface CartPageProps {

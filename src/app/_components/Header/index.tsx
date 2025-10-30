@@ -51,7 +51,7 @@ export function Header() {
     <header className='fixed top-0 w-full z-30 filter-top'>
       <div className='relative py-2 px-3 flex items-center z-40'>
         {/* Logo on the left */}
-        <div className='flex-shrink-0'>
+        <div className='shrink-0'>
           <Link href='/' onClick={closeMenu}>
             <Image
               src={logoSrc}

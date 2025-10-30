@@ -1,4 +1,4 @@
-import type { Social } from '../../payload/payload-types';
+import type { Social } from '../../payload-types';
 
 export const fetchSocials = async (): Promise<Social> => {
   const socialsRes: Social = await fetch(

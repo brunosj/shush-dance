@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { formatDate } from '../../_utilities/formatDateTime';
-import type { Event, Artist } from '../../../payload/payload-types';
+import type { Event, Artist } from '../../../payload-types';
 import { useShoppingCart } from 'use-shopping-cart';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
@@ -62,7 +62,7 @@ const EventListing: React.FC<EventListingProps> = ({
       key={event.id}
       className='relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-16 group'
     >
-      <div className='flex-grow-0'>
+      <div className='grow-0'>
         {event.image && typeof event.image !== 'string' && !imageHover && (
           <div className='relative h-full'>
             <div className='flex flex-col items-start'>

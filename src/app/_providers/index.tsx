@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
-import { AuthProvider } from '../_providers/Auth';
+import { AuthProvider } from './Auth';
 import { ThemeProvider } from './Theme';
 import CartProvider from './CartProvider';
 import { ShippingProvider } from './ShippingProvider';

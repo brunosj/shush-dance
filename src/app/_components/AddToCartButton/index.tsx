@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
 import { useShipping } from '../../_providers/ShippingProvider';
 import Button from '../Button';
-import type { Merch, Release } from '../../../payload/payload-types';
+import type { Merch, Release } from '../../../payload-types';
 import toast from 'react-hot-toast';
 
 interface AddToCartButtonProps {

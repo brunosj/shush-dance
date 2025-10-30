@@ -5,7 +5,7 @@ import { SalesFilters } from './SalesFilter';
 import { SalesSummary } from './SalesSummary';
 import { SalesTable } from './SalesTable';
 import { TaxSummary } from './TaxSummary';
-import type { Sale } from '../../../payload/payload-types';
+import type { Sale } from '../../../payload-types';
 
 interface SalesDashboardProps {
   initialSales: Sale[];

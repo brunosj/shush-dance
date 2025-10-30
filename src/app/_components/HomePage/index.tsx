@@ -1,13 +1,7 @@
 'use client';
 
 import React from 'react';
-import {
-  Page,
-  Event,
-  Social,
-  Release,
-  Merch,
-} from '../../../payload/payload-types';
+import { Page, Event, Social, Release, Merch } from '../../../payload-types';
 import { RichText } from '../RichText';
 import { useShoppingCart } from 'use-shopping-cart';
 import Button from '../Button';
@@ -60,7 +54,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
 
   return (
     <article className='relative overflow-hidden'>
-      <div className='mx-2 lg:mx-24 my-24 lg:my-32 lg:flex relative lg:gap-32 flex-grow-0'>
+      <div className='mx-2 lg:mx-24 my-24 lg:my-32 lg:flex relative lg:gap-32 grow-0'>
         <aside className=' text-left text-lg  '>
           <div className='lg:fixed lg:w-1/4 lg:top-1/2 transform lg:-translate-y-1/2'>
             <RichText content={page.data.content} />

@@ -1,4 +1,4 @@
-import type { Page } from '../../payload/payload-types';
+import type { Page } from '../../payload-types';
 
 export const fetchPage = async (
   slug: string

@@ -1,4 +1,4 @@
-import type { Merch } from '../../payload/payload-types';
+import type { Merch } from '../../payload-types';
 
 export const fetchMerch = async (): Promise<Merch[]> => {
   const response = await fetch(

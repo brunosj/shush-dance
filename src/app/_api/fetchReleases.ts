@@ -1,4 +1,4 @@
-import type { Release } from '../../payload/payload-types';
+import type { Release } from '../../payload-types';
 
 export const fetchReleases = async (): Promise<Release[]> => {
   const response = await fetch(

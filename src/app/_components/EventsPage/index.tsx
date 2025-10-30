@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Page, Event, Social } from '../../../payload/payload-types';
+import { Page, Event, Social } from '../../../payload-types';
 import { RichText } from '../RichText';
 import EventList from '../EventList';
 import Link from 'next/link';
