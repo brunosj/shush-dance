@@ -1,11 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
-import { useShoppingCart } from 'use-shopping-cart';
-import { IoTicketOutline } from 'react-icons/io5';
-import { Fade as Hamburger } from 'hamburger-react';
-import { useState } from 'react';
 import { footerItems } from '../Menu';
 
 const logoSrc = '/shush_triple_logo_black.png';

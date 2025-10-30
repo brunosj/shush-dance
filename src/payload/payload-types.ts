@@ -365,6 +365,8 @@ export interface OnlineOrder {
  */
 export interface TicketSale {
   id: string;
+  totalQuantity?: number | null;
+  total?: number | null;
   ticketNumber: string;
   status: 'active' | 'used' | 'cancelled' | 'refunded';
   event?: (string | null) | Event;

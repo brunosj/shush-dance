@@ -14,6 +14,7 @@ export const TicketSales: CollectionConfig = {
       'customerEmail',
       'event',
       'ticketTier',
+      'totalQuantity',
       'total',
       'status',
       'createdAt',
@@ -26,6 +27,51 @@ export const TicketSales: CollectionConfig = {
     delete: admins,
   },
   fields: [
+    {
+      name: 'totalQuantity',
+      type: 'number',
+      label: 'Total Quantity',
+      admin: {
+        description: 'Total number of tickets (sum of all ticket quantities)',
+        readOnly: true,
+        position: 'sidebar',
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            // Calculate total quantity from tickets array
+            if (siblingData.tickets && Array.isArray(siblingData.tickets)) {
+              return siblingData.tickets.reduce(
+                (total: number, ticket: any) => {
+                  return total + (ticket.quantity || 0);
+                },
+                0
+              );
+            }
+            return 0;
+          },
+        ],
+      },
+    },
+    {
+      name: 'total',
+      type: 'number',
+      label: 'Total Amount',
+      admin: {
+        description: 'Total amount from ticketTotals.total',
+        readOnly: true,
+        position: 'sidebar',
+        step: 0.01,
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            // Get total from ticketTotals
+            return siblingData?.ticketTotals?.total || 0;
+          },
+        ],
+      },
+    },
     {
       type: 'tabs',
       tabs: [

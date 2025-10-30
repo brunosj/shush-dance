@@ -55,6 +55,7 @@
     "sharp": "0.33.5",
     "stripe": "^18.5.0",
     "use-shopping-cart": "^3.2.0",
+    "xlsx": "^0.18.5",
     "yet-another-react-lightbox": "^3.25.0"
   },
   "devDependencies": {
