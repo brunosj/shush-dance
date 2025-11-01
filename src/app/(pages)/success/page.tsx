@@ -111,17 +111,18 @@ const SuccessPageContent: React.FC = () => {
         {fallbackTriggered ? 'has been' : 'will be'} sent to your email
         {fallbackTriggered ? '' : ' shortly'}.
       </p>
-      {fallbackTriggered && (
+      {/* {fallbackTriggered && (
         <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800'>
           <p className='font-medium'>Backup System Activated</p>
           <p>
             Our backup system ensured your order was processed successfully.
           </p>
         </div>
-      )}
+      )} */}
       <p className='text-sm text-gray-600'>
         If you don't receive a confirmation email, please check your spam folder
-        or contact us at hello@shush.dance.
+        or contact us at hello@shush.dance. If you bought tickets, please note
+        that your name will be added to a list at the door.
       </p>
       <div className='pt-4'>
         <Button href='/' label='Return to Home' />
