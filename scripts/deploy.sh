@@ -47,56 +47,21 @@ cd "$REPO_DIR"
 git fetch origin
 git reset --hard origin/main
 
-# Verify .env file exists
-if [ ! -f "$REPO_DIR/.env" ]; then
-    echo "❌ ERROR: .env file not found at $REPO_DIR/.env"
-    exit 1
-fi
-
-# Source .env to ensure environment variables are available
-echo "🔧 Loading environment variables..."
-set -a
-source "$REPO_DIR/.env"
-set +a
-
-# Verify critical environment variables
-if [ -z "$DATABASE_URI" ]; then
-    echo "❌ ERROR: DATABASE_URI is not set in .env"
-    exit 1
-fi
-
-if [ -z "$PAYLOAD_SECRET" ]; then
-    echo "❌ ERROR: PAYLOAD_SECRET is not set in .env"
-    exit 1
-fi
-
-echo "✅ Environment variables loaded"
-
-# Check MongoDB connection (only for localhost)
-echo "🔍 Checking MongoDB availability..."
-if [[ "$DATABASE_URI" == *"localhost"* || "$DATABASE_URI" == *"127.0.0.1"* ]]; then
-    MONGO_PORT=27017
-    if ! command -v nc &> /dev/null || ! nc -z localhost "$MONGO_PORT" 2>/dev/null; then
-        echo "⚠️  WARNING: Cannot verify MongoDB on localhost:$MONGO_PORT"
-        echo "   If build fails, ensure MongoDB is running: sudo systemctl start mongod"
-    else
-        echo "✅ MongoDB is accessible on localhost:$MONGO_PORT"
-    fi
-else
-    echo "ℹ️  Using remote MongoDB"
-fi
-
 # Install dependencies
 echo "📦 Installing dependencies..."
 pnpm install
 
 echo "=========================================="
-echo "STEP 2: Build Application"
+echo "STEP 2: Build Application (without SSG)"
 echo "=========================================="
 
-# Build the app (builds Payload, TypeScript server, and Next.js)
-echo "📦 Building application..."
-pnpm run build
+# Build without Next.js SSG (no database connection needed)
+echo "📦 Building Payload admin and server..."
+pnpm run build:payload
+pnpm run build:server
+
+# Note: Skipping build:next (Next.js will compile on-demand at runtime)
+echo "ℹ️  Skipping Next.js pre-build (SSG not needed)"
 
 echo "=========================================="
 echo "STEP 3: Deploy to $NEW_COLOR Environment"
@@ -118,10 +83,12 @@ ln -sfn "$REPO_DIR/node_modules" "$APP_DIR/node_modules"
 echo "📁 Copying dist output..."
 rsync -av --delete "$REPO_DIR/dist/" "$APP_DIR/dist/"
 
-# Copy the .next build output (Next.js)
+# Copy the .next build output (Next.js) if it exists
 if [ -d "$REPO_DIR/.next" ]; then
     echo "📁 Copying .next output..."
     rsync -av --delete "$REPO_DIR/.next/" "$APP_DIR/.next/"
+else
+    echo "ℹ️  No .next directory (Next.js will compile at runtime)"
 fi
 
 # Copy the build directory (Payload admin)
