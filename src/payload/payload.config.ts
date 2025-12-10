@@ -29,6 +29,7 @@ import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
 import { clientErrorReportEndpoint } from './endpoints/clientErrorReport';
 import { stripeWebhookEndpoint } from './endpoints/stripeWebhook';
 import { ensureOrderCreatedEndpoint } from './endpoints/ensureOrderCreated';
+import { healthEndpoint } from './endpoints/health';
 import { Settings } from './globals/settings';
 
 dotenv.config({
@@ -79,6 +80,7 @@ export default buildConfig({
   cors: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
   csrf: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
   endpoints: [
+    healthEndpoint,
     testBandcampEndpoint,
     syncBandcampEndpoint,
     createOrderEndpoint,

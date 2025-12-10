@@ -10,30 +10,110 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Setup SSH
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        HOST: ${{ secrets.HOST }}
-        USERNAME: ${{ secrets.USERNAME }}
-      run: |
-        mkdir -p ~/.ssh/
-        echo "${SSH_PRIVATE_KEY}" | tr -d '\r' > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${SSH_PRIVATE_KEY}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
 
-    - name: Execute deployment script
-      env:
-        HOST: ${{ secrets.HOST }}
-        USERNAME: ${{ secrets.USERNAME }}
-      run: |
-        set -e
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.USERNAME }}@${{ env.HOST }} "cd ~ && ./deploy.sh"
-        EXIT_STATUS=$?
-        echo "Deployment script exited with status $EXIT_STATUS"
-        exit $EXIT_STATUS
+      - name: Execute deployment script
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+        run: |
+          set -e
+          echo "🚀 Starting SHUSH deployment..."
+          ssh -o StrictHostKeyChecking=no ${{ env.USERNAME }}@${{ env.HOST }} "
+            set -e
+            echo '📂 Checking repo directory...'
+            if [ ! -d '/home/lando/repo' ]; then
+              echo '❌ Repo directory not found!'
+              exit 1
+            fi
+            
+            echo '📥 Fetching latest changes first...'
+            cd /home/lando/repo
+            git fetch origin
+            git reset --hard origin/main
+            
+            echo '📋 Checking updated deploy script...'
+            if [ ! -f 'scripts/deploy.sh' ]; then
+              echo '❌ Deploy script not found in scripts folder!'
+              exit 1
+            fi
+            
+            echo '🚀 Executing updated deployment script...'
+            bash scripts/deploy.sh
+          "
+          EXIT_STATUS=$?
+          if [ $EXIT_STATUS -eq 0 ]; then
+            echo "✅ Deployment completed successfully"
+          else
+            echo "❌ Deployment failed with exit status $EXIT_STATUS"
+          fi
+          exit $EXIT_STATUS
+
+      - name: Verify deployment
+        if: success()
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+        run: |
+          echo "🔍 Verifying deployment status..."
+          ssh -o StrictHostKeyChecking=no ${{ env.USERNAME }}@${{ env.HOST }} '
+            set -e
+            export PATH=$HOME/.nvm/versions/node/v22.20.0/bin:$HOME/.local/share/pnpm:$PATH
+            
+            echo "📊 PM2 Process Status:"
+            pm2 list
+            echo ""
+            
+            echo "🔗 Blue-Green Deployment Status:"
+            ACTIVE_LINK=$(readlink /home/lando/app/active 2>/dev/null)
+            if [ -n "$ACTIVE_LINK" ]; then
+              ACTIVE_COLOR=$(echo "$ACTIVE_LINK" | grep -o "blue\|green")
+              echo "Active deployment: $ACTIVE_COLOR"
+              echo "Active symlink: $ACTIVE_LINK"
+              
+              # Determine active port
+              if [ "$ACTIVE_COLOR" = "blue" ]; then
+                ACTIVE_PORT=3000
+              else
+                ACTIVE_PORT=3001
+              fi
+            else
+              echo "⚠️  No active symlink found, trying both ports"
+              ACTIVE_PORT=3000
+            fi
+            echo ""
+            
+            echo "🏥 Health Check (port $ACTIVE_PORT):"
+            HEALTH=$(curl -sf http://localhost:$ACTIVE_PORT/api/health)
+            if [ -z "$HEALTH" ]; then
+              echo "❌ Application not responding on port $ACTIVE_PORT"
+              echo ""
+              echo "Trying alternate port..."
+              HEALTH=$(curl -sf http://localhost:3001/api/health 2>/dev/null || curl -sf http://localhost:3000/api/health 2>/dev/null)
+              if [ -z "$HEALTH" ]; then
+                echo "❌ Application not responding on any port"
+                exit 1
+              fi
+            fi
+            echo "$HEALTH"
+            echo "✅ Application OK"
+            echo ""
+            
+            echo "📁 Directory Structure:"
+            ls -la /home/lando/app/
+          '
 
   notify:
     needs: deploy
@@ -44,6 +124,5 @@ jobs:
       - name: Notify via Resend
         uses: brunosj/actions/resend-notify@v1
         with:
-          subject: "GitHub Actions - Deploy SHUSH Failed"
+          subject: 'GitHub Actions - Deploy SHUSH Failed'
           resend_api_key: ${{ secrets.RESEND_API_KEY }}
-
