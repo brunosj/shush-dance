@@ -47,6 +47,45 @@ cd "$REPO_DIR"
 git fetch origin
 git reset --hard origin/main
 
+# Verify .env file exists
+if [ ! -f "$REPO_DIR/.env" ]; then
+    echo "❌ ERROR: .env file not found at $REPO_DIR/.env"
+    exit 1
+fi
+
+# Source .env to ensure environment variables are available
+echo "🔧 Loading environment variables..."
+set -a
+source "$REPO_DIR/.env"
+set +a
+
+# Verify critical environment variables
+if [ -z "$DATABASE_URI" ]; then
+    echo "❌ ERROR: DATABASE_URI is not set in .env"
+    exit 1
+fi
+
+if [ -z "$PAYLOAD_SECRET" ]; then
+    echo "❌ ERROR: PAYLOAD_SECRET is not set in .env"
+    exit 1
+fi
+
+echo "✅ Environment variables loaded"
+
+# Check MongoDB connection (only for localhost)
+echo "🔍 Checking MongoDB availability..."
+if [[ "$DATABASE_URI" == *"localhost"* || "$DATABASE_URI" == *"127.0.0.1"* ]]; then
+    MONGO_PORT=27017
+    if ! command -v nc &> /dev/null || ! nc -z localhost "$MONGO_PORT" 2>/dev/null; then
+        echo "⚠️  WARNING: Cannot verify MongoDB on localhost:$MONGO_PORT"
+        echo "   If build fails, ensure MongoDB is running: sudo systemctl start mongod"
+    else
+        echo "✅ MongoDB is accessible on localhost:$MONGO_PORT"
+    fi
+else
+    echo "ℹ️  Using remote MongoDB"
+fi
+
 # Install dependencies
 echo "📦 Installing dependencies..."
 pnpm install
