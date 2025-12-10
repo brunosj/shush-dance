@@ -126,26 +126,38 @@ echo "=========================================="
 echo "STEP 4: Start $NEW_COLOR PM2 Process"
 echo "=========================================="
 
-echo "🚀 Starting PM2 process: $PM2_NAME on port $NEW_PORT"
-
-# Delete if it exists
-pm2 delete "$PM2_NAME" 2>/dev/null || true
-
-# Start the app using the serve script
 cd "$APP_DIR"
-PORT="$NEW_PORT" NODE_ENV=production pm2 start "pnpm run serve" \
-    --name "$PM2_NAME" \
-    --cwd "$APP_DIR"
+
+# Determine the serve command based on color
+if [ "$NEW_COLOR" = "green" ]; then
+    SERVE_CMD="pnpm serve-green"
+else
+    SERVE_CMD="pnpm serve"
+fi
+
+echo "🚀 Starting PM2 process: $PM2_NAME ($SERVE_CMD)"
+
+# Check if process already exists
+if pm2 list | grep -q "$PM2_NAME"; then
+    echo "🔄 Restarting existing PM2 process..."
+    pm2 restart "$PM2_NAME"
+else
+    echo "🆕 Creating new PM2 process..."
+    pm2 start "$SERVE_CMD" --name "$PM2_NAME"
+fi
 
 # Verify PM2 started successfully
-sleep 5
+echo "⏳ Waiting for PM2 process to initialize..."
+sleep 10
+
 if ! pm2 list | grep -q "$PM2_NAME.*online"; then
     echo "❌ PM2 process failed to start!"
-    pm2 logs "$PM2_NAME" --lines 50
+    echo "Checking logs..."
+    pm2 logs "$PM2_NAME" --lines 50 --nostream
     exit 1
 fi
 
-echo "✅ PM2 process started"
+echo "✅ PM2 process is online"
 
 echo "=========================================="
 echo "STEP 5: Health Check $NEW_COLOR"
