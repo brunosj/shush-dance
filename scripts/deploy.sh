@@ -140,7 +140,11 @@ echo "🚀 Starting PM2 process: $PM2_NAME ($SERVE_CMD)"
 # Check if process already exists
 if pm2 list | grep -q "$PM2_NAME"; then
     echo "🔄 Restarting existing PM2 process..."
-    pm2 restart "$PM2_NAME"
+    pm2 restart "$PM2_NAME" || {
+        echo "⚠️  Restart failed, deleting and recreating process..."
+        pm2 delete "$PM2_NAME" || true
+        pm2 start "$SERVE_CMD" --name "$PM2_NAME"
+    }
 else
     echo "🆕 Creating new PM2 process..."
     pm2 start "$SERVE_CMD" --name "$PM2_NAME"
@@ -233,8 +237,8 @@ echo "=========================================="
 
 if pm2 list | grep -q "$OLD_PM2_NAME"; then
     echo "🛑 Stopping old deployment: $OLD_PM2_NAME"
-    pm2 stop "$OLD_PM2_NAME"
-    pm2 delete "$OLD_PM2_NAME"
+    pm2 stop "$OLD_PM2_NAME" || true
+    pm2 delete "$OLD_PM2_NAME" || true
     echo "✅ Old deployment stopped and removed"
 else
     echo "ℹ️  No old deployment to stop"
