@@ -6,7 +6,10 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     staticURL: '/media',
-    staticDir: path.resolve(__dirname, '../../../../../media'),
+    // In production: /home/lando/media (6 levels up from dist/payload/collections/)
+    staticDir:
+      process.env.MEDIA_DIR ||
+      path.resolve(__dirname, '../../../../../../media'),
   },
   access: {
     read: () => true,

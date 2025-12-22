@@ -103,11 +103,12 @@ if [ -d "$REPO_DIR/public" ]; then
     rsync -av --delete "$REPO_DIR/public/" "$APP_DIR/public/"
 fi
 
-# Copy media directory (if it exists in repo)
-if [ -d "$REPO_DIR/media" ]; then
-    echo "📁 Copying media..."
-    rsync -av --delete "$REPO_DIR/media/" "$APP_DIR/media/"
-fi
+# Symlink shared media directory (persistent across deployments)
+SHARED_MEDIA_DIR="$BASE_DIR/media"
+mkdir -p "$SHARED_MEDIA_DIR"
+echo "🔗 Symlinking shared media directory..."
+rm -rf "$APP_DIR/media"
+ln -sfn "$SHARED_MEDIA_DIR" "$APP_DIR/media"
 
 # Copy configuration files from repo
 echo "📁 Copying configuration files..."
