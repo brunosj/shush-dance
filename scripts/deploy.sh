@@ -104,6 +104,7 @@ cd "$APP_DIR"
 echo "Removing old blue/green processes if present..."
 pm2 delete shush-blue 2>/dev/null || true
 pm2 delete shush-green 2>/dev/null || true
+pm2 delete shushv3 2>/dev/null || true
 
 echo "Starting PM2 process: $PM2_NAME"
 pm2 delete "$PM2_NAME" 2>/dev/null || true
@@ -122,9 +123,13 @@ APP_READY=false
 echo "Checking health at: $HEALTH_ENDPOINT"
 
 for i in {1..60}; do
-  # Try health check endpoint
+  # Try health check endpoint (curl failures are expected until app is ready)
+  set +e
   RESPONSE=$(curl -sf "$HEALTH_ENDPOINT" 2>&1)
-  if [ $? -eq 0 ]; then
+  CURL_EXIT=$?
+  set -e
+
+  if [ $CURL_EXIT -eq 0 ]; then
     echo "Application is ready."
     echo "Health check response: $RESPONSE"
     APP_READY=true
