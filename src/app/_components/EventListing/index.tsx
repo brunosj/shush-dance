@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { formatDate } from '../../_utilities/formatDateTime';
-import type { Event, Artist } from '../../../payload/payload-types';
+import type { Event, Artist, Media } from '../../../payload/payload-types';
 import { useShoppingCart } from 'use-shopping-cart';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
@@ -22,6 +22,27 @@ const EventListing: React.FC<EventListingProps> = ({
 
   const eventDate = new Date(event.date);
   const isPastEvent = eventDate.setHours(0, 0, 0, 0) < today.getTime();
+
+  const multiImages = (
+    Array.isArray((event as unknown as { images?: Array<{ image?: string | Media | null }> }).images)
+      ? (event as unknown as { images?: Array<{ image?: string | Media | null }> }).images
+      : []
+  )
+    .map((row) => row?.image)
+    .filter((img): img is Media => Boolean(img) && typeof img !== 'string');
+
+  const legacyImage =
+    event.image && typeof event.image !== 'string' ? event.image : null;
+
+  const images: Media[] = [
+    ...multiImages,
+    ...(legacyImage ? [legacyImage] : []),
+  ].filter((img, idx, arr) => arr.findIndex((x) => x.id === img.id) === idx);
+
+  const [hoverImage] = useState<Media | null>(() => {
+    if (images.length === 0) return null;
+    return images[Math.floor(Math.random() * images.length)] ?? null;
+  });
 
   const [imagePosition] = useState({
     top: `${Math.random() * 80}%`,
@@ -63,16 +84,19 @@ const EventListing: React.FC<EventListingProps> = ({
       className='relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-16 group'
     >
       <div className='flex-grow-0'>
-        {event.image && typeof event.image !== 'string' && !imageHover && (
+        {images.length > 0 && (
           <div className='relative h-full'>
-            <div className='flex flex-col items-start'>
-              <Image
-                src={event.image.url}
-                alt={event.image.alt}
-                width={200}
-                height={200}
-                className='object-contain w-full h-auto'
-              />
+            <div className='flex flex-wrap gap-2 items-start'>
+              {images.map((img) => (
+                <Image
+                  key={img.id}
+                  src={img.url ?? ''}
+                  alt={img.alt}
+                  width={imageHover ? 64 : 200}
+                  height={imageHover ? 64 : 200}
+                  className={imageHover ? 'object-cover rounded' : 'object-contain w-full h-auto'}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -141,7 +165,7 @@ const EventListing: React.FC<EventListingProps> = ({
       </div>
 
       {/* Image on Hover */}
-      {event.image && typeof event.image !== 'string' && imageHover && (
+      {hoverImage && imageHover && (
         <div
           className='h-32 lg:h-64 w-full absolute opacity-0 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none z-10'
           style={{
@@ -151,8 +175,8 @@ const EventListing: React.FC<EventListingProps> = ({
           }}
         >
           <Image
-            src={event.image.url}
-            alt={event.image.alt}
+            src={hoverImage.url ?? ''}
+            alt={hoverImage.alt}
             fill
             className='object-contain w-full'
           />

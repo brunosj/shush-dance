@@ -1,0 +1,264 @@
+[
+  {
+    "id": "67211ed0e7dad1e0630835c9",
+    "title": "SHUSH Vol. 1",
+    "artist": {
+      "id": "671fb43c4abfdc66d8603114",
+      "artistName": "Various Artists",
+      "slug": "various-artists",
+      "createdAt": "2024-10-28T15:56:44.040Z",
+      "updatedAt": "2024-10-28T15:56:44.040Z"
+    },
+    "description": [
+      {
+        "children": [
+          {
+            "text": "Berlin-based dance night and sound system SHUSH present their first musical offering: six soulful tracks that encapsulate the unique spirit of their functions and underlying community. Atlanta house ambassador Stefan Ringer lends his touch on deep vocal cut ‘Focus’, electronic jazz maestro Ziggy Zeitgeist serves up the late-night coaster ‘Yours To Make’ (feat. Jitwam), whilst SHUSH’s own D’Monk deals the dubbed-out damage of ‘Love Or Lust’, a raw house cut heavy on the 909s. Alongside them, producer Whodat offers a slapper in her own distinctive Detroit-style, AMA//MIZU comes with an introspective downbeat roller whilst Dweller presents one of his stunning orchestral works."
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Spread across two sides of a 12”, these bold selections translate their feeling both on and off the dancefloor."
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ],
+        "type": "h6"
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "A1\tStefan Ringer - Focus"
+          }
+        ],
+        "type": "h6"
+      },
+      {
+        "children": [
+          {
+            "text": "A2\tD’Monk - Love Or Lust"
+          }
+        ],
+        "type": "h6"
+      },
+      {
+        "children": [
+          {
+            "text": "A3\tDweller - Dweller’s Interlude"
+          }
+        ],
+        "type": "h6"
+      },
+      {
+        "children": [
+          {
+            "text": "B1\tZiggy Zeitgeist - Yours To Make (feat. Jitwam)"
+          }
+        ],
+        "type": "h6"
+      },
+      {
+        "children": [
+          {
+            "text": "B2\tWhodat - Joyous Element"
+          }
+        ],
+        "type": "h6"
+      },
+      {
+        "children": [
+          {
+            "text": "B3\tAma//Mizu - Unwinding Real"
+          }
+        ],
+        "type": "h6"
+      },
+      {
+        "children": [
+          {
+            "text": "\n"
+          }
+        ]
+      }
+    ],
+    "artwork": {
+      "id": "67f6ad8b2e7687de6d639c20",
+      "alt": "SHUSH Vol. 1 – 12\" Vinyl – Side A",
+      "filename": "shush_new_3-1.jpg",
+      "mimeType": "image/jpeg",
+      "filesize": 829942,
+      "width": 2798,
+      "height": 2758,
+      "focalX": 50,
+      "focalY": 50,
+      "createdAt": "2025-04-09T17:25:31.374Z",
+      "updatedAt": "2025-04-09T18:12:26.324Z",
+      "url": "https://shush.dance/media/shush_new_3-1.jpg"
+    },
+    "images": [
+      {
+        "image": {
+          "id": "67f6ad682e7687de6d639c06",
+          "alt": "SHUSH Vol. 1 – 12\" Vinyl – Side A",
+          "filename": "shush_new_3.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 3009356,
+          "width": 2947,
+          "height": 4018,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2025-04-09T17:24:56.991Z",
+          "updatedAt": "2025-04-09T17:24:56.991Z",
+          "url": "https://shush.dance/media/shush_new_3.jpg"
+        },
+        "id": "6735eed7a7e66210d10cf59f"
+      },
+      {
+        "image": {
+          "id": "67f6ad732e7687de6d639c0d",
+          "alt": "SHUSH Vol. 1 – 12\" Vinyl – Side B",
+          "filename": "shush_neu_4.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 5053267,
+          "width": 4123,
+          "height": 5608,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2025-04-09T17:25:07.055Z",
+          "updatedAt": "2025-04-09T17:25:07.055Z",
+          "url": "https://shush.dance/media/shush_neu_4.jpg"
+        },
+        "id": "6735efb6a7e66210d10cf5a0"
+      },
+      {
+        "image": {
+          "id": "672108a0e7dad1e06308330b",
+          "alt": "SHUSH Vol. 1 Side A",
+          "filename": "SHUSH_Vol1_digital_SideA_3000px.png",
+          "mimeType": "image/png",
+          "filesize": 650762,
+          "width": 3000,
+          "height": 3000,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2024-10-29T16:09:04.028Z",
+          "updatedAt": "2024-10-29T16:09:04.028Z",
+          "url": "https://shush.dance/media/SHUSH_Vol1_digital_SideA_3000px.png"
+        },
+        "id": "67211ed032d7e3790e45ce63"
+      },
+      {
+        "image": {
+          "id": "67211ebae7dad1e0630835b1",
+          "alt": "SHUSH Vol. 1 Side B",
+          "filename": "SHUSH_Vol1_digital_SideB_3000px.png",
+          "mimeType": "image/png",
+          "filesize": 260715,
+          "width": 3000,
+          "height": 3000,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2024-10-29T17:43:22.801Z",
+          "updatedAt": "2024-10-29T17:43:22.801Z",
+          "url": "https://shush.dance/media/SHUSH_Vol1_digital_SideB_3000px.png"
+        },
+        "id": "67211ed032d7e3790e45ce64"
+      }
+    ],
+    "catalogNumber": "SHH001",
+    "releaseYear": 2024,
+    "slug": "shush-vol-1",
+    "_status": "published",
+    "createdAt": "2024-10-29T17:43:44.103Z",
+    "updatedAt": "2025-07-02T23:29:27.423Z",
+    "credits": [
+      {
+        "children": [
+          {
+            "text": "A2, A3, B3 & BONUS mixed by D'Monk "
+          }
+        ],
+        "type": "h6"
+      },
+      {
+        "type": "h6",
+        "children": [
+          {
+            "text": " \nAll other tracks mixed by the respective artist  "
+          }
+        ]
+      },
+      {
+        "type": "h6",
+        "children": [
+          {
+            "text": "\nMastered by Marco Zangirolami  "
+          }
+        ]
+      },
+      {
+        "type": "h6",
+        "children": [
+          {
+            "text": "\nDesign by Jay Curry  "
+          }
+        ]
+      },
+      {
+        "type": "h6",
+        "children": [
+          {
+            "text": "\nCalligraphy by Faye Frazer  "
+          }
+        ]
+      },
+      {
+        "type": "h6",
+        "children": [
+          {
+            "text": "\nPressed and distributed by Mothertongue  "
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      }
+    ],
+    "buyLink": "https://shushrecords.bandcamp.com/album/shush-vol-1",
+    "isDigital": false,
+    "price": 15,
+    "shippingPrices": {
+      "germany": 5.5,
+      "germanyAdditional": 1,
+      "eu": 10.95,
+      "euAdditional": 1,
+      "restOfWorld": 19.95,
+      "restOfWorldAdditional": 1
+    }
+  }
+]

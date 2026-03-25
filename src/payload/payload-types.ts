@@ -40,6 +40,12 @@ export interface Event {
         [k: string]: unknown;
       }[]
     | null;
+  images?:
+    | {
+        image: string | Media;
+        id?: string | null;
+      }[]
+    | null;
   image?: string | Media | null;
   date: string;
   time?: string | null;

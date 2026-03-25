@@ -20,7 +20,10 @@
     "generate:graphQLSchema": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload generate:graphQLSchema",
     "lint": "eslint src",
     "lint:fix": "eslint --fix --ext .ts,.tsx src",
-    "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload"
+    "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload",
+    "export:events": "node scripts/exportEvents.cjs ./events.json",
+    "export:products": "node scripts/exportProducts.cjs ./products.json",
+    "fix:media-urls": "pnpm ts-node scripts/fixMediaUrls.ts --dry-run"
   },
   "dependencies": {
     "@payloadcms/bundler-webpack": "^1.0.7",

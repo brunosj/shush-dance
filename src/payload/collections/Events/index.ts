@@ -27,11 +27,28 @@ export const Events: CollectionConfig = {
       label: 'Event Information',
     }),
     {
+      name: 'images',
+      type: 'array',
+      label: 'Event Flyers',
+      required: false,
+      fields: [
+        {
+          name: 'image',
+          type: 'upload',
+          relationTo: 'media',
+          required: true,
+        },
+      ],
+    },
+    {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
-      label: 'Event Flyer',
+      label: 'Legacy Event Flyer (single)',
       required: false,
+      admin: {
+        description: 'Prefer using Event Flyers (multiple).',
+      },
     },
     {
       name: 'date',

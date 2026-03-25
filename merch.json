@@ -1,0 +1,418 @@
+[
+  {
+    "id": "68655bc851becc1b34ef195a",
+    "title": "3 YEAR ANNIVERSARY CELEBRATION – Riso Print (A2)",
+    "itemType": "prints",
+    "description": [
+      {
+        "children": [
+          {
+            "text": "Limited run of Risograph prints made for our 3 YEAR ANNIVERSARY Celebration in June."
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "It was a beautiful function, surrounded by our friends & family and including some seriously deep music. Thank you for everyone who's been supporting our movements over the years – we truly appreciate it."
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Artwork by Nick Dahlen. "
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Layout / Design by Anna Ntombi Marx & Ken Okuda."
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Printed in Berlin on heavyweight paper (150 g/m²). A2 format (59,4 x 42 cm)"
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Pick-ups in Berlin & London can be arranged if you're local – please write us"
+          }
+        ]
+      }
+    ],
+    "slug": "3-year-anniversary-celebration--riso-print-a2",
+    "price": 15,
+    "shippingPrices": {
+      "germany": 8.5,
+      "germanyAdditional": 0,
+      "eu": 15,
+      "euAdditional": 0,
+      "restOfWorld": 20.5,
+      "restOfWorldAdditional": 0
+    },
+    "isDigital": false,
+    "mainImage": {
+      "id": "68655d714010e219af3b4189",
+      "alt": "SHUSH Print",
+      "filename": "IMG_9251.jpg",
+      "mimeType": "image/jpeg",
+      "filesize": 521120,
+      "width": 3024,
+      "height": 4032,
+      "focalX": 50,
+      "focalY": 50,
+      "createdAt": "2025-07-02T16:25:21.147Z",
+      "updatedAt": "2025-07-02T16:25:21.147Z",
+      "url": "https://shush.dance/media/IMG_9251.jpg"
+    },
+    "images": [
+      {
+        "image": {
+          "id": "68655bc751becc1b34ef1954",
+          "alt": "shush print",
+          "filename": "IMG_9346 4.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 902400,
+          "width": 3347,
+          "height": 4184,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2025-07-02T16:18:15.036Z",
+          "updatedAt": "2025-07-02T16:18:15.036Z",
+          "url": "https://shush.dance/media/IMG_9346 4.jpg"
+        },
+        "id": "68655d749533833cc0f12e2c"
+      },
+      {
+        "image": {
+          "id": "68655d714010e219af3b4189",
+          "alt": "SHUSH Print",
+          "filename": "IMG_9251.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 521120,
+          "width": 3024,
+          "height": 4032,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2025-07-02T16:25:21.147Z",
+          "updatedAt": "2025-07-02T16:25:21.147Z",
+          "url": "https://shush.dance/media/IMG_9251.jpg"
+        },
+        "id": "68655dab9533833cc0f12e2e"
+      }
+    ],
+    "_status": "published",
+    "createdAt": "2025-07-02T16:18:16.081Z",
+    "updatedAt": "2025-07-02T23:18:21.617Z"
+  },
+  {
+    "id": "68652c3141f3ce9242d866b7",
+    "title": "3 YEAR ANNIVERSARY CELEBRATION – Heavyweight T-Shirt",
+    "itemType": "clothing",
+    "description": [
+      {
+        "children": [
+          {
+            "text": "We had this limited run of shirts made for our 3 YEAR ANNIVERSARY Celebration in June – now putting the rest of these shirts up for grabs here."
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "It was a beautiful function, surrounded by our friends & family and including some seriously deep music. Thank you for everyone who's been supporting our movements over the years – we truly appreciate it."
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Artwork by Nick Dahlen. Layout / Design by SHUSH"
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Screen printed in Berlin on organic cotton"
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Thick & heavyweight fabric (240 g/m²), 'natural raw' colourway"
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Loose / oversized fit (for a true to size fit, size down one size)."
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Pick-ups in Berlin & London can be arranged if you're local – please write us."
+          }
+        ]
+      }
+    ],
+    "slug": "shush-3-year-anniversary-celebration--heavyweight-t-shirt",
+    "price": 35,
+    "shippingPrices": {
+      "germany": 3.5,
+      "germanyAdditional": 0,
+      "eu": 6.9,
+      "euAdditional": 0,
+      "restOfWorld": 6.9,
+      "restOfWorldAdditional": 0
+    },
+    "isDigital": false,
+    "mainImage": {
+      "id": "68655a6351becc1b34ef1776",
+      "alt": "SHUSH 3-year Shirt",
+      "filename": "shush_3year_shirt_5-1.jpg",
+      "mimeType": "image/jpeg",
+      "filesize": 719205,
+      "width": 4284,
+      "height": 3427,
+      "focalX": 50,
+      "focalY": 50,
+      "createdAt": "2025-07-02T16:12:19.380Z",
+      "updatedAt": "2025-07-02T16:12:19.380Z",
+      "url": "https://shush.dance/media/shush_3year_shirt_5-1.jpg"
+    },
+    "images": [
+      {
+        "image": {
+          "id": "68655a8b51becc1b34ef17d4",
+          "alt": "SHUSH 3-year Shirt back",
+          "filename": "shush_3year_shirt_4-1.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 1161904,
+          "width": 4284,
+          "height": 5712,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2025-07-02T16:12:59.459Z",
+          "updatedAt": "2025-07-02T16:12:59.459Z",
+          "url": "https://shush.dance/media/shush_3year_shirt_4-1.jpg"
+        },
+        "id": "68655a7d3eef0a5b0005d1e6"
+      },
+      {
+        "image": {
+          "id": "68655a9e51becc1b34ef1808",
+          "alt": "SHUSH 3-year Shirt front",
+          "filename": "shush_3year_shirt_3-1.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 801313,
+          "width": 3024,
+          "height": 3780,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2025-07-02T16:13:18.878Z",
+          "updatedAt": "2025-07-02T16:13:18.878Z",
+          "url": "https://shush.dance/media/shush_3year_shirt_3-1.jpg"
+        },
+        "id": "68655a933eef0a5b0005d1e7"
+      },
+      {
+        "image": {
+          "id": "68655aad51becc1b34ef1822",
+          "alt": "SHUSH 3-year Shirt back1",
+          "filename": "shush_3year_shirt_1-1.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 633311,
+          "width": 2737,
+          "height": 3421,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2025-07-02T16:13:33.359Z",
+          "updatedAt": "2025-07-02T16:13:33.359Z",
+          "url": "https://shush.dance/media/shush_3year_shirt_1-1.jpg"
+        },
+        "id": "68655aa33eef0a5b0005d1e8"
+      },
+      {
+        "image": {
+          "id": "68655ae151becc1b34ef1882",
+          "alt": "SHUSH 3-year Shirt11",
+          "filename": "shush_3year_shirt_2-1.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 1096323,
+          "width": 4284,
+          "height": 5355,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2025-07-02T16:14:25.600Z",
+          "updatedAt": "2025-07-02T16:14:25.600Z",
+          "url": "https://shush.dance/media/shush_3year_shirt_2-1.jpg"
+        },
+        "id": "68655ad6ca9f49745e1a0257"
+      }
+    ],
+    "_status": "published",
+    "createdAt": "2025-07-02T12:55:13.608Z",
+    "updatedAt": "2025-08-23T16:01:52.151Z"
+  },
+  {
+    "id": "6748cfd53bc054e0a516aa4a",
+    "title": "SHUSH Vol. 1 – Heavyweight T-Shirt",
+    "itemType": "Clothing",
+    "description": [
+      {
+        "children": [
+          {
+            "text": "Second batch sold out already...sorry!",
+            "bold": true
+          }
+        ],
+        "type": "h4"
+      },
+      {
+        "children": [
+          {
+            "text": "______"
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "text": "Limited run of t-shirts to celebrate our inaugural release. Screen printed in Berlin on organic cotton. Thick & heavyweight fabric (240 g/m²). Loose / oversized fit.\n                \n            \n            \n            \n            \n\n\n        "
+          }
+        ]
+      }
+    ],
+    "mainImage": {
+      "id": "6748cfce3bc054e0a516aa44",
+      "alt": "shush_shirt",
+      "filename": "shush_shirt_dj.jpeg",
+      "mimeType": "image/jpeg",
+      "filesize": 924437,
+      "width": 3575,
+      "height": 2433,
+      "focalX": 50,
+      "focalY": 50,
+      "createdAt": "2024-11-28T20:17:18.056Z",
+      "updatedAt": "2024-11-28T20:17:18.056Z",
+      "url": "https://shush.dance/media/shush_shirt_dj.jpeg"
+    },
+    "images": [
+      {
+        "image": {
+          "id": "6748cf673bc054e0a516aa36",
+          "alt": "SHUSH_Shirt_Front",
+          "filename": "IMG_8143.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 726190,
+          "width": 4107,
+          "height": 5134,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2024-11-28T20:15:35.793Z",
+          "updatedAt": "2024-11-28T20:15:35.793Z",
+          "url": "https://shush.dance/media/IMG_8143.jpg"
+        },
+        "id": "6748cfd50677eedcaf5297d2"
+      },
+      {
+        "image": {
+          "id": "6748cf753bc054e0a516aa3d",
+          "alt": "SHUSH_Shirt_Back",
+          "filename": "IMG_8149.jpg",
+          "mimeType": "image/jpeg",
+          "filesize": 792409,
+          "width": 4284,
+          "height": 5355,
+          "focalX": 50,
+          "focalY": 50,
+          "createdAt": "2024-11-28T20:15:49.750Z",
+          "updatedAt": "2024-11-28T20:15:49.750Z",
+          "url": "https://shush.dance/media/IMG_8149.jpg"
+        },
+        "id": "6748cfd50677eedcaf5297d3"
+      }
+    ],
+    "slug": "shush-vol-1--heavyweight-t-shirt",
+    "_status": "published",
+    "createdAt": "2024-11-28T20:17:25.553Z",
+    "updatedAt": "2025-03-24T21:06:03.268Z",
+    "shippingPrices": {
+      "germany": 0,
+      "germanyAdditional": 0,
+      "eu": 0,
+      "euAdditional": 0,
+      "restOfWorld": 0,
+      "restOfWorldAdditional": 0
+    },
+    "isDigital": false
+  }
+]
