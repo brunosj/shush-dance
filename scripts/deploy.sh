@@ -108,11 +108,24 @@ pm2 delete shushv3 2>/dev/null || true
 
 echo "Starting PM2 process: $PM2_NAME"
 pm2 delete "$PM2_NAME" 2>/dev/null || true
-PAYLOAD_CONFIG_PATH="dist/payload/payload.config.js" \
-NODE_ENV="production" \
-MEDIA_DIR="$SHARED_MEDIA_DIR" \
-PORT="$PORT" \
-pm2 start "node dist/server.js" --name "$PM2_NAME" --cwd "$APP_DIR"
+
+# Source .env so all vars (DATABASE_URI, PAYLOAD_SECRET, etc.) are inherited
+# by the PM2 child process. Override critical ones explicitly.
+if [ -f "$REPO_DIR/.env" ]; then
+  set -a
+  . "$REPO_DIR/.env"
+  set +a
+  echo "Loaded .env from $REPO_DIR/.env"
+else
+  echo "WARNING: No .env found at $REPO_DIR/.env"
+fi
+
+export PAYLOAD_CONFIG_PATH="dist/payload/payload.config.js"
+export NODE_ENV="production"
+export MEDIA_DIR="$SHARED_MEDIA_DIR"
+export PORT="$PORT"
+
+pm2 start dist/server.js --interpreter node --name "$PM2_NAME" --cwd "$APP_DIR"
 
 echo "Waiting for PM2 process to initialize..."
 sleep 10
