@@ -3,140 +3,58 @@
 set -e
 set -x
 
-echo "Starting single-instance SHUSH deployment..."
+echo "Starting SHUSH deployment..."
 
-# Ensure correct Node.js and pnpm are in PATH
 export PATH=$HOME/.nvm/versions/node/v22.20.0/bin:$HOME/.local/share/pnpm:$PATH
 
-BASE_DIR="/home/lando"
-REPO_DIR="$BASE_DIR/repo"
-APP_DIR="$BASE_DIR/app/current"
+REPO_DIR="/home/lando/repo"
 PM2_NAME="shushv2"
-PORT=3000
-SHARED_MEDIA_DIR="$BASE_DIR/media"
-
-echo "======================================"
-echo "Single Deployment"
-echo "App dir: $APP_DIR"
-echo "PM2 process: $PM2_NAME"
-echo "Port: $PORT"
-echo "Media dir: $SHARED_MEDIA_DIR"
-echo "======================================"
-
-echo "=========================================="
-echo "STEP 1: Prepare Repository"
-echo "=========================================="
-
-mkdir -p "$APP_DIR"
-mkdir -p "$SHARED_MEDIA_DIR"
+SHARED_MEDIA_DIR="/home/lando/media"
 
 cd "$REPO_DIR"
+
+echo "=========================================="
+echo "STEP 1: Pull & Install"
+echo "=========================================="
 
 git fetch origin
 git reset --hard origin/main
 
-echo "Installing dependencies..."
 pnpm install
 
 echo "=========================================="
-echo "STEP 2: Build Application"
+echo "STEP 2: Build"
 echo "=========================================="
 
-echo "Building Payload admin and server..."
 pnpm run build:payload
 pnpm run build:server
 
-echo "Skipping Next.js pre-build (runtime compile mode)"
-
 echo "=========================================="
-echo "STEP 3: Sync Runtime Directory"
+echo "STEP 3: Ensure media symlink"
 echo "=========================================="
 
-echo "Preparing runtime directory..."
-
-rm -rf "$APP_DIR/package.json" "$APP_DIR/node_modules" "$APP_DIR/.next" "$APP_DIR/dist" "$APP_DIR/public" "$APP_DIR/build"
-
-echo "Creating symlinks..."
-ln -sfn "$REPO_DIR/package.json" "$APP_DIR/package.json"
-ln -sfn "$REPO_DIR/node_modules" "$APP_DIR/node_modules"
-
-echo "Copying dist output..."
-rsync -av --delete "$REPO_DIR/dist/" "$APP_DIR/dist/"
-
-if [ -d "$REPO_DIR/.next" ]; then
-    echo "Copying .next output..."
-    rsync -av --delete "$REPO_DIR/.next/" "$APP_DIR/.next/"
-else
-    echo "No .next directory (Next.js will compile at runtime)"
-fi
-
-if [ -d "$REPO_DIR/build" ]; then
-    echo "Copying build output..."
-    rsync -av --delete "$REPO_DIR/build/" "$APP_DIR/build/"
-fi
-
-if [ -d "$REPO_DIR/public" ]; then
-    echo "Copying public assets..."
-    rsync -av --delete "$REPO_DIR/public/" "$APP_DIR/public/"
-fi
-
-echo "Symlinking shared media directory..."
-rm -rf "$APP_DIR/media"
-ln -sfn "$SHARED_MEDIA_DIR" "$APP_DIR/media"
-
-echo "Copying configuration files..."
-for file in next.config.js tailwind.config.js postcss.config.js nodemon.json middleware.ts redirects.js csp.js; do
-    if [ -f "$REPO_DIR/$file" ]; then
-        cp "$REPO_DIR/$file" "$APP_DIR/"
-    fi
-done
-
-echo "Symlinking .env from repo..."
-rm -f "$APP_DIR/.env"
-ln -sfn "$REPO_DIR/.env" "$APP_DIR/.env"
+mkdir -p "$SHARED_MEDIA_DIR"
+rm -rf "$REPO_DIR/media"
+ln -sfn "$SHARED_MEDIA_DIR" "$REPO_DIR/media"
 
 echo "=========================================="
-echo "STEP 4: Start Single PM2 Process"
+echo "STEP 4: Restart PM2"
 echo "=========================================="
 
-cd "$APP_DIR"
-
-echo "Removing old blue/green processes if present..."
 pm2 delete shush-blue 2>/dev/null || true
 pm2 delete shush-green 2>/dev/null || true
 pm2 delete shushv3 2>/dev/null || true
-
-echo "Starting PM2 process: $PM2_NAME"
 pm2 delete "$PM2_NAME" 2>/dev/null || true
 
-# Source .env so all vars (DATABASE_URI, PAYLOAD_SECRET, etc.) are inherited
-# by the PM2 child process. Override critical ones explicitly.
-if [ -f "$REPO_DIR/.env" ]; then
-  set -a
-  . "$REPO_DIR/.env"
-  set +a
-  echo "Loaded .env from $REPO_DIR/.env"
-else
-  echo "WARNING: No .env found at $REPO_DIR/.env"
-fi
+pm2 start pnpm --name "$PM2_NAME" --cwd "$REPO_DIR" -- serve
 
-export PAYLOAD_CONFIG_PATH="dist/payload/payload.config.js"
-export NODE_ENV="production"
-export MEDIA_DIR="$SHARED_MEDIA_DIR"
-export PORT="$PORT"
-
-pm2 start dist/server.js --interpreter node --name "$PM2_NAME" --cwd "$APP_DIR"
-
-echo "Waiting for PM2 process to initialize..."
-sleep 10
+echo "Waiting for process to initialize..."
+sleep 15
 
 if ! pm2 list | grep -q "$PM2_NAME.*online"; then
-    echo "PM2 process is not online after startup."
-    echo "PM2 snapshot:"
+    echo "PM2 process is not online."
     pm2 list
-    echo ""
-    echo "Process logs (last 120 lines):"
-    pm2 logs "$PM2_NAME" --lines 120 --nostream || true
+    pm2 logs "$PM2_NAME" --lines 80 --nostream || true
     exit 1
 fi
 
@@ -144,53 +62,37 @@ echo "=========================================="
 echo "STEP 5: Health Check"
 echo "=========================================="
 
-HEALTH_ENDPOINT="http://localhost:$PORT/api/health"
+HEALTH_ENDPOINT="http://localhost:3000/api/health"
 APP_READY=false
 
-echo "Checking health at: $HEALTH_ENDPOINT"
-
-for i in {1..60}; do
-  # Try health check endpoint (curl failures are expected until app is ready)
+for i in {1..90}; do
   set +e
   RESPONSE=$(curl -sf "$HEALTH_ENDPOINT" 2>&1)
   CURL_EXIT=$?
   set -e
 
   if [ $CURL_EXIT -eq 0 ]; then
-    echo "Application is ready."
-    echo "Health check response: $RESPONSE"
+    echo "Application is ready: $RESPONSE"
     APP_READY=true
     break
   fi
 
-  # If PM2 process is no longer online, fail immediately with diagnostics.
   if ! pm2 list | grep -q "$PM2_NAME.*online"; then
-    echo "PM2 process went offline during health checks."
-    pm2 list
-    echo ""
-    echo "Process logs (last 120 lines):"
-    pm2 logs "$PM2_NAME" --lines 120 --nostream || true
+    echo "PM2 process crashed."
+    pm2 logs "$PM2_NAME" --lines 80 --nostream || true
     exit 1
   fi
-  
-  if [ $i -eq 60 ]; then
-    echo "Application failed to respond in time (60 seconds)"
-    echo ""
-    echo "Testing health endpoint:"
-    curl -v "$HEALTH_ENDPOINT" 2>&1 | head -20
-    echo ""
-    echo "PM2 status:"
-    pm2 list
-    echo ""
-    echo "Application logs (last 50 lines):"
-    pm2 logs "$PM2_NAME" --lines 50 --nostream
+
+  if [ $i -eq 90 ]; then
+    echo "Timed out after 90s."
+    pm2 logs "$PM2_NAME" --lines 80 --nostream || true
     exit 1
   fi
-  
-  if [ $((i % 5)) -eq 0 ]; then
-    echo "Waiting for application... (attempt $i/60, ${i}s elapsed)"
+
+  if [ $((i % 10)) -eq 0 ]; then
+    echo "Waiting... ($i/90s)"
   fi
-  
+
   sleep 1
 done
 
@@ -202,8 +104,6 @@ fi
 pm2 save
 
 echo "=========================================="
-echo "Deployment completed successfully."
+echo "Deployed successfully."
 echo "=========================================="
-echo "Active deployment: $PM2_NAME on port $PORT"
-echo "MEDIA_DIR forced to: $SHARED_MEDIA_DIR"
 pm2 list
