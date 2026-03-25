@@ -76,7 +76,7 @@
   background: linear-gradient(
     to top,
     rgba(254, 254, 246, 1),
-    /* Stronger opacity at the top */ rgba(254, 254, 246, 0.1),
+    #fefef6 /* Stronger opacity at the top */ rgba(254, 254, 246, 0.1),
     /* Mid-opacity in the center */ rgba(255, 255, 255, 0)
       /* Fully transparent at the bottom */
   );

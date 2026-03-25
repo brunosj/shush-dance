@@ -108,12 +108,16 @@ pm2 delete shushv3 2>/dev/null || true
 
 echo "Starting PM2 process: $PM2_NAME"
 pm2 delete "$PM2_NAME" 2>/dev/null || true
-MEDIA_DIR="$SHARED_MEDIA_DIR" PORT="$PORT" pm2 start pnpm --name "$PM2_NAME" --cwd "$APP_DIR" -- serve
+PAYLOAD_CONFIG_PATH="dist/payload/payload.config.js" \
+NODE_ENV="production" \
+MEDIA_DIR="$SHARED_MEDIA_DIR" \
+PORT="$PORT" \
+pm2 start "node dist/server.js" --name "$PM2_NAME" --cwd "$APP_DIR"
 
 echo "Waiting for PM2 process to initialize..."
 sleep 10
 
-if ! pm2 list | rg "$PM2_NAME.*online" > /dev/null; then
+if ! pm2 list | grep -q "$PM2_NAME.*online"; then
     echo "PM2 process is not online after startup."
     echo "PM2 snapshot:"
     pm2 list
@@ -147,7 +151,7 @@ for i in {1..60}; do
   fi
 
   # If PM2 process is no longer online, fail immediately with diagnostics.
-  if ! pm2 list | rg "$PM2_NAME.*online" > /dev/null; then
+  if ! pm2 list | grep -q "$PM2_NAME.*online"; then
     echo "PM2 process went offline during health checks."
     pm2 list
     echo ""
