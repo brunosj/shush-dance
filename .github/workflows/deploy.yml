@@ -76,37 +76,8 @@ jobs:
             pm2 list
             echo ""
             
-            echo "🔗 Blue-Green Deployment Status:"
-            ACTIVE_LINK=$(readlink /home/lando/app/active 2>/dev/null)
-            if [ -n "$ACTIVE_LINK" ]; then
-              ACTIVE_COLOR=$(echo "$ACTIVE_LINK" | grep -o "blue\|green")
-              echo "Active deployment: $ACTIVE_COLOR"
-              echo "Active symlink: $ACTIVE_LINK"
-              
-              # Determine active port
-              if [ "$ACTIVE_COLOR" = "blue" ]; then
-                ACTIVE_PORT=3000
-              else
-                ACTIVE_PORT=3001
-              fi
-            else
-              echo "⚠️  No active symlink found, trying both ports"
-              ACTIVE_PORT=3000
-            fi
-            echo ""
-            
-            echo "🏥 Health Check (port $ACTIVE_PORT):"
-            HEALTH=$(curl -sf http://localhost:$ACTIVE_PORT/api/health)
-            if [ -z "$HEALTH" ]; then
-              echo "❌ Application not responding on port $ACTIVE_PORT"
-              echo ""
-              echo "Trying alternate port..."
-              HEALTH=$(curl -sf http://localhost:3001/api/health 2>/dev/null || curl -sf http://localhost:3000/api/health 2>/dev/null)
-              if [ -z "$HEALTH" ]; then
-                echo "❌ Application not responding on any port"
-                exit 1
-              fi
-            fi
+            echo "🏥 Health Check (port 3000):"
+            HEALTH=$(curl -sf http://localhost:3000/api/health)
             echo "$HEALTH"
             echo "✅ Application OK"
             echo ""

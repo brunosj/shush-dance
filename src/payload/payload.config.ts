@@ -32,8 +32,14 @@ import { ensureOrderCreatedEndpoint } from './endpoints/ensureOrderCreated';
 import { healthEndpoint } from './endpoints/health';
 import { Settings } from './globals/settings';
 
+// In production, this config runs from `dist/payload`, so `__dirname`-relative
+// paths won't match the runtime working directory. Prefer loading `.env` from
+// the current working directory (where deploy scripts place it).
 dotenv.config({
-  path: path.resolve(__dirname, '../../.env'),
+  path:
+    process.env.DOTENV_PATH ||
+    path.resolve(process.cwd(), '.env') ||
+    path.resolve(__dirname, '../../.env'),
 });
 
 export default buildConfig({
