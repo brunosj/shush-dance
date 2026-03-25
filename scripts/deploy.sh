@@ -108,10 +108,20 @@ pm2 delete shushv3 2>/dev/null || true
 
 echo "Starting PM2 process: $PM2_NAME"
 pm2 delete "$PM2_NAME" 2>/dev/null || true
-MEDIA_DIR="$SHARED_MEDIA_DIR" PORT="$PORT" pm2 start "pnpm serve" --name "$PM2_NAME"
+MEDIA_DIR="$SHARED_MEDIA_DIR" PORT="$PORT" pm2 start pnpm --name "$PM2_NAME" --cwd "$APP_DIR" -- serve
 
 echo "Waiting for PM2 process to initialize..."
 sleep 10
+
+if ! pm2 list | rg "$PM2_NAME.*online" > /dev/null; then
+    echo "PM2 process is not online after startup."
+    echo "PM2 snapshot:"
+    pm2 list
+    echo ""
+    echo "Process logs (last 120 lines):"
+    pm2 logs "$PM2_NAME" --lines 120 --nostream || true
+    exit 1
+fi
 
 echo "=========================================="
 echo "STEP 5: Health Check"
@@ -134,6 +144,16 @@ for i in {1..60}; do
     echo "Health check response: $RESPONSE"
     APP_READY=true
     break
+  fi
+
+  # If PM2 process is no longer online, fail immediately with diagnostics.
+  if ! pm2 list | rg "$PM2_NAME.*online" > /dev/null; then
+    echo "PM2 process went offline during health checks."
+    pm2 list
+    echo ""
+    echo "Process logs (last 120 lines):"
+    pm2 logs "$PM2_NAME" --lines 120 --nostream || true
+    exit 1
   fi
   
   if [ $i -eq 60 ]; then
