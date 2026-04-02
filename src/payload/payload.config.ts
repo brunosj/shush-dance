@@ -29,6 +29,7 @@ import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
 import { clientErrorReportEndpoint } from './endpoints/clientErrorReport';
 import { stripeWebhookEndpoint } from './endpoints/stripeWebhook';
 import { ensureOrderCreatedEndpoint } from './endpoints/ensureOrderCreated';
+import { stripeBackfillTicketSalesEndpoint } from './endpoints/stripeBackfillTicketSales';
 import { healthEndpoint } from './endpoints/health';
 import { Settings } from './globals/settings';
 
@@ -90,6 +91,7 @@ export default buildConfig({
     clientErrorReportEndpoint,
     stripeWebhookEndpoint,
     ensureOrderCreatedEndpoint,
+    stripeBackfillTicketSalesEndpoint,
   ],
   email: {
     fromName: 'SHUSH',

@@ -84,6 +84,17 @@ export const Events: CollectionConfig = {
       label: 'Tickets Available',
       defaultValue: true,
     },
+    {
+      name: 'stripeCatalogMatchKey',
+      type: 'text',
+      label: 'Stripe catalog match key',
+      required: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Optional. Set the same value in Stripe as metadata **cms_event_key** on each Price or Product used by Payment Links. Use a unique value per event. Also set **cms_tier_name** on each Stripe Price to match that tier’s **Tier Name** here (exact text, case-insensitive) so sync maps the correct tier. Alternatively use **payload_event_id** on the Price/Product for a direct event link.',
+      },
+    },
 
     {
       name: 'ticketTiers',
@@ -122,6 +133,10 @@ export const Events: CollectionConfig = {
           type: 'text',
           label: 'Stripe Price ID',
           required: true,
+          admin: {
+            description:
+              'For Payment Links: you can set Price metadata **cms_tier_name** in Stripe to this tier’s **Tier Name** (exact match, case-insensitive). Sync then maps the line to this tier even when the Stripe product name differs.',
+          },
         },
         {
           name: 'ticketLink',

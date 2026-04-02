@@ -52,6 +52,7 @@ export interface Event {
   location: string;
   artists?: (string | Artist)[] | null;
   ticketsAvailable?: boolean | null;
+  stripeCatalogMatchKey?: string | null;
   ticketTiers?:
     | {
         tierName: string;
