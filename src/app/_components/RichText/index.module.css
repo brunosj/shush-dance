@@ -2,14 +2,13 @@
   margin-top: 0;
 }
 
-.richText a {
+.link {
   text-decoration: underline;
   transition: opacity 0.3s ease;
-  opacity:1
 }
 
-.richText a:hover {
-  opacity:0.6
+.link:hover {
+  opacity: 0.6;
 }
 
 

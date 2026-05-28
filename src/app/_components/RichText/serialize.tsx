@@ -2,6 +2,8 @@ import React, { Fragment } from 'react';
 import escapeHTML from 'escape-html';
 import { Text } from 'slate';
 
+import styles from './index.module.css';
+
 // eslint-disable-next-line no-use-before-define
 type Children = Leaf[];
 
@@ -81,7 +83,13 @@ const serialize = (children: Children): React.ReactNode[] =>
         return <li key={i}>{serialize(node.children)}</li>;
       case 'link':
         return (
-          <a href={escapeHTML(node.url)} key={i}>
+          <a
+            href={escapeHTML(node.url)}
+            key={i}
+            className={styles.link}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {serialize(node.children)}
           </a>
         );
