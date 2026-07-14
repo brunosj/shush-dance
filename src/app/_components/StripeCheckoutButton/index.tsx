@@ -30,13 +30,49 @@ const CheckoutForm: React.FC<{
   customerData: any;
   orderTotals: any;
   shippingRegion: string;
+  clientSecret: string;
   onSuccess: () => void;
   onError: (error: string) => void;
-}> = ({ customerData, orderTotals, shippingRegion, onSuccess, onError }) => {
+}> = ({
+  customerData,
+  orderTotals,
+  shippingRegion,
+  clientSecret,
+  onSuccess,
+  onError,
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const { clearCart, cartDetails } = useShoppingCart();
+
+  const buildOrderData = () => {
+    const orderNumber = `SHUSH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return {
+      orderNumber,
+      customerData,
+      cartItems: Object.entries(cartDetails || {}).map(([key, item]) => {
+        const productData = item?.product_data as any;
+        const metadata = productData?.metadata || {};
+
+        return {
+          id: key,
+          name: item.name,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          lineTotal: item.price * item.quantity,
+          type: metadata.type || 'merch',
+          metadata: metadata,
+          parentItem: item.parentItem || null, // For tickets, this contains the event title
+          stripePriceId: item.id.includes('price_') ? item.id : null, // Extract Stripe price ID if present
+        };
+      }),
+      totals: orderTotals,
+      shippingRegion,
+      paymentMethod: 'stripe',
+    };
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -55,10 +91,21 @@ const CheckoutForm: React.FC<{
         return;
       }
 
+      // Persist fallback data BEFORE confirming. Redirect-based methods (e.g.
+      // Klarna) navigate away during confirmPayment, so any code after the
+      // call never runs. The payment intent id is derivable from the client
+      // secret (`pi_xxx_secret_yyy`). sessionStorage survives the redirect back
+      // to /success (same tab, same origin), letting the fallback run there.
+      const paymentIntentId = clientSecret.split('_secret_')[0];
+      sessionStorage.setItem(
+        'fallbackOrderData',
+        JSON.stringify({ paymentIntentId, orderData: buildOrderData() })
+      );
+
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/success`,
+          return_url: `${window.location.origin}/success?payment_intent=${paymentIntentId}`,
         },
         redirect: 'if_required',
       });
@@ -72,48 +119,10 @@ const CheckoutForm: React.FC<{
           payment_method: paymentIntent.payment_method,
         });
 
-        // Payment succeeded - webhook will handle order creation
+        // Payment succeeded (non-redirect method) - webhook will handle order
+        // creation, with the sessionStorage fallback as backup.
         console.log(
           '🎉 Payment completed, webhook will process order creation'
-        );
-
-        // Prepare order data for potential fallback use
-        const orderNumber = `SHUSH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const orderData = {
-          orderNumber,
-          customerData,
-          cartItems: Object.entries(cartDetails || {}).map(([key, item]) => {
-            const productData = item?.product_data as any;
-            const metadata = productData?.metadata || {};
-
-            return {
-              id: key,
-              name: item.name,
-              description: item.description,
-              quantity: item.quantity,
-              unitPrice: item.price,
-              lineTotal: item.price * item.quantity,
-              type: metadata.type || 'merch',
-              metadata: metadata,
-              parentItem: item.parentItem || null, // For tickets, this contains the event title
-              stripePriceId: item.id.includes('price_') ? item.id : null, // Extract Stripe price ID if present
-            };
-          }),
-          totals: orderTotals,
-          shippingRegion,
-          paymentMethod: 'stripe',
-        };
-
-        // Store order data and payment intent for potential fallback
-        const fallbackData = {
-          paymentIntentId: paymentIntent.id,
-          orderData: orderData,
-        };
-
-        // Store in sessionStorage for fallback use
-        sessionStorage.setItem(
-          'fallbackOrderData',
-          JSON.stringify(fallbackData)
         );
 
         // Don't clear cart here - let success page handle it after processing timeout
@@ -514,6 +523,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
         customerData={customerData}
         orderTotals={orderTotals}
         shippingRegion={shippingRegion || 'eu'}
+        clientSecret={clientSecret}
         onSuccess={handleSuccess}
         onError={handleError}
       />

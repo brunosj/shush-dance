@@ -8,6 +8,8 @@ interface MonitoringResult {
     nodeVersion: string;
     hasStripeKey: boolean;
     stripeKeyPrefix: string;
+    hasStripeWebhookSecret: boolean;
+    hasSmtpConfig: boolean;
     pid: number;
     platform: string;
     arch: string;
@@ -21,7 +23,14 @@ interface MonitoringResult {
     attempts?: number;
     errorPattern?: string;
   };
-  order: { success: boolean; error?: string; orderNumber?: string };
+  order: {
+    success: boolean;
+    error?: string;
+    orderNumber?: string;
+    onlineOrders?: number;
+    ticketSales?: number;
+  };
+  config: { success: boolean; error?: string; warnings?: string[] };
   overall: boolean;
 }
 
@@ -41,10 +50,54 @@ const getServerHealth = () => {
     hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
     stripeKeyPrefix:
       process.env.STRIPE_SECRET_KEY?.substring(0, 8) || 'missing',
+    hasStripeWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+    hasSmtpConfig:
+      !!process.env.SMTP_HOST &&
+      !!process.env.SMTP_USER &&
+      !!process.env.SMTP_PASS,
     pid: process.pid,
     platform: process.platform,
     arch: process.arch,
   };
+};
+
+// Validate critical configuration needed for the post-payment flow
+// (webhook signature verification + confirmation emails). Missing values here
+// silently break order creation / emails even when checkout "starts" fine.
+const testCriticalConfig = (): {
+  success: boolean;
+  error?: string;
+  warnings?: string[];
+} => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const missing: string[] = [];
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    missing.push(
+      'STRIPE_WEBHOOK_SECRET (webhook signature verification will fail → orders only via fallback)'
+    );
+  }
+
+  const smtpMissing: string[] = [];
+  if (!process.env.SMTP_HOST) smtpMissing.push('SMTP_HOST');
+  if (!process.env.SMTP_USER) smtpMissing.push('SMTP_USER');
+  if (!process.env.SMTP_PASS) smtpMissing.push('SMTP_PASS');
+  if (smtpMissing.length > 0) {
+    missing.push(
+      `SMTP config (${smtpMissing.join(', ')}) → confirmation emails will not send`
+    );
+  }
+
+  if (missing.length === 0) {
+    return { success: true };
+  }
+
+  // In production these are critical; elsewhere surface them as warnings only.
+  if (isProduction) {
+    return { success: false, error: missing.join('; ') };
+  }
+
+  return { success: true, warnings: missing };
 };
 
 // Test Stripe connectivity without creating payment intents
@@ -467,22 +520,32 @@ const testPaymentIntentEndpoint = async (): Promise<{
 // Test database connectivity without creating orders
 const testDatabaseConnectivity = async (
   payload: any
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<{
+  success: boolean;
+  error?: string;
+  onlineOrders?: number;
+  ticketSales?: number;
+}> => {
   const testId = `database-${Date.now()}`;
 
   try {
     console.log(`[${testId}] 🧪 Testing database connectivity...`);
 
-    // Simple read-only test - just count existing orders
-    const orderCount = await payload.count({
-      collection: 'online-orders',
-    });
+    // Simple read-only test - count both order collections. Tickets live in a
+    // separate collection, so counting only online-orders would miss the
+    // ticket-sales path entirely.
+    const [orderCount, ticketCount] = await Promise.all([
+      payload.count({ collection: 'online-orders' }),
+      payload.count({ collection: 'ticket-sales' }),
+    ]);
 
     console.log(
-      `[${testId}] ✅ Database connectivity test successful (${orderCount.totalDocs} orders in system)`
+      `[${testId}] ✅ Database connectivity test successful (${orderCount.totalDocs} online orders, ${ticketCount.totalDocs} ticket sales)`
     );
     return {
       success: true,
+      onlineOrders: orderCount.totalDocs,
+      ticketSales: ticketCount.totalDocs,
     };
   } catch (error: any) {
     console.error(`[${testId}] ❌ Database connectivity test failed:`, {
@@ -603,6 +666,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
       stripe: { success: false },
       endpoint: { success: false },
       order: { success: false },
+      config: { success: false },
       overall: true,
     };
 
@@ -611,6 +675,8 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
       uptime: results.health.uptime,
       memory: results.health.memory.used,
       hasStripeKey: results.health.hasStripeKey,
+      hasStripeWebhookSecret: results.health.hasStripeWebhookSecret,
+      hasSmtpConfig: results.health.hasSmtpConfig,
       nodeVersion: results.health.nodeVersion,
     });
 
@@ -654,6 +720,20 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
         console.log(`[${monitorId}] ❌ Database connectivity test failed`);
       }
 
+      // Test 4: Critical config for the post-payment flow (webhook + email)
+      console.log(`[${monitorId}] 🧪 Running critical config check...`);
+      results.config = testCriticalConfig();
+      if (!results.config.success) {
+        results.overall = false;
+        console.log(
+          `[${monitorId}] ❌ Critical config check failed: ${results.config.error}`
+        );
+      } else if (results.config.warnings?.length) {
+        console.warn(
+          `[${monitorId}] ⚠️ Config warnings: ${results.config.warnings.join('; ')}`
+        );
+      }
+
       // Handle results
       if (results.overall) {
         console.log(`[${monitorId}] ✅ Payment system tests passed`, {
@@ -683,6 +763,12 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
               ? 'skipped'
               : 'fail',
           database: results.order.success ? 'ok' : 'fail',
+          config: results.config.success ? 'ok' : 'fail',
+          configWarnings: results.config.warnings || [],
+          counts: {
+            onlineOrders: results.order.onlineOrders,
+            ticketSales: results.order.ticketSales,
+          },
           health: results.health,
           responseTime: results.endpoint.responseTime,
           attempts: results.endpoint.attempts,
@@ -712,6 +798,8 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
           errors.push(`Endpoint: ${results.endpoint.error}`);
         if (!results.order.success)
           errors.push(`Database Connectivity: ${results.order.error}`);
+        if (!results.config.success)
+          errors.push(`Critical Config: ${results.config.error}`);
 
         const errorMessage = errors.join('\n');
         const errorPattern = results.endpoint.errorPattern;
@@ -722,6 +810,8 @@ Monitor Results (${skipPaymentIntents ? 'NO-TRANSACTIONS MODE' : 'FULL-TEST MODE
 - Stripe API: ${results.stripe.success ? '✅ OK' : '❌ FAILED'}
 - Production Endpoint: ${results.endpoint.success ? '✅ OK' : skipPaymentIntents ? '⏭️ SKIPPED' : '❌ FAILED'}
 - Database Connectivity: ${results.order.success ? '✅ OK' : '❌ FAILED'}
+- Critical Config (webhook + email): ${results.config.success ? '✅ OK' : '❌ FAILED'}
+- Config: webhook secret ${results.health.hasStripeWebhookSecret ? '✅' : '❌'}, SMTP ${results.health.hasSmtpConfig ? '✅' : '❌'}
 
 ${
   results.endpoint.attempts && !skipPaymentIntents
@@ -770,6 +860,12 @@ Recommended Actions:
               ? 'skipped'
               : 'fail',
           database: results.order.success ? 'ok' : 'fail',
+          config: results.config.success ? 'ok' : 'fail',
+          configWarnings: results.config.warnings || [],
+          counts: {
+            onlineOrders: results.order.onlineOrders,
+            ticketSales: results.order.ticketSales,
+          },
           health: results.health,
           responseTime: results.endpoint.responseTime,
           attempts: results.endpoint.attempts,

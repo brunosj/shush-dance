@@ -16,6 +16,7 @@ import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import Button from '../Button';
 import AddToCartButton from '../AddToCartButton';
+import { resolveMediaResource, resolveMediaUrl } from '../../_utilities/getMediaUrl';
 
 interface ProductListingProps {
   product: ExtendedMerch | ExtendedRelease;
@@ -41,11 +42,15 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
   const mainImageUrl = isRelease
     ? (() => {
         const artwork = (product as ExtendedRelease).artwork;
-        return typeof artwork === 'string' ? artwork : artwork.url;
+        return typeof artwork === 'string'
+          ? resolveMediaUrl(artwork)
+          : resolveMediaResource(artwork);
       })()
     : (() => {
         const mainImage = (product as ExtendedMerch).mainImage;
-        return typeof mainImage === 'string' ? mainImage : mainImage.url;
+        return typeof mainImage === 'string'
+          ? resolveMediaUrl(mainImage)
+          : resolveMediaResource(mainImage);
       })();
 
   // Release-specific data
@@ -73,7 +78,10 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
     : undefined;
 
   const transformedImages = images?.map((img) => {
-    const imageUrl = typeof img.image === 'string' ? img.image : img.image.url;
+    const imageUrl =
+      typeof img.image === 'string'
+        ? resolveMediaUrl(img.image)
+        : resolveMediaResource(img.image);
     return { src: imageUrl, alt: `${title} additional image` };
   });
 

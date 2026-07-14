@@ -18,6 +18,13 @@ const mediaPath =
 console.log('Serving media from:', mediaPath);
 app.use('/media', express.static(mediaPath));
 
+// Stripe needs the untouched raw body to verify the webhook signature.
+// Must be registered before Payload attaches its JSON body parser.
+app.use(
+  '/api/stripe-webhook',
+  express.raw({ type: 'application/json' })
+);
+
 const PORT = process.env.PORT || 3000;
 const start = async (): Promise<void> => {
   console.log(`Server starting on port ${PORT}`);

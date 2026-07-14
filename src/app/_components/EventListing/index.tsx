@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import Button from '../Button';
 import { RichText } from '../RichText';
+import { resolveMediaResource } from '../../_utilities/getMediaUrl';
 
 interface EventListingProps {
   event: Event;
@@ -90,7 +91,7 @@ const EventListing: React.FC<EventListingProps> = ({
               {images.map((img) => (
                 <Image
                   key={img.id}
-                  src={img.url ?? ''}
+                  src={resolveMediaResource(img)}
                   alt={img.alt}
                   width={imageHover ? 64 : 200}
                   height={imageHover ? 64 : 200}
@@ -175,7 +176,7 @@ const EventListing: React.FC<EventListingProps> = ({
           }}
         >
           <Image
-            src={hoverImage.url ?? ''}
+            src={resolveMediaResource(hoverImage)}
             alt={hoverImage.alt}
             fill
             className='object-contain w-full'

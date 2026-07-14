@@ -2,6 +2,55 @@
 const ContentSecurityPolicy = require('./csp');
 const redirects = require('./redirects');
 
+function originFromEnvUrl(envUrl) {
+  if (!envUrl) return null;
+
+  try {
+    const normalized = envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
+    const parsed = new URL(normalized);
+    return {
+      protocol: parsed.protocol.replace(':', ''),
+      hostname: parsed.hostname,
+      port: parsed.port || undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+const mediaOrigin = originFromEnvUrl(process.env.NEXT_PUBLIC_MEDIA_URL);
+const payloadOrigin = originFromEnvUrl(process.env.NEXT_PUBLIC_PAYLOAD_URL);
+
+const remotePatterns = [];
+
+if (mediaOrigin) {
+  remotePatterns.push({
+    protocol: mediaOrigin.protocol,
+    hostname: mediaOrigin.hostname,
+    ...(mediaOrigin.port ? { port: mediaOrigin.port } : {}),
+    pathname: '/**',
+  });
+}
+
+if (
+  payloadOrigin &&
+  (!mediaOrigin || payloadOrigin.hostname !== mediaOrigin.hostname)
+) {
+  remotePatterns.push({
+    protocol: payloadOrigin.protocol,
+    hostname: payloadOrigin.hostname,
+    ...(payloadOrigin.port ? { port: payloadOrigin.port } : {}),
+    pathname: '/**',
+  });
+}
+
+remotePatterns.push({
+  protocol: 'http',
+  hostname: 'localhost',
+  port: '3000',
+  pathname: '/media/**',
+});
+
 const nextConfig = {
   // need to see how this can properly work with the current setup
   // https://nextjs.org/docs/app/api-reference/next-config-js/output
@@ -9,22 +58,10 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: process.env.NEXT_PUBLIC_PAYLOAD_URL?.replace(
-          /https?:\/\//,
-          ''
-        ),
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3000',
-        pathname: '/media/**',
-      },
-    ],
+    // When dev loads media from a remote host, skip server-side optimization to
+    // avoid fetchExternalImage timeouts against production.
+    unoptimized: Boolean(process.env.NEXT_PUBLIC_MEDIA_URL),
+    remotePatterns,
   },
 
   redirects,

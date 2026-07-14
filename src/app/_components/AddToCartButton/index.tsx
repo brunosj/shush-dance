@@ -6,6 +6,7 @@ import { useShipping } from '../../_providers/ShippingProvider';
 import Button from '../Button';
 import type { Merch, Release } from '../../../payload/payload-types';
 import toast from 'react-hot-toast';
+import { resolveMediaResource, resolveMediaUrl } from '../../_utilities/getMediaUrl';
 
 interface AddToCartButtonProps {
   item: Merch | Release;
@@ -51,14 +52,14 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
         if (type === 'release') {
           const release = item as Release;
           return typeof release.artwork === 'string'
-            ? release.artwork
-            : release.artwork?.url || '';
-        } else {
-          const merch = item as Merch;
-          return typeof merch.mainImage === 'string'
-            ? merch.mainImage
-            : merch.mainImage?.url || '';
+            ? resolveMediaUrl(release.artwork)
+            : resolveMediaResource(release.artwork) || '';
         }
+
+        const merch = item as Merch;
+        return typeof merch.mainImage === 'string'
+          ? resolveMediaUrl(merch.mainImage)
+          : resolveMediaResource(merch.mainImage) || '';
       };
 
       // Create cart item WITHOUT VAT (will be calculated at cart level)

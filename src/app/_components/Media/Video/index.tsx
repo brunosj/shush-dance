@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 
 import { Props as MediaProps } from '../types';
+import { mediaUrlFromFilename } from '../../../_utilities/getMediaUrl';
 
 import classes from './index.module.css';
 
@@ -36,9 +37,7 @@ export const Video: React.FC<MediaProps> = (props) => {
         onClick={onClick}
         ref={videoRef}
       >
-        <source
-          src={`${process.env.NEXT_PUBLIC_SERVER_URL}/media/${filename}`}
-        />
+        <source src={mediaUrlFromFilename(filename)} />
       </video>
     );
   }

@@ -34,13 +34,13 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ env.USERNAME }}@${{ env.HOST }} "
             set -e
             echo '📂 Checking repo directory...'
-            if [ ! -d '/home/lando/repo' ]; then
+            if [ ! -d '/home/lando/shush/repo' ]; then
               echo '❌ Repo directory not found!'
               exit 1
             fi
             
             echo '📥 Fetching latest changes first...'
-            cd /home/lando/repo
+            cd /home/lando/shush/repo
             git fetch origin
             git reset --hard origin/main
             

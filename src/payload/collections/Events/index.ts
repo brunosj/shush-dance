@@ -85,6 +85,16 @@ export const Events: CollectionConfig = {
       defaultValue: true,
     },
     {
+      ...createRichTextField({
+        label: 'Ticket Email Footer',
+      }),
+      admin: {
+        description:
+          'Optional content appended to ticket confirmation emails below the SHUSH crew signature.',
+        condition: (data) => data.ticketsAvailable === true,
+      },
+    },
+    {
       name: 'stripeCatalogMatchKey',
       type: 'text',
       label: 'Stripe catalog match key',

@@ -115,7 +115,11 @@ GET /api/monitor-payment-system?key=your-secret-monitor-key
   "status": "ok",
   "message": "Payment system healthy",
   "stripe": "ok",
-  "order": "ok",
+  "endpoint": "ok",
+  "database": "ok",
+  "config": "ok",
+  "configWarnings": [],
+  "counts": { "onlineOrders": 123, "ticketSales": 45 },
   "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
@@ -144,23 +148,42 @@ GET /api/monitor-payment-system?key=your-secret-monitor-key
 
 ## What Gets Tested
 
-### 1. Stripe Payment Intent Creation
+### 1. Stripe API Connectivity
 
-- Creates a €1.00 test payment intent
-- Verifies Stripe API connectivity
-- Tests authentication and configuration
+- Calls a lightweight, read-only Stripe API (`accounts.list`) — does **not** create payment intents
+- Verifies Stripe API connectivity, authentication, and that `STRIPE_SECRET_KEY` is valid
 
-### 2. Order Creation
+### 2. Production Payment Intent Endpoint (optional)
 
-- Creates a test order in the database
-- Verifies database connectivity
-- Tests order processing workflow
+- POSTs a minimal €0.01 test request to `/api/create-payment-intent` via the public URL
+- Confirms the checkout **start** path works end-to-end (catches 502/timeout/stale-instance issues)
+- Skipped when the request includes `skipPaymentIntents=true` (avoids creating Stripe transactions)
 
-### 3. Email System
+### 3. Database Connectivity
 
-- Sends alerts when failures are detected
-- Tests SMTP configuration
-- Provides detailed error information
+- Read-only `count` on **both** `online-orders` and `ticket-sales`
+- Verifies database connectivity for the merch and ticket order paths
+- Returns the counts in the response under `counts`
+
+> Note: monitoring does **not** create test orders. Earlier docs claimed it did; it only counts existing records.
+
+### 4. Critical Config (webhook + email)
+
+- Verifies `STRIPE_WEBHOOK_SECRET` is set — without it, webhook signature verification fails and orders are only created via the client-side fallback (which cannot cover redirect-based methods like Klarna)
+- Verifies SMTP config (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`) — without it, confirmation emails do not send
+- In production, missing values fail the check (HTTP 500 + alert). In non-production they are surfaced as `configWarnings` only.
+- The `health` object also reports `hasStripeWebhookSecret` and `hasSmtpConfig` booleans.
+
+### 5. Email Alerts
+
+- Sends alert emails when failures are detected
+- Provides detailed error information, including which config values are missing
+
+## What Is NOT Tested
+
+- **Webhook end-to-end processing:** a full check would require sending a signed Stripe test event (via the Dashboard or `stripe trigger`) and confirming a record is created. The config check only confirms the secret is present.
+- **Actual email delivery:** SMTP presence is checked, but no test email is sent on every run.
+- **Redirect-based payment completion (Klarna, etc.):** these rely on the webhook; monitor the webhook secret and Stripe webhook delivery in the Dashboard.
 
 ## Monitoring Schedule
 

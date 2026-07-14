@@ -1,4 +1,8 @@
 import { Endpoint } from 'payload/config';
+import {
+  fetchEventFooterHtml,
+  renderEventFooterSection,
+} from '../utils/ticketEmailFooter';
 
 export const createOrderEndpoint: Endpoint = {
   path: '/create-order',
@@ -244,6 +248,11 @@ Payment Method: ${paymentMethod}
 Transaction ID: ${transactionId}
             `;
 
+            const eventFooterHtml = await fetchEventFooterHtml(
+              req,
+              ticketItems[0]?.metadata?.eventId
+            );
+
             // Send ticket confirmation email to customer
             await req.payload.sendEmail({
               to: customerData.email,
@@ -263,6 +272,7 @@ Transaction ID: ${transactionId}
                 </ul>
                 <p>Thanks for supporting us and what we do. See you on the dance!</p>
                 <p>- SHUSH crew</p>
+                ${renderEventFooterSection(eventFooterHtml)}
               `,
             });
 

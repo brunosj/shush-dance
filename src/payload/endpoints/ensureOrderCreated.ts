@@ -1,5 +1,9 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+import {
+  fetchEventFooterHtml,
+  renderEventFooterSection,
+} from '../utils/ticketEmailFooter';
 
 let stripeInstance: Stripe | null = null;
 const getStripeInstance = (): Stripe => {
@@ -12,6 +16,61 @@ const getStripeInstance = (): Stripe => {
   }
   return stripeInstance;
 };
+
+async function findExistingOrderByPaymentIntent(
+  payload: any,
+  paymentIntentId: string
+): Promise<boolean> {
+  const [existingOnlineOrders, existingTicketSales] = await Promise.all([
+    payload.find({
+      collection: 'online-orders',
+      where: {
+        transactionId: {
+          equals: paymentIntentId,
+        },
+      },
+      limit: 1,
+    }),
+    payload.find({
+      collection: 'ticket-sales',
+      where: {
+        transactionId: {
+          equals: paymentIntentId,
+        },
+      },
+      limit: 1,
+    }),
+  ]);
+
+  return (
+    existingOnlineOrders.docs.length > 0 || existingTicketSales.docs.length > 0
+  );
+}
+
+async function waitForWebhookOrder(
+  payload: any,
+  paymentIntentId: string,
+  maxAttempts = 6,
+  delayMs = 1500
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (await findExistingOrderByPaymentIntent(payload, paymentIntentId)) {
+      console.log(
+        `✅ Webhook already processed order for ${paymentIntentId} (attempt ${attempt}/${maxAttempts})`
+      );
+      return true;
+    }
+
+    if (attempt < maxAttempts) {
+      console.log(
+        `⏳ Waiting for webhook to create order (${attempt}/${maxAttempts})...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  return false;
+}
 
 export const ensureOrderCreatedEndpoint: Endpoint = {
   path: '/ensure-order-created',
@@ -30,35 +89,14 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
         `🔍 Fallback: Checking if order exists for payment intent: ${paymentIntentId}`
       );
 
-      // Check if webhook already created the order
-      const existingOnlineOrders = await req.payload.find({
-        collection: 'online-orders',
-        where: {
-          transactionId: {
-            equals: paymentIntentId,
-          },
-        },
-        limit: 1,
-      });
-
-      const existingTicketSales = await req.payload.find({
-        collection: 'ticket-sales',
-        where: {
-          transactionId: {
-            equals: paymentIntentId,
-          },
-        },
-        limit: 1,
-      });
-
-      const orderExists =
-        existingOnlineOrders.docs.length > 0 ||
-        existingTicketSales.docs.length > 0;
+      // Poll briefly — the success page waits 4s first, but a slow webhook
+      // may still be processing when this endpoint is called.
+      const orderExists = await waitForWebhookOrder(
+        req.payload,
+        paymentIntentId
+      );
 
       if (orderExists) {
-        console.log(
-          `✅ Webhook already processed order for ${paymentIntentId}`
-        );
         return res.json({
           success: true,
           message: 'Order already exists',
@@ -70,13 +108,42 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
         `⚠️ No order found for ${paymentIntentId}, creating fallback order...`
       );
 
-      // Get payment method from Stripe
+      const isLocalDev =
+        process.env.NODE_ENV !== 'production' ||
+        process.env.PAYLOAD_PUBLIC_SERVER_URL?.includes('localhost') ||
+        process.env.PAYLOAD_PUBLIC_SERVER_URL?.includes('127.0.0.1');
+
+      if (isLocalDev) {
+        console.log(
+          '💡 Local dev tip: run `stripe listen --forward-to localhost:3000/api/stripe-webhook` so the webhook creates orders instead of this fallback.'
+        );
+      }
+
+      // Get payment method + status from Stripe
       const stripe = getStripeInstance();
       let paymentMethodType = 'unknown';
 
       try {
         const paymentIntent =
           await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        // Only create records for genuinely completed payments. Async /
+        // redirect-based methods (e.g. Klarna) can still be `processing` when
+        // the success page runs this fallback; creating a "paid" record then
+        // would be premature. The webhook will handle it on
+        // `payment_intent.succeeded`.
+        if (paymentIntent.status !== 'succeeded') {
+          console.log(
+            `⏳ Fallback skipped: payment intent ${paymentIntentId} status is "${paymentIntent.status}" (not succeeded). Webhook will process it once completed.`
+          );
+          return res.json({
+            success: true,
+            message: `Payment not yet completed (status: ${paymentIntent.status}); deferring to webhook`,
+            webhookWorked: true,
+            deferred: true,
+          });
+        }
+
         if (paymentIntent.payment_method) {
           const paymentMethod = await stripe.paymentMethods.retrieve(
             paymentIntent.payment_method as string
@@ -361,6 +428,11 @@ Total: €${ticketTotal.toFixed(2)}
 Transaction ID: ${paymentIntentId}
     `;
 
+    const eventFooterHtml = await fetchEventFooterHtml(
+      req,
+      ticketItems[0]?.metadata?.eventId
+    );
+
     await req.payload.sendEmail({
       to: orderData.customerData.email,
       from: `SHUSH <${process.env.SMTP_USER}>`,
@@ -379,6 +451,7 @@ Transaction ID: ${paymentIntentId}
         </ul>
         <p>Thanks for supporting us and what we do. See you on the dance!</p>
         <p>- SHUSH crew</p>
+        ${renderEventFooterSection(eventFooterHtml)}
       `,
     });
 

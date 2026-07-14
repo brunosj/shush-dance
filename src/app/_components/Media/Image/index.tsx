@@ -5,6 +5,7 @@ import NextImage, { StaticImageData } from 'next/image';
 
 import cssVariables from '../../../cssVariables';
 import { Props as MediaProps } from '../types';
+import { mediaUrlFromFilename } from '../../../_utilities/getMediaUrl';
 
 import classes from './index.module.css';
 
@@ -41,9 +42,7 @@ export const Image: React.FC<MediaProps> = (props) => {
     height = fullHeight;
     alt = altFromResource;
 
-    const filename = fullFilename;
-
-    src = `${process.env.NEXT_PUBLIC_SERVER_URL}/media/${filename}`;
+    src = mediaUrlFromFilename(fullFilename);
   }
 
   // NOTE: this is used by the browser to determine which image to download at different screen sizes

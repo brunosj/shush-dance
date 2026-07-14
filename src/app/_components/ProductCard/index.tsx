@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { Release, Merch } from '../../../payload/payload-types';
 import { RichText } from '../RichText';
 import Button from '../Button';
+import { resolveMediaResource, resolveMediaUrl } from '../../_utilities/getMediaUrl';
 
 interface ProductCardProps {
   product: Release | Merch;
@@ -17,11 +18,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, type }) => {
   const imageUrl = isRelease
     ? (() => {
         const artwork = (product as Release).artwork;
-        return typeof artwork === 'string' ? artwork : artwork.url;
+        return typeof artwork === 'string'
+          ? resolveMediaUrl(artwork)
+          : resolveMediaResource(artwork);
       })()
     : (() => {
         const mainImage = (product as Merch).mainImage;
-        return typeof mainImage === 'string' ? mainImage : mainImage.url;
+        return typeof mainImage === 'string'
+          ? resolveMediaUrl(mainImage)
+          : resolveMediaResource(mainImage);
       })();
 
   // Get the appropriate link with anchor

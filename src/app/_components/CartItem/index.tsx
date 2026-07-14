@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
 import { formatCurrencyString } from 'use-shopping-cart';
 import Image from 'next/image';
+import { resolveMediaUrl } from '../../_utilities/getMediaUrl';
 
 type Props = {
   item: {
@@ -59,7 +60,7 @@ const CartItem = ({ item }: Props) => {
       <div className='flex items-center gap-4 w-full lg:w-auto'>
         <div className='relative h-20 aspect-square'>
           <Image
-            src={image || '/path/to/default/image.jpg'} // Use provided image or default
+            src={resolveMediaUrl(image) || '/path/to/default/image.jpg'}
             alt={name || 'Product'}
             className='object-contain'
             fill

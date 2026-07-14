@@ -1,5 +1,9 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+import {
+  fetchEventFooterHtml,
+  renderEventFooterSection,
+} from '../utils/ticketEmailFooter';
 
 let stripeInstance: Stripe | null = null;
 const getStripeInstance = (): Stripe => {
@@ -18,15 +22,26 @@ export const stripeWebhookEndpoint: Endpoint = {
   handler: async (req, res) => {
     console.log('🎯 Stripe webhook received');
 
-    // For development, skip signature verification and just process the event
-    if (process.env.NODE_ENV === 'development') {
+    const isLocalDev =
+      process.env.NODE_ENV !== 'production' ||
+      process.env.PAYLOAD_PUBLIC_SERVER_URL?.includes('localhost') ||
+      process.env.PAYLOAD_PUBLIC_SERVER_URL?.includes('127.0.0.1');
+
+    // Local dev: skip signature verification (pnpm dev does not set NODE_ENV=development).
+    // Use `stripe listen --forward-to localhost:3000/api/stripe-webhook` to deliver events.
+    if (isLocalDev) {
       console.log(
         '🚧 Development mode: processing webhook without signature verification'
       );
 
       let event: Stripe.Event;
       try {
-        event = req.body as Stripe.Event;
+        const raw = Buffer.isBuffer(req.body)
+          ? req.body.toString('utf8')
+          : typeof req.body === 'string'
+            ? req.body
+            : JSON.stringify(req.body);
+        event = JSON.parse(raw) as Stripe.Event;
       } catch (error) {
         console.error('❌ Failed to parse webhook body:', error);
         return res.status(400).json({ error: 'Invalid webhook body' });
@@ -63,8 +78,11 @@ export const stripeWebhookEndpoint: Endpoint = {
     let event: Stripe.Event;
     try {
       const stripe = getStripeInstance();
-      const rawBody =
-        typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const rawBody = Buffer.isBuffer(req.body)
+        ? req.body
+        : typeof req.body === 'string'
+          ? req.body
+          : JSON.stringify(req.body);
       event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
       console.log('✅ Webhook signature verified:', event.type);
     } catch (err: any) {
@@ -397,6 +415,11 @@ Payment Method: ${paymentMethod}
 Transaction ID: ${transactionId}
   `;
 
+  const eventFooterHtml = await fetchEventFooterHtml(
+    req,
+    ticketItems[0]?.metadata?.eventId
+  );
+
   // Send ticket confirmation email to customer
   await req.payload.sendEmail({
     to: orderData.customerData.email,
@@ -416,6 +439,7 @@ Transaction ID: ${transactionId}
       </ul>
       <p>Thanks for supporting us and what we do. See you on the dance!</p>
       <p>- SHUSH crew</p>
+      ${renderEventFooterSection(eventFooterHtml)}
     `,
   });
 
