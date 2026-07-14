@@ -7,9 +7,9 @@ echo "Starting SHUSH deployment..."
 
 export PATH=$HOME/.nvm/versions/node/v22.20.0/bin:$HOME/.local/share/pnpm:$PATH
 
-REPO_DIR="/home/lando/repo"
+REPO_DIR="/home/lando/shush/repo"
 PM2_NAME="shushv2"
-SHARED_MEDIA_DIR="/home/lando/media"
+SHARED_MEDIA_DIR="/home/lando/shush/media"
 
 cd "$REPO_DIR"
 
