@@ -28,6 +28,7 @@ echo "=========================================="
 
 pnpm run build:payload
 pnpm run build:server
+pnpm run build:next
 
 echo "=========================================="
 echo "STEP 3: Ensure media symlink"
@@ -46,7 +47,7 @@ pm2 delete shush-green 2>/dev/null || true
 pm2 delete shushv3 2>/dev/null || true
 pm2 delete "$PM2_NAME" 2>/dev/null || true
 
-pm2 start pnpm --name "$PM2_NAME" --cwd "$REPO_DIR" -- serve
+pm2 start pnpm --interpreter bash --name "$PM2_NAME" --cwd "$REPO_DIR" -- serve
 
 echo "Waiting for process to initialize..."
 sleep 15
