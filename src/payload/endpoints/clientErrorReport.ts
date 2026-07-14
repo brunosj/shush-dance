@@ -76,36 +76,9 @@ export const clientErrorReportEndpoint: Endpoint = {
         }
       }
 
-      // Store error report for analysis (optional)
-      try {
-        await req.payload.create({
-          collection: 'client-error-reports', // You'd need to create this collection
-          data: {
-            reportId,
-            source,
-            errorType: type,
-            message,
-            userAgent,
-            url,
-            responseTime: responseTime || 0,
-            clientTimestamp: timestamp,
-            serverTimestamp: new Date().toISOString(),
-            clientIP: req.ip || req.connection?.remoteAddress,
-            headers: {
-              userAgent: req.headers['user-agent'],
-              referer: req.headers.referer,
-              origin: req.headers.origin,
-            },
-          },
-        });
-        console.log(`[${reportId}] 💾 Client error report stored in database`);
-      } catch (dbError) {
-        console.error(
-          `[${reportId}] ⚠️ Could not store client error report:`,
-          dbError.message
-        );
-        // Continue anyway - alerting is more important than storage
-      }
+      // NOTE: reports are intentionally not persisted. There is no
+      // `client-error-reports` collection, and attempting to create one here
+      // only produced error noise. Logging + email alerts above are enough.
 
       return res.status(200).json({
         success: true,

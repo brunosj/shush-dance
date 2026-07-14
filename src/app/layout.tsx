@@ -8,7 +8,6 @@ import { siteMetadata } from './_components/Metadata';
 import { Header } from './_components/Header';
 import { Footer } from './_components/Footer/footer';
 import { Toaster } from 'react-hot-toast';
-import PaymentMonitor from './_components/PaymentMonitor';
 
 import './_css/globals.css';
 
@@ -52,7 +51,6 @@ export default async function RootLayout({
       </head>
       <body>
         <Providers>
-          <PaymentMonitor />
           <Toaster
             position='top-right'
             toastOptions={{

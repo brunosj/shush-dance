@@ -81,6 +81,23 @@ export default buildConfig({
   },
   cors: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
   csrf: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
+  rateLimit: {
+    // Honour X-Forwarded-For so the limiter keys on the real visitor IP
+    // instead of the nginx proxy address (otherwise every request shares
+    // a single 127.0.0.1 bucket and the whole site gets rate limited).
+    trustProxy: true,
+    window: 15 * 60 * 1000,
+    max: 5000,
+    // Never rate limit internal server-side requests. All SSR data fetching
+    // authenticates with the server-only API key, and the Stripe webhook is
+    // trusted; counting these against the limit is what 404s the homepage.
+    skip: (req) => {
+      const authHeader = req.headers?.authorization || '';
+      if (authHeader.includes('API-Key')) return true;
+      if (req.path?.startsWith('/stripe-webhook')) return true;
+      return false;
+    },
+  },
   endpoints: [
     healthEndpoint,
     testBandcampEndpoint,
