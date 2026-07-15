@@ -23,6 +23,10 @@
     "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload",
     "export:events": "node scripts/exportEvents.cjs ./events.json",
     "export:products": "node scripts/exportProducts.cjs ./products.json",
+    "migrate:event-ticket-tiers": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts ts-node scripts/migrateEventTicketTiers.ts",
+    "test:order-processing": "ts-node scripts/testOrderProcessing.ts",
+    "test:order-validation": "ts-node scripts/testOrderValidation.ts",
+    "test:tax": "ts-node scripts/testTaxUtilities.ts",
     "fix:media-urls": "pnpm ts-node scripts/fixMediaUrls.ts --dry-run"
   },
   "dependencies": {

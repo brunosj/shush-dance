@@ -7,6 +7,10 @@ import Image from 'next/image';
 import Button from '../Button';
 import { RichText } from '../RichText';
 import { resolveMediaResource } from '../../_utilities/getMediaUrl';
+import {
+  buildTicketCartId,
+  DEFAULT_TICKET_VAT_RATE,
+} from '../../../utilities/tax';
 
 interface EventListingProps {
   event: Event;
@@ -51,16 +55,22 @@ const EventListing: React.FC<EventListingProps> = ({
   });
 
   const handleAddToCart = (tier) => {
+    const vatRate =
+      typeof tier.vatRate === 'number' ? tier.vatRate : DEFAULT_TICKET_VAT_RATE;
+    const priceEuros =
+      typeof tier.price === 'number' ? tier.price : parseFloat(String(tier.price));
+    const priceCents = Math.round(priceEuros * 100);
+
     const item = {
-      id: tier.stripePriceId,
+      id: buildTicketCartId(String(event.id), String(tier.id)),
       name: tier.tierName,
       parentItem: event.title,
-      price: tier.price * 100,
+      price: priceCents,
       currency: 'EUR',
       quantity: 1,
       description: `Ticket for ${event.title}`,
       priceObject: {
-        value: tier.price * 100,
+        value: priceCents,
         currency: 'EUR',
       },
       product_data: {
@@ -68,10 +78,14 @@ const EventListing: React.FC<EventListingProps> = ({
           isDigital: 'true',
           type: 'ticket',
           itemType: 'ticket',
-          eventId: event.id, // Add event ID for proper linking
+          eventId: event.id,
+          tierId: tier.id,
+          tierName: tier.tierName,
+          vatRate,
           eventTitle: event.title,
           eventDate: event.date,
           eventLocation: event.location,
+          stripePriceId: tier.stripePriceId || null,
         },
       },
     };

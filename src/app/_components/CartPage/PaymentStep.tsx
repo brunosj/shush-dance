@@ -7,6 +7,7 @@ import PaymentSection from './PaymentSection';
 import PaymentErrorBoundary from './PaymentErrorBoundary';
 import { CustomerData } from '../../_providers/CheckoutProvider';
 import { type ShippingRegion } from '../../_types/shipping';
+import type { OrderTotalsBreakdown } from '../../../utilities/tax';
 
 type CheckoutStep = 'cart' | 'customer-info' | 'payment';
 
@@ -19,12 +20,16 @@ interface PaymentStepProps {
   subtotalExclVAT: number;
   shippingCost: number;
   totalVAT: number;
+  ticketVatCents?: number;
+  merchVatCents?: number;
   finalTotal: number;
   regionLabel: string;
   selectedRegion: string;
   shippingRegion: ShippingRegion;
   isTicketOnlyCart?: boolean;
+  hasTickets?: boolean;
   paymentRefreshKey?: number;
+  orderTotals: OrderTotalsBreakdown;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({
@@ -36,12 +41,16 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   subtotalExclVAT,
   shippingCost,
   totalVAT,
+  ticketVatCents = 0,
+  merchVatCents = 0,
   finalTotal,
   regionLabel,
   selectedRegion,
   shippingRegion,
   isTicketOnlyCart = false,
+  hasTickets = false,
   paymentRefreshKey = 0,
+  orderTotals,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -57,42 +66,42 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
         </p>
       </div>
 
-      {/* Order Items */}
       <div className='mb-6'>
         <ReviewOrderItems cartDetails={cartDetails} />
       </div>
 
-      {/* First Row - Order Summary & Shipping Address */}
-      {!isTicketOnlyCart && (
-        <div className={`grid gap-6 mb-8 'grid-cols-1 md:grid-cols-2'`}>
-          <OrderSummary
-            subtotalExclVAT={subtotalExclVAT}
-            shippingCost={shippingCost}
-            totalVAT={totalVAT}
-            finalTotal={finalTotal}
-            regionLabel={regionLabel}
-            selectedRegion={selectedRegion}
-            title={'Order Summary'}
-          />
+      <div
+        className={`grid gap-6 mb-8 ${
+          isTicketOnlyCart ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'
+        }`}
+      >
+        <OrderSummary
+          subtotalExclVAT={subtotalExclVAT}
+          shippingCost={shippingCost}
+          totalVAT={totalVAT}
+          ticketVatCents={ticketVatCents}
+          merchVatCents={merchVatCents}
+          finalTotal={finalTotal}
+          regionLabel={regionLabel}
+          selectedRegion={selectedRegion}
+          title={'Order Summary'}
+          isTicketOnlyCart={isTicketOnlyCart}
+          hasTickets={hasTickets}
+        />
 
+        {!isTicketOnlyCart && (
           <ShippingAddressDisplay
             customerData={customerData}
             onEditCustomerInfo={() => onStepNavigation('customer-info')}
           />
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Second Row - Payment */}
       <PaymentErrorBoundary onRetry={() => window.location.reload()}>
         <PaymentSection
           key={paymentRefreshKey}
           customerData={customerData}
-          orderTotals={{
-            subtotal: subtotalExclVAT / 100,
-            shipping: shippingCost / 100,
-            vat: totalVAT / 100,
-            total: finalTotal / 100,
-          }}
+          orderTotals={orderTotals}
           shippingRegion={shippingRegion}
         />
       </PaymentErrorBoundary>

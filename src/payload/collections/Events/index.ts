@@ -18,144 +18,207 @@ export const Events: CollectionConfig = {
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
-      label: 'Event Title',
-      required: true,
-    },
-    createRichTextField({
-      label: 'Event Information',
-    }),
-    {
-      name: 'images',
-      type: 'array',
-      label: 'Event Flyers',
-      required: false,
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'image',
-          type: 'upload',
-          relationTo: 'media',
-          required: true,
+          label: 'Details',
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+              label: 'Event Title',
+              required: true,
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'date',
+                  type: 'date',
+                  label: 'Event Date',
+                  required: true,
+                  admin: { width: '33%' },
+                },
+                {
+                  name: 'time',
+                  type: 'text',
+                  label: 'Event Time',
+                  required: false,
+                  admin: { width: '33%' },
+                },
+                {
+                  name: 'location',
+                  type: 'text',
+                  label: 'Event Location',
+                  required: true,
+                  admin: { width: '34%' },
+                },
+              ],
+            },
+            {
+              name: 'artists',
+              type: 'relationship',
+              relationTo: 'artists',
+              label: 'Artists',
+              hasMany: true,
+            },
+            slugField(),
+          ],
+        },
+        {
+          label: 'Content',
+          fields: [
+            createRichTextField({
+              label: 'Event Information',
+            }),
+            {
+              name: 'images',
+              type: 'array',
+              label: 'Event Flyers',
+              required: false,
+              fields: [
+                {
+                  name: 'image',
+                  type: 'upload',
+                  relationTo: 'media',
+                  required: true,
+                },
+              ],
+            },
+            {
+              name: 'image',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Legacy Event Flyer (single)',
+              required: false,
+              admin: {
+                hidden: true,
+                description: 'Legacy single-image field. Use Event Flyers instead.',
+              },
+            },
+          ],
+        },
+        {
+          label: 'Tickets',
+          fields: [
+            {
+              name: 'ticketsAvailable',
+              type: 'checkbox',
+              label: 'Tickets Available',
+              defaultValue: true,
+            },
+            {
+              name: 'ticketTiers',
+              type: 'array',
+              label: 'Ticket Tiers',
+              admin: {
+                condition: (data) => data.ticketsAvailable === true,
+              },
+              fields: [
+                {
+                  name: 'tierName',
+                  type: 'text',
+                  label: 'Tier Name',
+                  required: true,
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'price',
+                      type: 'number',
+                      label: 'Price (EUR, incl. VAT)',
+                      required: true,
+                      min: 0.01,
+                      admin: {
+                        description:
+                          'Final customer-facing ticket price in euros, VAT included.',
+                        step: 0.01,
+                        width: '50%',
+                      },
+                    },
+                    {
+                      name: 'vatRate',
+                      type: 'number',
+                      label: 'VAT rate (%)',
+                      defaultValue: 7,
+                      min: 0,
+                      max: 100,
+                      admin: {
+                        description:
+                          'VAT rate included in the price above. Defaults to 7% for event tickets.',
+                        step: 0.01,
+                        width: '50%',
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'visible',
+                      type: 'checkbox',
+                      label: 'Visible',
+                      defaultValue: true,
+                      admin: { width: '50%' },
+                    },
+                    {
+                      name: 'strikeThrough',
+                      type: 'checkbox',
+                      label: 'Strike Through',
+                      defaultValue: false,
+                      admin: { width: '50%' },
+                    },
+                  ],
+                },
+                {
+                  name: 'stripePriceId',
+                  type: 'text',
+                  label: 'Stripe Price ID (legacy)',
+                  required: false,
+                  admin: {
+                    hidden: true,
+                    description:
+                      'Optional legacy Stripe Price ID for historical Payment Link backfill.',
+                  },
+                },
+                {
+                  name: 'ticketLink',
+                  type: 'text',
+                  label: 'Ticket Link (legacy)',
+                  required: false,
+                  admin: {
+                    hidden: true,
+                    description: 'Optional legacy Stripe Payment Link URL.',
+                  },
+                },
+              ],
+            },
+            {
+              ...createRichTextField({
+                label: 'Ticket Email Footer',
+              }),
+              admin: {
+                description:
+                  'Optional content appended to ticket confirmation emails below the SHUSH crew signature.',
+                condition: (data) => data.ticketsAvailable === true,
+              },
+            },
+            {
+              name: 'stripeCatalogMatchKey',
+              type: 'text',
+              label: 'Stripe catalog match key (legacy)',
+              required: false,
+              admin: {
+                hidden: true,
+                description:
+                  'Legacy field for Stripe Payment Link backfill only. Not required for onsite checkout.',
+              },
+            },
+          ],
         },
       ],
     },
-    {
-      name: 'image',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'Legacy Event Flyer (single)',
-      required: false,
-      admin: {
-        description: 'Prefer using Event Flyers (multiple).',
-      },
-    },
-    {
-      name: 'date',
-      type: 'date',
-      label: 'Event Date',
-      required: true,
-      admin: { position: 'sidebar' },
-    },
-    {
-      name: 'time',
-      type: 'text',
-      label: 'Event Time',
-      required: false,
-      admin: { position: 'sidebar' },
-    },
-    {
-      name: 'location',
-      type: 'text',
-      label: 'Event Location',
-      required: true,
-      admin: { position: 'sidebar' },
-    },
-    {
-      name: 'artists',
-      type: 'relationship',
-      relationTo: 'artists',
-      label: 'Artists',
-      hasMany: true,
-    },
-    {
-      name: 'ticketsAvailable',
-      type: 'checkbox',
-      label: 'Tickets Available',
-      defaultValue: true,
-    },
-    {
-      ...createRichTextField({
-        label: 'Ticket Email Footer',
-      }),
-      admin: {
-        description:
-          'Optional content appended to ticket confirmation emails below the SHUSH crew signature.',
-        condition: (data) => data.ticketsAvailable === true,
-      },
-    },
-    {
-      name: 'stripeCatalogMatchKey',
-      type: 'text',
-      label: 'Stripe catalog match key',
-      required: false,
-      admin: {
-        position: 'sidebar',
-        description:
-          'Optional. Set the same value in Stripe as metadata **cms_event_key** on each Price or Product used by Payment Links. Use a unique value per event. Also set **cms_tier_name** on each Stripe Price to match that tier’s **Tier Name** here (exact text, case-insensitive) so sync maps the correct tier. Alternatively use **payload_event_id** on the Price/Product for a direct event link.',
-      },
-    },
-
-    {
-      name: 'ticketTiers',
-      type: 'array',
-      label: 'Ticket Tiers',
-      admin: {
-        condition: (data) => data.ticketsAvailable === true,
-      },
-      fields: [
-        {
-          name: 'tierName',
-          type: 'text',
-          label: 'Tier Name',
-          required: true,
-        },
-        {
-          name: 'price',
-          type: 'text',
-          label: 'Price',
-          required: true,
-        },
-        {
-          name: 'visible',
-          type: 'checkbox',
-          label: 'Visible',
-          defaultValue: true,
-        },
-        {
-          name: 'strikeThrough',
-          type: 'checkbox',
-          label: 'Strike Through',
-          defaultValue: false,
-        },
-        {
-          name: 'stripePriceId',
-          type: 'text',
-          label: 'Stripe Price ID',
-          required: true,
-          admin: {
-            description:
-              'For Payment Links: you can set Price metadata **cms_tier_name** in Stripe to this tier’s **Tier Name** (exact match, case-insensitive). Sync then maps the line to this tier even when the Stripe product name differs.',
-          },
-        },
-        {
-          name: 'ticketLink',
-          type: 'text',
-          label: 'Ticket Link',
-          required: false,
-        },
-      ],
-    },
-    slugField(),
   ],
 };

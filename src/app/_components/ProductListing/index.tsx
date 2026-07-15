@@ -17,6 +17,7 @@ import 'yet-another-react-lightbox/styles.css';
 import Button from '../Button';
 import AddToCartButton from '../AddToCartButton';
 import { resolveMediaResource, resolveMediaUrl } from '../../_utilities/getMediaUrl';
+import { TSHIRT_SIZES } from '../../../utilities/productVariants';
 
 interface ProductListingProps {
   product: ExtendedMerch | ExtendedRelease;
@@ -29,7 +30,7 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
   const [selectedSize, setSelectedSize] = useState<string>('');
 
   // Define available sizes for t-shirts
-  const tshirtSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
+  const tshirtSizes = TSHIRT_SIZES;
 
   // Common properties
   const { title, description, images, price } = product;

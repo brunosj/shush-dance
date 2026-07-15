@@ -22,7 +22,6 @@ import { Socials } from './globals/Socials';
 import { Sales } from './collections/Sales';
 import { testBandcampEndpoint } from './endpoints/testBandcamp';
 import { syncBandcampEndpoint } from './endpoints/syncBandcamp';
-import { createOrderEndpoint } from './endpoints/createOrder';
 import { createPaymentIntentEndpoint } from './endpoints/createPaymentIntent';
 import { createSaleEndpoint } from './endpoints/createSale';
 import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
@@ -101,7 +100,6 @@ export default buildConfig({
     healthEndpoint,
     testBandcampEndpoint,
     syncBandcampEndpoint,
-    createOrderEndpoint,
     createPaymentIntentEndpoint,
     createSaleEndpoint,
     monitorPaymentSystemEndpoint,

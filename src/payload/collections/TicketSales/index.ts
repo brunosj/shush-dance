@@ -163,6 +163,17 @@ export const TicketSales: CollectionConfig = {
                 description: 'Payment processor transaction ID',
               },
             },
+            {
+              name: 'confirmationEmailSent',
+              type: 'checkbox',
+              label: 'Confirmation email sent',
+              defaultValue: false,
+              admin: {
+                readOnly: true,
+                description:
+                  'Used to retry ticket email delivery safely after payment processing.',
+              },
+            },
           ],
         },
         {
@@ -287,9 +298,50 @@ export const TicketSales: CollectionConfig = {
                 {
                   name: 'stripePriceId',
                   type: 'text',
-                  label: 'Stripe Price ID',
+                  label: 'Stripe Price ID (legacy)',
                   admin: {
-                    description: 'Stripe price ID used for this ticket',
+                    description:
+                      'Optional legacy Stripe price ID for historical Payment Link sales',
+                  },
+                },
+                {
+                  name: 'tierId',
+                  type: 'text',
+                  label: 'Tier ID',
+                  admin: {
+                    description: 'Payload ticket tier ID from the event',
+                  },
+                },
+                {
+                  name: 'eventId',
+                  type: 'text',
+                  label: 'Event ID',
+                  admin: {
+                    description: 'Payload event ID for this ticket line',
+                  },
+                },
+                {
+                  name: 'vatRate',
+                  type: 'number',
+                  label: 'VAT Rate (%)',
+                  admin: {
+                    step: 0.01,
+                  },
+                },
+                {
+                  name: 'unitNet',
+                  type: 'number',
+                  label: 'Unit Net (EUR)',
+                  admin: {
+                    step: 0.01,
+                  },
+                },
+                {
+                  name: 'vatAmount',
+                  type: 'number',
+                  label: 'VAT Amount (EUR)',
+                  admin: {
+                    step: 0.01,
                   },
                 },
               ],

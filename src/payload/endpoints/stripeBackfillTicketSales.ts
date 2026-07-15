@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+import { splitGrossIntoNetAndVatCents } from '../../utilities/tax';
 
 let stripeInstance: Stripe | null = null;
 const getStripe = (): Stripe => {
@@ -399,67 +400,116 @@ async function createTicketSaleFromOrderDataPi(
     // ignore
   }
   const detectedPaymentMethod = pmType === 'paypal' ? 'paypal' : 'stripe';
-  const ticketNumber = `TICKET-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-  const ticketSubtotal =
-    ticketItems.reduce(
-      (sum: number, item: any) => sum + (item.lineTotal || 0),
-      0
-    ) / 100;
-  const firstTicket = ticketItems[0];
-  const eventMetadata = firstTicket?.metadata || {};
   const cd = orderData.customerData || {};
-  const eventIdRaw =
-    eventMetadata.eventId ||
-    firstTicket?.eventId ||
-    orderData.eventId ||
-    null;
-  const eventId =
-    eventIdRaw != null && String(eventIdRaw).trim()
-      ? String(eventIdRaw).trim()
-      : null;
+  const groups = new Map<string, any[]>();
+  for (const item of ticketItems) {
+    const eventId = String(
+      item.eventId || item.metadata?.eventId || orderData.eventId || ''
+    ).trim();
+    if (!eventId) continue;
+    groups.set(eventId, [...(groups.get(eventId) || []), item]);
+  }
 
-  await payload.create({
-    collection: 'ticket-sales',
-    data: {
-      ticketNumber,
-      status: 'active',
-      event: eventId,
-      ticketTier: firstTicket?.name || 'General Admission',
-      paymentMethod: detectedPaymentMethod,
-      paymentStatus: 'paid',
-      transactionId: pi.id,
-      customerEmail: cd.email,
-      customerPhone: cd.phone || '',
-      firstName: cd.firstName,
-      lastName: cd.lastName,
-      tickets: ticketItems.map((item: any) => {
+  for (const [eventId, eventTickets] of groups) {
+    const existing = await payload.find({
+      collection: 'ticket-sales',
+      where: {
+        and: [
+          { transactionId: { equals: pi.id } },
+          { event: { equals: eventId } },
+        ],
+      },
+      limit: 1,
+      depth: 0,
+    });
+    if (existing.docs?.length) continue;
+
+    const firstTicket = eventTickets[0];
+    const eventMetadata = firstTicket?.metadata || {};
+    const ticketGross =
+      eventTickets.reduce(
+        (sum: number, item: any) => sum + (item.lineTotal || 0),
+        0
+      ) / 100;
+    const ticketTax = eventTickets.reduce(
+      (totals: { netCents: number; vatCents: number }, item: any) => {
+        const vatRate =
+          typeof item.vatRate === 'number'
+            ? item.vatRate
+            : typeof item.metadata?.vatRate === 'number'
+              ? item.metadata.vatRate
+              : 0;
+        const split = splitGrossIntoNetAndVatCents(
+          Number(item.lineTotal) || 0,
+          vatRate
+        );
+        totals.netCents += split.netCents;
+        totals.vatCents += split.vatCents;
+        return totals;
+      },
+      { netCents: 0, vatCents: 0 }
+    );
+
+    await payload.create({
+      collection: 'ticket-sales',
+      data: {
+        ticketNumber: `TICKET-${pi.id}-${eventId}`,
+        status: 'active',
+        event: eventId,
+        ticketTier:
+          eventTickets.map((item: any) => item.name).join(', ') ||
+          'General Admission',
+        paymentMethod: detectedPaymentMethod,
+        paymentStatus: 'paid',
+        transactionId: pi.id,
+        customerEmail: cd.email,
+        customerPhone: cd.phone || '',
+        firstName: cd.firstName,
+        lastName: cd.lastName,
+        tickets: eventTickets.map((item: any) => {
         const priceIdFromCart =
           typeof item.id === 'string' && item.id.startsWith('price_')
             ? item.id
             : '';
-        return {
-          cartItemId: item.cartItemId || item.id,
-          ticketName: item.name,
-          ticketDescription: item.description,
-          quantity: item.quantity,
-          unitPrice: (item.unitPrice || 0) / 100,
-          lineTotal: (item.lineTotal || 0) / 100,
-          stripePriceId: item.stripePriceId || priceIdFromCart || '',
-        };
-      }),
-      ticketTotals: {
-        subtotal: ticketSubtotal,
-        vat: 0,
-        total: ticketSubtotal,
+        const vatRate =
+          typeof item.vatRate === 'number'
+            ? item.vatRate
+            : typeof item.metadata?.vatRate === 'number'
+              ? item.metadata.vatRate
+              : 0;
+        const split = splitGrossIntoNetAndVatCents(
+          Number(item.lineTotal) || 0,
+          vatRate
+        );
+          return {
+            cartItemId: item.cartItemId || item.id,
+            ticketName: item.name,
+            ticketDescription: item.description,
+            quantity: item.quantity,
+            unitPrice: (item.unitPrice || 0) / 100,
+            lineTotal: (item.lineTotal || 0) / 100,
+            eventId,
+            tierId: item.tierId || item.metadata?.tierId || '',
+            vatRate,
+            unitNet: split.netCents / 100 / (item.quantity || 1),
+            vatAmount: split.vatCents / 100,
+            stripePriceId: item.stripePriceId || priceIdFromCart || '',
+          };
+        }),
+        ticketTotals: {
+          subtotal: ticketTax.netCents / 100,
+          vat: ticketTax.vatCents / 100,
+          total: ticketGross,
+        },
+        eventDate: eventMetadata.eventDate || null,
+        eventLocation: eventMetadata.eventLocation || null,
+        eventTitle:
+          eventMetadata.eventTitle || firstTicket?.parentItem || null,
+        customerNotes: cd.customerNotes || '',
+        internalNotes: `Backfilled from PaymentIntent orderData metadata: ${pi.id}.`,
       },
-      eventDate: eventMetadata.eventDate || null,
-      eventLocation: eventMetadata.eventLocation || null,
-      eventTitle:
-        eventMetadata.eventTitle || firstTicket?.parentItem || null,
-      customerNotes: cd.customerNotes || '',
-      internalNotes: `Backfilled from PaymentIntent orderData metadata: ${pi.id}.`,
-    },
-  });
+    });
+  }
 }
 
 async function createGenericKlarnaTicketSale(
@@ -726,6 +776,9 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
             product,
             eventLookups
           );
+          // This endpoint is ticket-only. Never import an unmapped Stripe
+          // catalog line as a ticket (it may be merchandise).
+          if (!lineInfo) continue;
           const tierFromPriceId = eventLookups.priceIdToInfo.get(price.id);
           const name =
             stripeTierLabel ||
@@ -761,6 +814,12 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
         for (let i = 0; i < tickets.length; i++) {
           const id = lineEventInfos[i]?.eventId;
           if (id) eventIds.add(id);
+        }
+        if (eventIds.size > 1) {
+          skipped.push(
+            `${session.id} (line items map to multiple CMS events; import separately)`
+          );
+          continue;
         }
 
         let primaryEventId: string | null = null;
@@ -813,11 +872,6 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
           }
         }
 
-        let multiEventNote = '';
-        if (eventIds.size > 1 && primaryInfo) {
-          multiEventNote = ` Multiple line items map to different CMS events; linked to first matched (${primaryInfo.eventTitle || primaryEventId}).`;
-        }
-
         let pmNote = '';
         if (paymentIntentId) {
           try {
@@ -836,7 +890,6 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
         const internalNotes = [
           `Backfilled from Stripe Checkout (session ${session.id}).`,
           pmNote ? `Payment method type: ${pmNote}.` : '',
-          multiEventNote.trim(),
         ]
           .filter(Boolean)
           .join(' ')
@@ -899,14 +952,6 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
       for (const row of piPage.data) {
         if (row.status !== 'succeeded') continue;
 
-        const existingPi = await req.payload.find({
-          collection: 'ticket-sales',
-          where: { transactionId: { equals: row.id } },
-          limit: 1,
-          depth: 0,
-        });
-        if (existingPi.docs?.length) continue;
-
         const fullPi = await stripe.paymentIntents.retrieve(row.id, {
           expand: ['payment_method', 'latest_charge'],
         });
@@ -948,6 +993,13 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
         if (sessionPaymentIntentIds.has(row.id)) continue;
 
         if (paymentMethodTypeFromPi(fullPi) !== 'klarna') continue;
+        const existingPi = await req.payload.find({
+          collection: 'ticket-sales',
+          where: { transactionId: { equals: row.id } },
+          limit: 1,
+          depth: 0,
+        });
+        if (existingPi.docs?.length) continue;
 
         try {
           await createGenericKlarnaTicketSale(

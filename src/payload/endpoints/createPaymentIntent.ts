@@ -1,5 +1,6 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+import { validateAndNormalizeOrderData } from '../utils/validateOrderData';
 
 // Cache Stripe instance with proper cleanup and health checks
 let stripeInstance: Stripe | null = null;
@@ -105,7 +106,8 @@ process.on('uncaughtException', (error) => {
 const createPaymentIntentWithRetry = async (
   paymentIntentData: Stripe.PaymentIntentCreateParams,
   maxRetries = 3,
-  requestId = 'unknown'
+  requestId = 'unknown',
+  idempotencyKey?: string
 ): Promise<Stripe.PaymentIntent> => {
   let stripe = getStripeInstance();
 
@@ -114,7 +116,9 @@ const createPaymentIntentWithRetry = async (
       console.log(
         `[${requestId}] 🔄 Stripe API call attempt ${attempt}/${maxRetries} (instance age: ${Math.floor((Date.now() - instanceCreatedAt) / 1000)}s, requests: ${instanceRequestCount})`
       );
-      return await stripe.paymentIntents.create(paymentIntentData);
+      return await stripe.paymentIntents.create(paymentIntentData, {
+        idempotencyKey,
+      });
     } catch (error: any) {
       console.error(
         `[${requestId}] ❌ Payment intent creation attempt ${attempt}/${maxRetries} failed:`,
@@ -200,11 +204,11 @@ export const createPaymentIntentEndpoint: Endpoint = {
         });
       }
 
-      const { amount, currency = 'eur', customerData, orderData } = req.body;
+      const { amount, customerData, orderData } = req.body;
 
       console.log(`[${requestId}] 📋 Request payload:`, {
         amount,
-        currency,
+        currency: 'eur',
         hasCustomerData: !!customerData,
         hasOrderData: !!orderData,
         customerEmail: customerData?.email
@@ -213,9 +217,52 @@ export const createPaymentIntentEndpoint: Endpoint = {
         itemCount: orderData?.cartItems?.length || 0,
       });
 
+      if (!orderData?.cartItems?.length) {
+        return res.status(400).json({
+          error: 'Order data with cart items is required',
+          code: 'missing_cart_items',
+          requestId,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      let validatedOrderData;
+      try {
+        validatedOrderData = await validateAndNormalizeOrderData(
+          req.payload,
+          orderData
+        );
+      } catch (validationError: any) {
+        console.error(`[${requestId}] ❌ Order validation failed:`, validationError);
+        return res.status(400).json({
+          error: validationError.message || 'Invalid order data',
+          code: 'cart_validation_failed',
+          requestId,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const validatedAmount = validatedOrderData.totals.total;
+      const submittedAmount = Number(amount);
+      if (
+        !Number.isFinite(submittedAmount) ||
+        Math.abs(submittedAmount - validatedAmount) > 0.02
+      ) {
+        return res.status(400).json({
+          error: 'Cart total is out of date. Please refresh your cart.',
+          code: 'cart_validation_failed',
+          requestId,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       // Validate required fields
-      if (!amount || typeof amount !== 'number' || amount <= 0) {
-        console.error(`[${requestId}] ❌ Invalid amount:`, amount);
+      if (
+        !validatedAmount ||
+        typeof validatedAmount !== 'number' ||
+        validatedAmount <= 0
+      ) {
+        console.error(`[${requestId}] ❌ Invalid amount:`, validatedAmount);
         return res.status(400).json({
           error: 'Valid amount is required',
           requestId,
@@ -223,7 +270,10 @@ export const createPaymentIntentEndpoint: Endpoint = {
         });
       }
 
-      if (!customerData || !customerData.email) {
+      if (
+        !customerData ||
+        customerData.email !== validatedOrderData.customerData.email
+      ) {
         console.error(`[${requestId}] ❌ Customer data missing or invalid:`, {
           hasCustomerData: !!customerData,
           hasEmail: !!customerData?.email,
@@ -236,28 +286,28 @@ export const createPaymentIntentEndpoint: Endpoint = {
       }
 
       // Convert amount to cents and ensure it's an integer
-      const amountInCents = Math.round(amount * 100);
+      const amountInCents = Math.round(validatedAmount * 100);
 
       // Log if we're in test mode
       const isTestMode = process.env.STRIPE_SECRET_KEY.startsWith('sk_test_');
 
       console.log(
-        `[${requestId}] 💳 Creating payment intent for €${amount} (${amountInCents} cents) - ${isTestMode ? 'TEST' : 'LIVE'} mode`
+        `[${requestId}] 💳 Creating payment intent for €${validatedAmount} (${amountInCents} cents) - ${isTestMode ? 'TEST' : 'LIVE'} mode`
       );
 
       // Prepare metadata with order data split into chunks (500 char limit per key)
       const metadata: Record<string, string> = {
-        customerEmail: customerData.email,
+        customerEmail: validatedOrderData.customerData.email as string,
         customerName:
-          `${customerData.firstName || ''} ${customerData.lastName || ''}`.trim(),
+          `${validatedOrderData.customerData.firstName || ''} ${validatedOrderData.customerData.lastName || ''}`.trim(),
         testMode: isTestMode.toString(),
         requestId,
         timestamp: new Date().toISOString(),
       };
 
       // Split order data into chunks if it exists
-      if (orderData) {
-        const orderDataString = JSON.stringify(orderData);
+      if (validatedOrderData) {
+        const orderDataString = JSON.stringify(validatedOrderData);
         const chunkSize = 450; // Leave some buffer under 500 char limit
 
         console.log(
@@ -274,6 +324,13 @@ export const createPaymentIntentEndpoint: Endpoint = {
           const chunks = [];
           for (let i = 0; i < orderDataString.length; i += chunkSize) {
             chunks.push(orderDataString.substring(i, i + chunkSize));
+          }
+          if (chunks.length > 44) {
+            return res.status(400).json({
+              error: 'Cart contains too much data. Please reduce its size.',
+              code: 'cart_too_large',
+              requestId,
+            });
           }
 
           // Store chunks in separate metadata keys
@@ -292,7 +349,7 @@ export const createPaymentIntentEndpoint: Endpoint = {
       // Create payment intent data
       const paymentIntentData: Stripe.PaymentIntentCreateParams = {
         amount: amountInCents,
-        currency: currency.toLowerCase(),
+        currency: 'eur',
         automatic_payment_methods: {
           enabled: true,
         },
@@ -305,7 +362,10 @@ export const createPaymentIntentEndpoint: Endpoint = {
       const paymentIntent = await createPaymentIntentWithRetry(
         paymentIntentData,
         3,
-        requestId
+        requestId,
+        typeof req.headers['idempotency-key'] === 'string'
+          ? req.headers['idempotency-key'].slice(0, 255)
+          : undefined
       );
 
       console.log(

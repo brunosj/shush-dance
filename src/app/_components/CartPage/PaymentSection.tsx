@@ -2,15 +2,11 @@ import React from 'react';
 import StripeCheckoutButton from '../StripeCheckoutButton';
 import { CustomerData } from '../../_providers/CheckoutProvider';
 import { type ShippingRegion } from '../../_types/shipping';
+import type { OrderTotalsBreakdown } from '../../../utilities/tax';
 
 interface PaymentSectionProps {
   customerData: CustomerData | null;
-  orderTotals: {
-    subtotal: number;
-    shipping: number;
-    vat: number;
-    total: number;
-  };
+  orderTotals: OrderTotalsBreakdown;
   shippingRegion: ShippingRegion;
 }
 

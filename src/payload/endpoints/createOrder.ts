@@ -1,5 +1,9 @@
 import { Endpoint } from 'payload/config';
 import {
+  splitGrossIntoNetAndVatCents,
+  DEFAULT_TICKET_VAT_RATE,
+} from '../../utilities/tax';
+import {
   fetchEventFooterHtml,
   renderEventFooterSection,
 } from '../utils/ticketEmailFooter';
@@ -176,8 +180,21 @@ ${customerData.country}
               (sum: number, item: any) => sum + item.lineTotal,
               0
             ) / 100;
-          const ticketVAT = 0; // Tickets are typically VAT-exempt
-          const ticketTotal = ticketSubtotal + ticketVAT;
+          let ticketNet = 0;
+          let ticketVAT = 0;
+          for (const item of ticketItems) {
+            const rate =
+              typeof item.metadata?.vatRate === 'number'
+                ? item.metadata.vatRate
+                : DEFAULT_TICKET_VAT_RATE;
+            const { netCents, vatCents } = splitGrossIntoNetAndVatCents(
+              item.lineTotal,
+              rate
+            );
+            ticketNet += netCents / 100;
+            ticketVAT += vatCents / 100;
+          }
+          const ticketTotal = ticketSubtotal;
 
           // Extract event information from the first ticket item
           const firstTicket = ticketItems[0];
@@ -195,17 +212,31 @@ ${customerData.country}
             customerPhone: customerData.phone || '',
             firstName: customerData.firstName,
             lastName: customerData.lastName,
-            tickets: ticketItems.map((item: any) => ({
-              cartItemId: item.id,
-              ticketName: item.name,
-              ticketDescription: item.description,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice / 100,
-              lineTotal: item.lineTotal / 100,
-              stripePriceId: item.stripePriceId || '',
-            })),
+            tickets: ticketItems.map((item: any) => {
+              const rate =
+                typeof item.metadata?.vatRate === 'number'
+                  ? item.metadata.vatRate
+                  : DEFAULT_TICKET_VAT_RATE;
+              const { netCents, vatCents } = splitGrossIntoNetAndVatCents(
+                item.unitPrice,
+                rate
+              );
+              return {
+                cartItemId: item.id,
+                ticketName: item.name,
+                ticketDescription: item.description,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice / 100,
+                lineTotal: item.lineTotal / 100,
+                tierId: item.metadata?.tierId || item.tierId || '',
+                vatRate: rate,
+                unitNet: netCents / 100,
+                vatAmount: (vatCents / 100) * item.quantity,
+                stripePriceId: item.stripePriceId || item.metadata?.stripePriceId || '',
+              };
+            }),
             ticketTotals: {
-              subtotal: ticketSubtotal,
+              subtotal: ticketNet,
               vat: ticketVAT,
               total: ticketTotal,
             },

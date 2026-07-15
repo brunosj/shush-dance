@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useShoppingCart } from 'use-shopping-cart';
 import Button from '../../_components/Button';
@@ -17,6 +17,13 @@ const IN_PROGRESS_STATUSES = new Set([
   'requires_capture',
   'requires_confirmation',
 ]);
+
+const STATUS_MESSAGES: Record<PageState, string> = {
+  verifying: 'Verifying your payment...',
+  processing: 'Processing your order...',
+  succeeded: 'Payment successful!',
+  failed: 'Payment not completed',
+};
 
 async function fetchPaymentStatus(
   paymentIntentId: string
@@ -56,50 +63,52 @@ async function waitForPaymentSuccess(
 const SuccessPageContent: React.FC = () => {
   const searchParams = useSearchParams();
   const { clearCart } = useShoppingCart();
+  const clearCartRef = useRef(clearCart);
+  clearCartRef.current = clearCart;
+
+  const paymentIntentId = searchParams.get('payment_intent');
+  const redirectStatus = searchParams.get('redirect_status');
+
   const [pageState, setPageState] = useState<PageState>('verifying');
-  const [processingMessage, setProcessingMessage] = useState(
-    'Verifying your payment...'
+  const [processingDetail, setProcessingDetail] = useState<string | null>(
+    null
   );
   const [fallbackTriggered, setFallbackTriggered] = useState(false);
 
   useEffect(() => {
-    const paymentIntentId = searchParams.get('payment_intent');
-    const redirectStatus = searchParams.get('redirect_status');
+    let active = true;
 
     const cleanupFallbackData = () => {
       sessionStorage.removeItem('fallbackOrderData');
     };
 
     const failPayment = () => {
+      if (!active) return;
       cleanupFallbackData();
       setPageState('failed');
+      setProcessingDetail(null);
     };
 
     const completeSuccessfulPayment = async () => {
+      if (!active) return;
       setPageState('processing');
+      setProcessingDetail(
+        'Please wait while we finalize your order and send your confirmation email.'
+      );
 
-      const messages = [
-        'Processing your order...',
-        'Creating order records...',
-        'Sending confirmation email...',
-        'Finalizing your purchase...',
-      ];
-
-      let messageIndex = 0;
-      const messageInterval = setInterval(() => {
-        messageIndex = (messageIndex + 1) % messages.length;
-        setProcessingMessage(messages[messageIndex]);
-      }, 800);
-
-      await new Promise((resolve) => setTimeout(resolve, 4000));
+      // Brief pause to give the webhook a head start before fallback runs.
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (!active) return;
 
       if (paymentIntentId) {
         try {
           const fallbackDataStr = sessionStorage.getItem('fallbackOrderData');
           if (fallbackDataStr) {
-            const fallbackData = JSON.parse(fallbackDataStr);
-            setProcessingMessage('Ensuring order completion...');
+            if (active) {
+              setProcessingDetail('Confirming your order details...');
+            }
 
+            const fallbackData = JSON.parse(fallbackDataStr);
             const response = await fetch('/api/ensure-order-created', {
               method: 'POST',
               headers: {
@@ -107,6 +116,8 @@ const SuccessPageContent: React.FC = () => {
               },
               body: JSON.stringify(fallbackData),
             });
+
+            if (!active) return;
 
             if (response.ok) {
               const result = await response.json();
@@ -122,8 +133,9 @@ const SuccessPageContent: React.FC = () => {
         }
       }
 
-      clearInterval(messageInterval);
-      clearCart();
+      if (!active) return;
+      clearCartRef.current();
+      setProcessingDetail(null);
       setPageState('succeeded');
     };
 
@@ -138,7 +150,15 @@ const SuccessPageContent: React.FC = () => {
         return;
       }
 
+      // Stripe redirect-based methods include redirect_status on return.
+      if (redirectStatus === 'succeeded') {
+        await completeSuccessfulPayment();
+        return;
+      }
+
       const initialStatus = await fetchPaymentStatus(paymentIntentId);
+      if (!active) return;
+
       if (!initialStatus) {
         failPayment();
         return;
@@ -155,8 +175,13 @@ const SuccessPageContent: React.FC = () => {
       }
 
       if (IN_PROGRESS_STATUSES.has(initialStatus.status)) {
-        setProcessingMessage('Waiting for payment confirmation...');
+        if (active) {
+          setProcessingDetail(
+            'Your bank is still confirming the payment. This usually takes a few seconds.'
+          );
+        }
         const finalStatus = await waitForPaymentSuccess(paymentIntentId);
+        if (!active) return;
 
         if (!finalStatus || !finalStatus.succeeded) {
           failPayment();
@@ -171,18 +196,20 @@ const SuccessPageContent: React.FC = () => {
     };
 
     verifyPayment();
-  }, [searchParams, clearCart]);
+
+    return () => {
+      active = false;
+    };
+  }, [paymentIntentId, redirectStatus]);
 
   if (pageState === 'verifying' || pageState === 'processing') {
     return (
       <article className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
-        <h1 className='font-bold text-xl'>{processingMessage}</h1>
-        <p className='text-gray-600'>
-          {pageState === 'verifying'
-            ? 'Please wait while we confirm your payment status.'
-            : 'Please wait while we finalize your payment and send your confirmation email.'}
-        </p>
+        <h1 className='font-bold text-xl'>{STATUS_MESSAGES[pageState]}</h1>
+        {processingDetail && (
+          <p className='text-gray-600'>{processingDetail}</p>
+        )}
       </article>
     );
   }
@@ -190,7 +217,7 @@ const SuccessPageContent: React.FC = () => {
   if (pageState === 'failed') {
     return (
       <article className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
-        <h1 className='font-bold text-2xl'>Payment not completed</h1>
+        <h1 className='font-bold text-2xl'>{STATUS_MESSAGES.failed}</h1>
         <p className='pb-3 text-lg'>
           Your payment was not completed. No charge was made and no order was
           created.

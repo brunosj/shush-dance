@@ -198,13 +198,14 @@ export function DashboardClient() {
         {renderToggle()}
         <div className='mb-6 flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between'>
           <div className='text-sm text-gray-600'>
-            <p className='font-medium text-gray-800'>Stripe Checkout / Payment Links</p>
+            <p className='font-medium text-gray-800'>Legacy Stripe Payment Link backfill</p>
             <p>
-              Pull completed Stripe Checkout sessions into ticket sales when
-              they are missing (lookback:{' '}
+              Import historical ticket sales from Stripe Checkout Sessions /
+              Payment Links when they are missing in the CMS. Onsite checkout
+              sales are created automatically and do not need this sync.
+              Lookback:{' '}
               <code className='rounded bg-gray-100 px-1'>STRIPE_TICKET_SYNC_LOOKBACK_DAYS</code>{' '}
-              or default 365 days). Existing rows are skipped. Uses the same
-              Stripe secret key mode (test vs live) as your .env.
+              or default 365 days.
             </p>
           </div>
           <button

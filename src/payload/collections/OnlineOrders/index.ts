@@ -96,6 +96,17 @@ export const OnlineOrders: CollectionConfig = {
                 description: 'Payment processor transaction ID',
               },
             },
+            {
+              name: 'confirmationEmailSent',
+              type: 'checkbox',
+              label: 'Confirmation email sent',
+              defaultValue: false,
+              admin: {
+                readOnly: true,
+                description:
+                  'Used to retry email delivery safely after payment processing.',
+              },
+            },
           ],
         },
         {

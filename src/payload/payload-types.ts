@@ -61,10 +61,11 @@ export interface Event {
   ticketTiers?:
     | {
         tierName: string;
-        price: string;
+        price: number;
+        vatRate?: number | null;
         visible?: boolean | null;
         strikeThrough?: boolean | null;
-        stripePriceId: string;
+        stripePriceId?: string | null;
         ticketLink?: string | null;
         id?: string | null;
       }[]
@@ -331,6 +332,7 @@ export interface OnlineOrder {
   paymentMethod: 'stripe' | 'paypal';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   transactionId?: string | null;
+  confirmationEmailSent?: boolean | null;
   customerEmail: string;
   customerPhone?: string | null;
   firstName: string;
@@ -386,6 +388,7 @@ export interface TicketSale {
   paymentMethod: 'stripe' | 'paypal';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   transactionId?: string | null;
+  confirmationEmailSent?: boolean | null;
   customerEmail: string;
   customerPhone?: string | null;
   firstName: string;
@@ -398,6 +401,11 @@ export interface TicketSale {
     unitPrice: number;
     lineTotal: number;
     stripePriceId?: string | null;
+    eventId?: string | null;
+    tierId?: string | null;
+    vatRate?: number | null;
+    unitNet?: number | null;
+    vatAmount?: number | null;
     id?: string | null;
   }[];
   ticketTotals: {

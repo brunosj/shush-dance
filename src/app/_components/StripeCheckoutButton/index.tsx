@@ -8,6 +8,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { useShoppingCart } from 'use-shopping-cart';
 import { useRouter } from 'next/navigation';
+import type { OrderTotalsBreakdown } from '../../../utilities/tax';
 
 // Create a fresh Stripe promise for each component instance to avoid caching issues
 const createStripePromise = () => {
@@ -16,12 +17,11 @@ const createStripePromise = () => {
 
 interface StripeCheckoutButtonProps {
   customerData?: any;
-  orderTotals?: {
-    subtotal: number;
-    shipping: number;
-    vat: number;
-    total: number;
-  };
+  orderTotals?: Pick<
+    OrderTotalsBreakdown,
+    'subtotal' | 'shipping' | 'vat' | 'total'
+  > &
+    Partial<OrderTotalsBreakdown>;
   shippingRegion?: string;
 }
 
@@ -64,8 +64,9 @@ const CheckoutForm: React.FC<{
           lineTotal: item.price * item.quantity,
           type: metadata.type || 'merch',
           metadata: metadata,
-          parentItem: item.parentItem || null, // For tickets, this contains the event title
-          stripePriceId: item.id.includes('price_') ? item.id : null, // Extract Stripe price ID if present
+          parentItem: item.parentItem || null,
+          tierId: metadata.tierId || null,
+          stripePriceId: metadata.stripePriceId || null,
         };
       }),
       totals: orderTotals,
@@ -293,9 +294,8 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
               type: metadata.type || 'merch',
               metadata: metadata,
               parentItem: (item as any).parentItem || null,
-              stripePriceId: (item as any).id?.includes('price_')
-                ? (item as any).id
-                : null,
+              tierId: metadata.tierId || null,
+              stripePriceId: metadata.stripePriceId || null,
             };
           }),
           totals: orderTotals,
@@ -315,7 +315,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             Pragma: 'no-cache',
             'X-Request-ID': paymentKey, // Add request ID for debugging
-            'Idempotency-Key': `${paymentKey}-${retryCount}`, // Stripe idempotency key for safe retries
+            'Idempotency-Key': paymentKey,
           },
           body: JSON.stringify({
             amount: orderTotals.total,
@@ -341,6 +341,22 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             response.status,
             errorText
           );
+
+          let parsedError: { error?: string; code?: string } | null = null;
+          try {
+            parsedError = JSON.parse(errorText);
+          } catch {
+            parsedError = null;
+          }
+
+          if (parsedError?.code === 'cart_validation_failed') {
+            setError(
+              parsedError.error ||
+                'Your cart is out of date. Please return to the cart and refresh.'
+            );
+            setIsLoading(false);
+            return;
+          }
 
           // Retry on server errors (502, 503, 504) and 429 (rate limit) as per Stripe docs
           const shouldRetry =

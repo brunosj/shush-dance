@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { CartProvider as USCProvider } from 'use-shopping-cart';
+import { CART_SCHEMA_VERSION } from '../../../utilities/tax';
 
 export default function CartProvider({ children }: { children: ReactNode }) {
   return (
@@ -14,7 +15,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       currency='EUR'
       billingAddressCollection={true}
       shouldPersist={true}
-      // allowedCountries={['DE']}
+      persistKey={`shush-cart-v${CART_SCHEMA_VERSION}`}
     >
       {children}
     </USCProvider>

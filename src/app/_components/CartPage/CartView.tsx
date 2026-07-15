@@ -17,11 +17,14 @@ interface CartViewProps {
   subtotalExclVAT: number;
   shippingCost: number;
   totalVAT: number;
+  ticketVatCents?: number;
+  merchVatCents?: number;
   finalTotal: number;
   regionLabel: string;
   selectedRegion: string;
   onProceedToCheckout: () => void;
   isTicketOnlyCart?: boolean;
+  hasTickets?: boolean;
 }
 
 const CartView: React.FC<CartViewProps> = ({
@@ -35,11 +38,14 @@ const CartView: React.FC<CartViewProps> = ({
   subtotalExclVAT,
   shippingCost,
   totalVAT,
+  ticketVatCents = 0,
+  merchVatCents = 0,
   finalTotal,
   regionLabel,
   selectedRegion,
   onProceedToCheckout,
   isTicketOnlyCart = false,
+  hasTickets = false,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -68,12 +74,15 @@ const CartView: React.FC<CartViewProps> = ({
         subtotalExclVAT={subtotalExclVAT}
         shippingCost={shippingCost}
         totalVAT={totalVAT}
+        ticketVatCents={ticketVatCents}
+        merchVatCents={merchVatCents}
         finalTotal={finalTotal}
         regionLabel={regionLabel}
         selectedRegion={selectedRegion}
         onProceedToCheckout={onProceedToCheckout}
         showProceedButton={true}
         isTicketOnlyCart={isTicketOnlyCart}
+        hasTickets={hasTickets}
       />
     </div>
   );
