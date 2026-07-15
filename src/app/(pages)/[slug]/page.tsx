@@ -18,7 +18,7 @@ export default async function Page({ params: { slug = 'home' } }: PageParams) {
     }
   } catch (error) {
     console.error(`Failed to fetch data for slug "${slug}":`, error);
-    return notFound();
+    throw error;
   }
 
   return <PageTemplate slug={slug} data={data} />;

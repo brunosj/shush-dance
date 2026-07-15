@@ -1,4 +1,5 @@
 import type { Page } from '../../payload/payload-types';
+import { PayloadFetchError } from '../_utilities/payloadFetchError';
 
 export const fetchPage = async (
   slug: string
@@ -14,14 +15,12 @@ export const fetchPage = async (
     }
   );
 
-  // Guard against non-OK / non-JSON responses (e.g. a rate-limit 429 returns
-  // plain text "Too many requests"). Parsing that as JSON used to throw and
-  // hard-404 the whole page, so we degrade gracefully instead.
   if (!res.ok) {
-    console.error(
-      `fetchPage: unexpected ${res.status} response for slug "${slug}"`
+    const body = await res.text().catch(() => '');
+    throw new PayloadFetchError(
+      `Payload API returned ${res.status} for slug "${slug}"${body ? `: ${body.slice(0, 120)}` : ''}`,
+      { status: res.status, slug, context: 'fetchPage' }
     );
-    return null;
   }
 
   const pageRes: { docs?: Page[] } = await res.json();

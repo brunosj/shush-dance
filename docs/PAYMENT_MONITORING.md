@@ -2,7 +2,7 @@
 
 This documentation covers the automated monitoring system for the Stripe payment integration using Uptime Kuma.
 
-> **📋 Quick Start**: See [UPTIME_KUMA_SETUP.md](./UPTIME_KUMA_SETUP.md) for step-by-step Uptime Kuma configuration.
+> **📋 Quick Start**: See [scripts/uptime-kuma-setup.md](../scripts/uptime-kuma-setup.md) for step-by-step Uptime Kuma configuration.
 
 ## Problem Solved
 
@@ -51,7 +51,7 @@ const getStripeInstance = (): Stripe => {
 **Files**:
 
 - `src/payload/endpoints/monitorPaymentSystem.ts` - Monitoring endpoint
-- `UPTIME_KUMA_SETUP.md` - Configuration guide
+- `scripts/uptime-kuma-setup.md` - Configuration guide
 
 **Features:**
 
@@ -64,7 +64,7 @@ const getStripeInstance = (): Stripe => {
 
 ## Setup Instructions
 
-> **🚀 Quick Setup**: Follow the [Uptime Kuma Setup Guide](./UPTIME_KUMA_SETUP.md) for detailed step-by-step instructions.
+> **🚀 Quick Setup**: Follow the [Uptime Kuma Setup Guide](../scripts/uptime-kuma-setup.md) for detailed step-by-step instructions.
 
 ### 1. Add Environment Variables
 
@@ -91,7 +91,7 @@ pnpm build
 3. **Configure Notifications**: Email, Discord, Slack, etc.
 4. **Set Frequency**: Every 15 minutes (recommended)
 
-See the [detailed Uptime Kuma guide](./UPTIME_KUMA_SETUP.md) for complete configuration.
+See the [detailed Uptime Kuma guide](../scripts/uptime-kuma-setup.md) for complete configuration.
 
 ## Monitoring Endpoint
 
@@ -279,7 +279,7 @@ With this Uptime Kuma monitoring system, you should expect:
 
 ## Next Steps
 
-1. **Configure Uptime Kuma** following the [setup guide](./UPTIME_KUMA_SETUP.md)
+1. **Configure Uptime Kuma** following the [setup guide](../scripts/uptime-kuma-setup.md)
 2. **Test notifications** to ensure alerts reach the right team members
 3. **Monitor the dashboard** for the first few days to verify everything works correctly
 4. **Adjust the frequency** based on your needs (5-30 minutes)
