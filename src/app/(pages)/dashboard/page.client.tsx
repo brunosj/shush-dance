@@ -57,23 +57,36 @@ export function DashboardClient() {
         toast.error(result.error);
         return;
       }
-      const detail = `${result.created} created, ${result.skipped} skipped${
+
+      const salesDetail = `${result.created} sales created, ${result.skipped} skipped${
         result.errors ? `, ${result.errors} row errors` : ''
       }`;
+      const feesDetail = `${result.feesUpdated} fees updated${
+        result.feesMissing ? `, ${result.feesMissing} missing fee` : ''
+      }${result.feesWrongMode ? `, ${result.feesWrongMode} wrong mode` : ''}${
+        result.feesErrors ? `, ${result.feesErrors} fee errors` : ''
+      }`;
+
       if (
         result.checkoutSessionsListed === 0 &&
         result.created === 0 &&
-        result.skipped === 0
+        result.skipped === 0 &&
+        result.feesUpdated === 0
       ) {
         toast.success(
           `Stripe sync: 0 checkout sessions in range (${result.windowSinceIso.slice(0, 10)} → ${result.windowUntilIso.slice(0, 10)}). Key mode: ${result.stripeKeyMode}. If sales are in the other mode or older, set STRIPE_TICKET_SYNC_LOOKBACK_DAYS or use live/test key.`,
           { duration: 8000 }
         );
       } else {
-        toast.success(`Stripe sync: ${detail}`, { duration: 5000 });
+        toast.success(`Stripe sync: ${salesDetail}; ${feesDetail}`, {
+          duration: 7000,
+        });
       }
       if (result.errorMessages.length > 0) {
         console.warn('Stripe sync errors:', result.errorMessages);
+      }
+      if (result.feeErrorMessages.length > 0) {
+        console.warn('Stripe fee backfill errors:', result.feeErrorMessages);
       }
       const fresh = await fetchTicketSales();
       setTicketData(fresh);
@@ -198,13 +211,15 @@ export function DashboardClient() {
         {renderToggle()}
         <div className='mb-6 flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between'>
           <div className='text-sm text-gray-600'>
-            <p className='font-medium text-gray-800'>Legacy Stripe Payment Link backfill</p>
+            <p className='font-medium text-gray-800'>Sync from Stripe</p>
             <p>
-              Import historical ticket sales from Stripe Checkout Sessions /
-              Payment Links when they are missing in the CMS. Onsite checkout
-              sales are created automatically and do not need this sync.
-              Lookback:{' '}
-              <code className='rounded bg-gray-100 px-1'>STRIPE_TICKET_SYNC_LOOKBACK_DAYS</code>{' '}
+              Imports missing historical ticket sales from Checkout Sessions /
+              Payment Links, then backfills real Stripe processing fees for any
+              paid sales that still need them. Onsite checkout sales are created
+              automatically. Lookback:{' '}
+              <code className='rounded bg-gray-100 px-1'>
+                STRIPE_TICKET_SYNC_LOOKBACK_DAYS
+              </code>{' '}
               or default 365 days.
             </p>
           </div>

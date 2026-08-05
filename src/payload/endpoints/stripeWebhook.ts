@@ -1,6 +1,7 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
 import { processStripeOrderSuccess } from '../utils/processStripeOrder';
+import { retrieveStripeProcessingFeeCents } from '../utils/stripeFees';
 import { readValidatedOrderDataFromMetadata } from '../utils/validateOrderData';
 
 let stripeInstance: Stripe | null = null;
@@ -129,12 +130,33 @@ async function processPaymentSuccess(
   const detectedPaymentMethod =
     paymentMethodType === 'paypal' ? 'paypal' : 'stripe';
 
+  let stripeFeeEuros: number | null = null;
+  try {
+    const feeCents = await retrieveStripeProcessingFeeCents(
+      stripe,
+      paymentIntent.id
+    );
+    if (feeCents !== null) {
+      stripeFeeEuros = feeCents / 100;
+      console.log(
+        `💳 Stripe fee for ${paymentIntent.id}: €${stripeFeeEuros.toFixed(2)}`
+      );
+    } else {
+      console.warn(
+        `⚠️ Stripe fee not available yet for ${paymentIntent.id}; will retry via fallback if needed`
+      );
+    }
+  } catch (error) {
+    console.warn('Could not retrieve Stripe processing fee:', error);
+  }
+
   await processStripeOrderSuccess(
     req.payload,
     paymentIntent.id,
     orderData,
     detectedPaymentMethod,
-    orderNumber
+    orderNumber,
+    { stripeFeeEuros }
   );
 
   console.log('🎉 Webhook processing completed successfully');

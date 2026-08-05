@@ -29,6 +29,7 @@ import { stripeWebhookEndpoint } from './endpoints/stripeWebhook';
 import { ensureOrderCreatedEndpoint } from './endpoints/ensureOrderCreated';
 import { getPaymentStatusEndpoint } from './endpoints/getPaymentStatus';
 import { stripeBackfillTicketSalesEndpoint } from './endpoints/stripeBackfillTicketSales';
+import { backfillStripeFeesEndpoint } from './endpoints/backfillStripeFees';
 import { healthEndpoint } from './endpoints/health';
 import { Settings } from './globals/settings';
 
@@ -107,6 +108,7 @@ export default buildConfig({
     ensureOrderCreatedEndpoint,
     getPaymentStatusEndpoint,
     stripeBackfillTicketSalesEndpoint,
+    backfillStripeFeesEndpoint,
   ],
   email: {
     fromName: 'SHUSH',

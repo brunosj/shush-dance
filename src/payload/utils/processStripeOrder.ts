@@ -8,6 +8,7 @@ import {
   getMerchVatRate,
   splitGrossIntoNetAndVatCents,
 } from '../../utilities/tax';
+import { allocateStripeFeeEuros } from './stripeFees';
 
 function splitItems(orderData: ValidatedOrderData) {
   const ticketItems = orderData.cartItems.filter(
@@ -146,10 +147,19 @@ export async function processStripeOrderSuccess(
   orderData: ValidatedOrderData,
   detectedPaymentMethod: 'stripe' | 'paypal',
   orderNumber: string,
-  options?: { emailSubjectSuffix?: string }
+  options?: {
+    emailSubjectSuffix?: string;
+    /** Actual Stripe fee for the whole PaymentIntent, in euros. */
+    stripeFeeEuros?: number | null;
+  }
 ) {
   const { ticketItems, physicalItems } = splitItems(orderData);
   const emailSuffix = options?.emailSubjectSuffix || '';
+  const paymentStripeFeeEuros =
+    typeof options?.stripeFeeEuros === 'number' && options.stripeFeeEuros >= 0
+      ? options.stripeFeeEuros
+      : null;
+  const paymentTotalEuros = orderData.totals.total;
   let createdAny = false;
 
   let onlineOrder =
@@ -240,6 +250,15 @@ export async function processStripeOrderSuccess(
     const eventMetadata = firstTicket.metadata || {};
     const ticketTotals = buildTicketTotals(eventTickets);
 
+    const eventStripeFee =
+      paymentStripeFeeEuros === null
+        ? undefined
+        : allocateStripeFeeEuros(
+            paymentStripeFeeEuros,
+            ticketTotals.total,
+            paymentTotalEuros
+          );
+
     if (!ticketSale) {
       ticketSale = await payload.create({
         collection: 'ticket-sales',
@@ -251,6 +270,9 @@ export async function processStripeOrderSuccess(
           paymentMethod: detectedPaymentMethod,
           paymentStatus: 'paid',
           transactionId: paymentIntentId,
+          ...(typeof eventStripeFee === 'number'
+            ? { stripeFee: eventStripeFee }
+            : {}),
           customerEmail: orderData.customerData.email as string,
           customerPhone: (orderData.customerData.phone as string) || '',
           firstName: orderData.customerData.firstName as string,
@@ -269,6 +291,15 @@ export async function processStripeOrderSuccess(
 
       console.log('✅ Created ticket sale:', ticketSale.id);
       createdAny = true;
+    } else if (
+      typeof eventStripeFee === 'number' &&
+      (typeof ticketSale.stripeFee !== 'number' || ticketSale.stripeFee <= 0)
+    ) {
+      ticketSale = await payload.update({
+        collection: 'ticket-sales',
+        id: ticketSale.id,
+        data: { stripeFee: eventStripeFee },
+      });
     }
     if (!ticketSale.confirmationEmailSent) {
       try {

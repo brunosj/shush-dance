@@ -388,6 +388,7 @@ export interface TicketSale {
   paymentMethod: 'stripe' | 'paypal';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   transactionId?: string | null;
+  stripeFee?: number | null;
   confirmationEmailSent?: boolean | null;
   customerEmail: string;
   customerPhone?: string | null;

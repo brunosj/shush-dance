@@ -13,6 +13,11 @@ export type SyncStripeTicketSalesResult =
       stripeKeyMode: string;
       windowSinceIso: string;
       windowUntilIso: string;
+      feesUpdated: number;
+      feesMissing: number;
+      feesWrongMode: number;
+      feesErrors: number;
+      feeErrorMessages: string[];
     }
   | { ok: false; error: string };
 
@@ -39,11 +44,10 @@ function defaultSyncWindow(): { since: string; until: string } {
   return { since, until };
 }
 
-/** Syncs Checkout Sessions into ticket-sales. Uses STRIPE_TICKET_SYNC_LOOKBACK_DAYS (default 365). */
-export async function syncStripeTicketSalesAction(
-  since?: string,
-  until?: string
-): Promise<SyncStripeTicketSalesResult> {
+async function requireAdminApiAccess(): Promise<
+  | { ok: true; payloadUrl: string; key: string }
+  | { ok: false; error: string }
+> {
   const payloadUrl = getPayloadBaseUrl();
   if (!payloadUrl) {
     return { ok: false, error: 'PAYLOAD URL not configured' };
@@ -80,6 +84,21 @@ export async function syncStripeTicketSalesAction(
     };
   }
 
+  return { ok: true, payloadUrl, key };
+}
+
+/** Syncs Checkout Sessions into ticket-sales, then backfills real Stripe fees. */
+export async function syncStripeTicketSalesAction(
+  since?: string,
+  until?: string
+): Promise<SyncStripeTicketSalesResult> {
+  const access = await requireAdminApiAccess();
+  if (access.ok === false) {
+    return { ok: false, error: access.error };
+  }
+
+  const { payloadUrl, key } = access;
+
   const win =
     since && until
       ? { since, until }
@@ -113,6 +132,51 @@ export async function syncStripeTicketSalesAction(
 
   const w = data.window as Record<string, string> | undefined;
 
+  let feesUpdated = 0;
+  let feesMissing = 0;
+  let feesWrongMode = 0;
+  let feesErrors = 0;
+  let feeErrorMessages: string[] = [];
+
+  try {
+    const feeRes = await fetch(`${payloadUrl}/api/backfill-stripe-fees`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+      },
+      body: JSON.stringify({ dryRun: false, force: false }),
+      cache: 'no-store',
+    });
+
+    let feeData: Record<string, unknown> = {};
+    try {
+      feeData = await feeRes.json();
+    } catch {
+      feeData = {};
+    }
+
+    if (!feeRes.ok || feeData.ok === false) {
+      feesErrors = 1;
+      feeErrorMessages = [
+        (feeData.error as string) ||
+          feeRes.statusText ||
+          'Stripe fee backfill failed',
+      ];
+    } else {
+      feesUpdated = Number(feeData.updated) || 0;
+      feesMissing = Number(feeData.missingFee) || 0;
+      feesWrongMode = Number(feeData.wrongMode) || 0;
+      feesErrors = Number(feeData.errors) || 0;
+      feeErrorMessages = Array.isArray(feeData.errorMessages)
+        ? (feeData.errorMessages as string[])
+        : [];
+    }
+  } catch (error: any) {
+    feesErrors = 1;
+    feeErrorMessages = [error?.message || 'Stripe fee backfill failed'];
+  }
+
   return {
     ok: true,
     created: Number(data.created) || 0,
@@ -125,5 +189,83 @@ export async function syncStripeTicketSalesAction(
     stripeKeyMode: String(data.stripeKeyMode || 'unknown'),
     windowSinceIso: w?.sinceIso || win.since,
     windowUntilIso: w?.untilIso || win.until,
+    feesUpdated,
+    feesMissing,
+    feesWrongMode,
+    feesErrors,
+    feeErrorMessages,
+  };
+}
+
+export type BackfillStripeFeesActionResult =
+  | {
+      ok: true;
+      dryRun: boolean;
+      stripeKeyMode: string;
+      scanned: number;
+      candidates: number;
+      uniqueTransactions: number;
+      updated: number;
+      skipped: number;
+      missingFee: number;
+      wrongMode: number;
+      errors: number;
+      errorMessages: string[];
+    }
+  | { ok: false; error: string };
+
+/** Backfill real Stripe fees onto ticket-sales missing stripeFee. */
+export async function backfillStripeFeesAction(
+  options: { dryRun?: boolean; force?: boolean } = {}
+): Promise<BackfillStripeFeesActionResult> {
+  const access = await requireAdminApiAccess();
+  if (access.ok === false) {
+    return { ok: false, error: access.error };
+  }
+
+  const { payloadUrl, key } = access;
+
+  const syncRes = await fetch(`${payloadUrl}/api/backfill-stripe-fees`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+    },
+    body: JSON.stringify({
+      dryRun: Boolean(options.dryRun),
+      force: Boolean(options.force),
+    }),
+    cache: 'no-store',
+  });
+
+  let data: Record<string, unknown> = {};
+  try {
+    data = await syncRes.json();
+  } catch {
+    return { ok: false, error: 'Invalid response from backfill endpoint' };
+  }
+
+  if (!syncRes.ok || data.ok === false) {
+    return {
+      ok: false,
+      error: (data.error as string) || syncRes.statusText || 'Backfill failed',
+    };
+  }
+
+  return {
+    ok: true,
+    dryRun: Boolean(data.dryRun),
+    stripeKeyMode: String(data.stripeKeyMode || 'unknown'),
+    scanned: Number(data.scanned) || 0,
+    candidates: Number(data.candidates) || 0,
+    uniqueTransactions: Number(data.uniqueTransactions) || 0,
+    updated: Number(data.updated) || 0,
+    skipped: Number(data.skipped) || 0,
+    missingFee: Number(data.missingFee) || 0,
+    wrongMode: Number(data.wrongMode) || 0,
+    errors: Number(data.errors) || 0,
+    errorMessages: Array.isArray(data.errorMessages)
+      ? (data.errorMessages as string[])
+      : [],
   };
 }

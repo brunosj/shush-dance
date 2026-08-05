@@ -164,6 +164,17 @@ export const TicketSales: CollectionConfig = {
               },
             },
             {
+              name: 'stripeFee',
+              type: 'number',
+              label: 'Stripe Fee (EUR)',
+              admin: {
+                description:
+                  'Actual Stripe processing fee for this sale (allocated share of the PaymentIntent fee).',
+                step: 0.01,
+                readOnly: true,
+              },
+            },
+            {
               name: 'confirmationEmailSent',
               type: 'checkbox',
               label: 'Confirmation email sent',

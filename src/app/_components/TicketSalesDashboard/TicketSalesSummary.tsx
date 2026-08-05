@@ -3,7 +3,15 @@
 import { useState } from 'react';
 import { formatCurrency } from '../../_utilities/formatters';
 import type { TicketSale, Event } from '../../../payload/payload-types';
+import {
+  DEFAULT_TICKET_VAT_RATE,
+  splitGrossIntoNetAndVatCents,
+} from '../../../utilities/tax';
 import * as XLSX from 'xlsx';
+
+/** Standard Stripe DE/EEA card rate used for dashboard estimates only. */
+const STRIPE_FEE_PERCENT = 1.5;
+const STRIPE_FEE_FIXED_EUR = 0.25;
 
 interface TicketSalesSummaryProps {
   ticketSales: TicketSale[];
@@ -23,8 +31,61 @@ interface EventTierSummary {
   };
   totalQuantity: number;
   totalRevenue: number;
+  totalVat: number;
+  totalNet: number;
+  stripeFees: number;
+  /** True when at least one sale on this event is still using an estimated fee. */
+  stripeFeesEstimated: boolean;
+  realNet: number;
   totalSales: number;
   tickets: TicketSale[];
+}
+
+function getSaleGross(ticketSale: TicketSale): number {
+  if (typeof ticketSale.ticketTotals?.total === 'number') {
+    return ticketSale.ticketTotals.total;
+  }
+  return ticketSale.tickets.reduce(
+    (sum, ticket) => sum + (ticket.lineTotal || 0),
+    0
+  );
+}
+
+function getSaleVat(ticketSale: TicketSale): number {
+  if (
+    typeof ticketSale.ticketTotals?.vat === 'number' &&
+    ticketSale.ticketTotals.vat > 0
+  ) {
+    return ticketSale.ticketTotals.vat;
+  }
+
+  const lineVat = ticketSale.tickets.reduce(
+    (sum, ticket) => sum + (ticket.vatAmount || 0),
+    0
+  );
+  if (lineVat > 0) return lineVat;
+
+  const grossCents = Math.round(getSaleGross(ticketSale) * 100);
+  return splitGrossIntoNetAndVatCents(grossCents, DEFAULT_TICKET_VAT_RATE)
+    .vatCents / 100;
+}
+
+function estimateStripeFee(grossEuros: number): number {
+  if (grossEuros <= 0) return 0;
+  return (
+    Math.round((grossEuros * (STRIPE_FEE_PERCENT / 100) + STRIPE_FEE_FIXED_EUR) * 100) /
+    100
+  );
+}
+
+function getSaleStripeFee(ticketSale: TicketSale): {
+  fee: number;
+  estimated: boolean;
+} {
+  if (typeof ticketSale.stripeFee === 'number' && ticketSale.stripeFee >= 0) {
+    return { fee: ticketSale.stripeFee, estimated: false };
+  }
+  return { fee: estimateStripeFee(getSaleGross(ticketSale)), estimated: true };
 }
 
 export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
@@ -73,6 +134,11 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
           tiers: {},
           totalQuantity: 0,
           totalRevenue: 0,
+          totalVat: 0,
+          totalNet: 0,
+          stripeFees: 0,
+          stripeFeesEstimated: false,
+          realNet: 0,
           totalSales: 0,
           tickets: [],
         };
@@ -104,6 +170,16 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
         acc[eventId].totalRevenue += lineTotal;
       });
 
+      const saleGross = getSaleGross(ticketSale);
+      const saleVat = getSaleVat(ticketSale);
+      const saleNet = Math.max(0, saleGross - saleVat);
+      const { fee: saleStripeFee, estimated } = getSaleStripeFee(ticketSale);
+
+      acc[eventId].totalVat += saleVat;
+      acc[eventId].totalNet += saleNet;
+      acc[eventId].stripeFees += saleStripeFee;
+      if (estimated) acc[eventId].stripeFeesEstimated = true;
+      acc[eventId].realNet += Math.max(0, saleNet - saleStripeFee);
       acc[eventId].totalSales += 1;
 
       return acc;
@@ -255,28 +331,56 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
     (acc, event) => {
       acc.totalQuantity += event.totalQuantity;
       acc.totalRevenue += event.totalRevenue;
+      acc.totalVat += event.totalVat;
+      acc.totalNet += event.totalNet;
+      acc.stripeFees += event.stripeFees;
+      if (event.stripeFeesEstimated) acc.stripeFeesEstimated = true;
+      acc.realNet += event.realNet;
       acc.totalSales += event.totalSales;
       return acc;
     },
-    { totalQuantity: 0, totalRevenue: 0, totalSales: 0 }
+    {
+      totalQuantity: 0,
+      totalRevenue: 0,
+      totalVat: 0,
+      totalNet: 0,
+      stripeFees: 0,
+      stripeFeesEstimated: false,
+      realNet: 0,
+      totalSales: 0,
+    }
   );
 
   return (
     <div className='bg-white rounded-lg border border-gray-200 p-6'>
-      <div className='flex justify-between items-center mb-6'>
-        <h2 className='text-lg font-semibold'>
-          Ticket Sales Summary (By Event & Tier)
-        </h2>
-        {/* <div className='text-right'>
-          <p className='text-sm text-gray-500'>Overall Totals</p>
-          <p className='text-xs text-gray-400'>
-            {overallTotals.totalQuantity} tickets • {overallTotals.totalSales}{' '}
-            orders
+      <div className='flex justify-between items-start mb-6 gap-4'>
+        <div>
+          <h2 className='text-lg font-semibold'>
+            Ticket Sales Summary (By Event & Tier)
+          </h2>
+          <p className='text-xs text-gray-400 mt-1'>
+            Stripe fees use the real amount from Stripe when available. Older
+            sales without a stored fee fall back to {STRIPE_FEE_PERCENT}% +{' '}
+            {formatCurrency(STRIPE_FEE_FIXED_EUR, 'EUR')} per order.
           </p>
-          <p className='text-lg font-bold text-blue-600'>
-            {formatCurrency(overallTotals.totalRevenue, 'EUR')}
-          </p>
-        </div> */}
+        </div>
+        {sortedEvents.length > 0 && (
+          <div className='text-right shrink-0'>
+            <p className='text-sm text-gray-500'>
+              Overall net
+              {overallTotals.stripeFeesEstimated ? ' (partially est.)' : ''}
+            </p>
+            <p className='text-lg font-bold text-blue-600'>
+              {formatCurrency(overallTotals.realNet, 'EUR')}
+            </p>
+            <p className='text-xs text-gray-400'>
+              {formatCurrency(overallTotals.totalRevenue, 'EUR')} collected ·{' '}
+              {formatCurrency(overallTotals.totalVat, 'EUR')} VAT ·{' '}
+              {formatCurrency(overallTotals.stripeFees, 'EUR')} Stripe
+              {overallTotals.stripeFeesEstimated ? ' (incl. est.)' : ''}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className='space-y-6'>
@@ -341,16 +445,46 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
                       )}
                     </div>
                   </div>
-                  <div className='text-right'>
+                  <div className='text-right min-w-[180px]'>
                     <p className='text-sm font-medium text-gray-600'>
-                      {event.totalQuantity} tickets
+                      {event.totalQuantity} tickets · {event.totalSales} orders
                     </p>
                     <p className='text-lg font-bold text-blue-600'>
-                      {formatCurrency(event.totalRevenue, 'EUR')}
+                      {formatCurrency(event.realNet, 'EUR')}
                     </p>
-                    <p className='text-xs text-gray-400'>
-                      {event.totalSales} orders
+                    <p className='text-xs text-gray-500 mb-2'>
+                      net income
+                      {event.stripeFeesEstimated ? ' (Stripe partially est.)' : ''}
                     </p>
+                    <dl className='text-xs text-gray-500 space-y-0.5 text-right'>
+                      <div className='flex justify-end gap-2'>
+                        <dt>Collected</dt>
+                        <dd className='tabular-nums min-w-[72px]'>
+                          {formatCurrency(event.totalRevenue, 'EUR')}
+                        </dd>
+                      </div>
+                      <div className='flex justify-end gap-2'>
+                        <dt>− VAT</dt>
+                        <dd className='tabular-nums min-w-[72px]'>
+                          {formatCurrency(event.totalVat, 'EUR')}
+                        </dd>
+                      </div>
+                      <div className='flex justify-end gap-2'>
+                        <dt>Ex. VAT</dt>
+                        <dd className='tabular-nums min-w-[72px]'>
+                          {formatCurrency(event.totalNet, 'EUR')}
+                        </dd>
+                      </div>
+                      <div className='flex justify-end gap-2'>
+                        <dt>
+                          − Stripe
+                          {event.stripeFeesEstimated ? ' (est.)' : ''}
+                        </dt>
+                        <dd className='tabular-nums min-w-[72px]'>
+                          {formatCurrency(event.stripeFees, 'EUR')}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
                 </div>
 

@@ -1,6 +1,7 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
 import { processStripeOrderSuccess } from '../utils/processStripeOrder';
+import { retrieveStripeProcessingFeeCents } from '../utils/stripeFees';
 import { readValidatedOrderDataFromMetadata } from '../utils/validateOrderData';
 
 let stripeInstance: Stripe | null = null;
@@ -68,13 +69,26 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
         paymentMethodType === 'paypal' ? 'paypal' : 'stripe';
       const orderNumber = `SHUSH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+      let stripeFeeEuros: number | null = null;
+      try {
+        const feeCents = await retrieveStripeProcessingFeeCents(
+          stripe,
+          paymentIntentId
+        );
+        if (feeCents !== null) {
+          stripeFeeEuros = feeCents / 100;
+        }
+      } catch (error) {
+        console.warn('Could not retrieve Stripe processing fee:', error);
+      }
+
       const result = await processStripeOrderSuccess(
         req.payload,
         paymentIntentId,
         validatedOrderData,
         detectedPaymentMethod,
         orderNumber,
-        { emailSubjectSuffix: ' (Fallback)' }
+        { emailSubjectSuffix: ' (Fallback)', stripeFeeEuros }
       );
 
       console.log('🎉 Fallback order creation completed successfully');
