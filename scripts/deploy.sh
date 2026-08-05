@@ -26,6 +26,8 @@ echo "=========================================="
 echo "STEP 2: Build"
 echo "=========================================="
 
+# build:next boots Express briefly so Payload can init Next's production build.
+# It must not use PORT 3000 — PM2 is still serving the live app there.
 pnpm run build:payload
 pnpm run build:server
 pnpm run build:next

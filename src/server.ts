@@ -41,11 +41,14 @@ const start = async (): Promise<void> => {
   });
 
   if (process.env.NEXT_BUILD) {
+    // Bind only for Payload init during `next build`. Prefer a dedicated
+    // PORT (package.json uses 3999) so this never clashes with a live PM2
+    // process on 3000 during deploy.
     app.listen(PORT, async () => {
-      payload.logger.info(`Next.js is now building...`);
+      payload.logger.info(`Next.js is now building on temporary port ${PORT}...`);
       // @ts-expect-error
       await nextBuild(path.join(__dirname, '../'));
-      process.exit();
+      process.exit(0);
     });
 
     return;
