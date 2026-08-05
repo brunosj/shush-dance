@@ -37,6 +37,15 @@ dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
 });
 
+/** Node 17+ resolves `localhost` to IPv6 (::1) first; mongod often only listens on 127.0.0.1. */
+function resolveDatabaseUri(uri: string | undefined): string | undefined {
+  if (!uri) return uri;
+  return uri.replace(
+    /^(mongodb(?:\+srv)?:\/\/[^@/]*@)localhost(?=[:/]|$)/i,
+    '$1127.0.0.1'
+  ).replace(/^(mongodb(?:\+srv)?:\/\/)localhost(?=[:/]|$)/i, '$1127.0.0.1');
+}
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -50,7 +59,11 @@ export default buildConfig({
   },
   editor: slateEditor({}),
   db: mongooseAdapter({
-    url: process.env.DATABASE_URI,
+    url: resolveDatabaseUri(process.env.DATABASE_URI),
+    connectOptions: {
+      // Prefer IPv4 when the URI still contains a hostname that resolves both ways.
+      family: 4,
+    },
   }),
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
   routes: {
