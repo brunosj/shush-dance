@@ -13,6 +13,7 @@ const Tracks: CollectionConfig = {
     update: () => true,
   },
   admin: {
+    group: 'Music',
     defaultColumns: ['title', 'year'],
     useAsTitle: 'title',
   },

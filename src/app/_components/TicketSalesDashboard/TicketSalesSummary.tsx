@@ -7,9 +7,14 @@ import {
   DEFAULT_TICKET_VAT_RATE,
   splitGrossIntoNetAndVatCents,
 } from '../../../utilities/tax';
+import {
+  DEFAULT_CURRENCY,
+  normalizeCurrency,
+  type CheckoutCurrency,
+} from '../../../utilities/currency';
 import * as XLSX from 'xlsx';
 
-/** Standard Stripe DE/EEA card rate used for dashboard estimates only. */
+/** Standard Stripe DE/EEA card rate used for EUR dashboard fee estimates only. */
 const STRIPE_FEE_PERCENT = 1.5;
 const STRIPE_FEE_FIXED_EUR = 0.25;
 
@@ -22,6 +27,7 @@ interface EventTierSummary {
   eventTitle: string;
   eventDate?: string | null;
   eventLocation?: string | null;
+  currency: CheckoutCurrency;
   tiers: {
     [tierName: string]: {
       quantity: number;
@@ -39,6 +45,20 @@ interface EventTierSummary {
   realNet: number;
   totalSales: number;
   tickets: TicketSale[];
+}
+
+function getSaleCurrency(ticketSale: TicketSale): CheckoutCurrency {
+  if (ticketSale.currency) return normalizeCurrency(ticketSale.currency);
+  if (
+    typeof ticketSale.event === 'object' &&
+    ticketSale.event !== null &&
+    'currency' in ticketSale.event
+  ) {
+    return normalizeCurrency(
+      (ticketSale.event as Event & { currency?: string }).currency
+    );
+  }
+  return DEFAULT_CURRENCY;
 }
 
 function getSaleGross(ticketSale: TicketSale): number {
@@ -70,10 +90,16 @@ function getSaleVat(ticketSale: TicketSale): number {
     .vatCents / 100;
 }
 
-function estimateStripeFee(grossEuros: number): number {
-  if (grossEuros <= 0) return 0;
+function estimateStripeFee(
+  grossAmount: number,
+  currency: CheckoutCurrency
+): number {
+  if (grossAmount <= 0) return 0;
+  // Only estimate for EUR; GBP without a stored fee is shown as 0 estimated
+  // so we never invent a €0.25 fee in pounds.
+  if (currency !== 'EUR') return 0;
   return (
-    Math.round((grossEuros * (STRIPE_FEE_PERCENT / 100) + STRIPE_FEE_FIXED_EUR) * 100) /
+    Math.round((grossAmount * (STRIPE_FEE_PERCENT / 100) + STRIPE_FEE_FIXED_EUR) * 100) /
     100
   );
 }
@@ -85,7 +111,11 @@ function getSaleStripeFee(ticketSale: TicketSale): {
   if (typeof ticketSale.stripeFee === 'number' && ticketSale.stripeFee >= 0) {
     return { fee: ticketSale.stripeFee, estimated: false };
   }
-  return { fee: estimateStripeFee(getSaleGross(ticketSale)), estimated: true };
+  const currency = getSaleCurrency(ticketSale);
+  return {
+    fee: estimateStripeFee(getSaleGross(ticketSale), currency),
+    estimated: currency === 'EUR',
+  };
 }
 
 export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
@@ -131,6 +161,7 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
           eventTitle,
           eventDate: ticketSale.eventDate,
           eventLocation: ticketSale.eventLocation,
+          currency: getSaleCurrency(ticketSale),
           tiers: {},
           totalQuantity: 0,
           totalRevenue: 0,
@@ -259,7 +290,7 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
   };
 
   const exportEventToExcel = (event: EventTierSummary) => {
-    // Prepare data for export
+    const currency = event.currency || DEFAULT_CURRENCY;
     const exportData = event.tickets.map((ticketSale) => {
       const totalQty = getTotalQuantity(ticketSale);
 
@@ -273,11 +304,12 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
         Event: event.eventTitle,
         'Event Date': formatDate(event.eventDate),
         Location: event.eventLocation || '',
+        Currency: currency,
         Tier: ticketSale.ticketTier,
         Quantity: totalQty,
-        'Subtotal (EUR)': ticketSale.ticketTotals.subtotal.toFixed(2),
-        'VAT (EUR)': ticketSale.ticketTotals.vat.toFixed(2),
-        'Total (EUR)': ticketSale.ticketTotals.total.toFixed(2),
+        [`Subtotal (${currency})`]: ticketSale.ticketTotals.subtotal.toFixed(2),
+        [`VAT (${currency})`]: ticketSale.ticketTotals.vat.toFixed(2),
+        [`Total (${currency})`]: ticketSale.ticketTotals.total.toFixed(2),
         Status: ticketSale.status,
         'Payment Status': ticketSale.paymentStatus,
         'Payment Method': ticketSale.paymentMethod,
@@ -326,29 +358,46 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
     XLSX.writeFile(wb, filename);
   };
 
-  // Calculate overall totals
-  const overallTotals = sortedEvents.reduce(
+  // Calculate overall totals split by currency (never sum EUR + GBP).
+  const overallByCurrency = sortedEvents.reduce(
     (acc, event) => {
-      acc.totalQuantity += event.totalQuantity;
-      acc.totalRevenue += event.totalRevenue;
-      acc.totalVat += event.totalVat;
-      acc.totalNet += event.totalNet;
-      acc.stripeFees += event.stripeFees;
-      if (event.stripeFeesEstimated) acc.stripeFeesEstimated = true;
-      acc.realNet += event.realNet;
-      acc.totalSales += event.totalSales;
+      const currency = event.currency || DEFAULT_CURRENCY;
+      if (!acc[currency]) {
+        acc[currency] = {
+          totalQuantity: 0,
+          totalRevenue: 0,
+          totalVat: 0,
+          totalNet: 0,
+          stripeFees: 0,
+          stripeFeesEstimated: false,
+          realNet: 0,
+          totalSales: 0,
+        };
+      }
+      const bucket = acc[currency];
+      bucket.totalQuantity += event.totalQuantity;
+      bucket.totalRevenue += event.totalRevenue;
+      bucket.totalVat += event.totalVat;
+      bucket.totalNet += event.totalNet;
+      bucket.stripeFees += event.stripeFees;
+      if (event.stripeFeesEstimated) bucket.stripeFeesEstimated = true;
+      bucket.realNet += event.realNet;
+      bucket.totalSales += event.totalSales;
       return acc;
     },
-    {
-      totalQuantity: 0,
-      totalRevenue: 0,
-      totalVat: 0,
-      totalNet: 0,
-      stripeFees: 0,
-      stripeFeesEstimated: false,
-      realNet: 0,
-      totalSales: 0,
-    }
+    {} as Record<
+      CheckoutCurrency,
+      {
+        totalQuantity: number;
+        totalRevenue: number;
+        totalVat: number;
+        totalNet: number;
+        stripeFees: number;
+        stripeFeesEstimated: boolean;
+        realNet: number;
+        totalSales: number;
+      }
+    >
   );
 
   return (
@@ -360,25 +409,34 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
           </h2>
           <p className='text-xs text-gray-400 mt-1'>
             Stripe fees use the real amount from Stripe when available. Older
-            sales without a stored fee fall back to {STRIPE_FEE_PERCENT}% +{' '}
+            EUR sales without a stored fee fall back to {STRIPE_FEE_PERCENT}% +{' '}
             {formatCurrency(STRIPE_FEE_FIXED_EUR, 'EUR')} per order.
           </p>
         </div>
         {sortedEvents.length > 0 && (
-          <div className='text-right shrink-0'>
-            <p className='text-sm text-gray-500'>
-              Overall net
-              {overallTotals.stripeFeesEstimated ? ' (partially est.)' : ''}
-            </p>
-            <p className='text-lg font-bold text-blue-600'>
-              {formatCurrency(overallTotals.realNet, 'EUR')}
-            </p>
-            <p className='text-xs text-gray-400'>
-              {formatCurrency(overallTotals.totalRevenue, 'EUR')} collected ·{' '}
-              {formatCurrency(overallTotals.totalVat, 'EUR')} VAT ·{' '}
-              {formatCurrency(overallTotals.stripeFees, 'EUR')} Stripe
-              {overallTotals.stripeFeesEstimated ? ' (incl. est.)' : ''}
-            </p>
+          <div className='text-right shrink-0 space-y-3'>
+            {(Object.keys(overallByCurrency) as CheckoutCurrency[]).map(
+              (currency) => {
+                const totals = overallByCurrency[currency];
+                return (
+                  <div key={currency}>
+                    <p className='text-sm text-gray-500'>
+                      Overall net ({currency})
+                      {totals.stripeFeesEstimated ? ' (partially est.)' : ''}
+                    </p>
+                    <p className='text-lg font-bold text-blue-600'>
+                      {formatCurrency(totals.realNet, currency)}
+                    </p>
+                    <p className='text-xs text-gray-400'>
+                      {formatCurrency(totals.totalRevenue, currency)} collected ·{' '}
+                      {formatCurrency(totals.totalVat, currency)} VAT ·{' '}
+                      {formatCurrency(totals.stripeFees, currency)} Stripe
+                      {totals.stripeFeesEstimated ? ' (incl. est.)' : ''}
+                    </p>
+                  </div>
+                );
+              }
+            )}
           </div>
         )}
       </div>
@@ -450,29 +508,31 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
                       {event.totalQuantity} tickets · {event.totalSales} orders
                     </p>
                     <p className='text-lg font-bold text-blue-600'>
-                      {formatCurrency(event.realNet, 'EUR')}
+                      {formatCurrency(event.realNet, event.currency)}
                     </p>
                     <p className='text-xs text-gray-500 mb-2'>
                       net income
                       {event.stripeFeesEstimated ? ' (Stripe partially est.)' : ''}
+                      {' · '}
+                      {event.currency}
                     </p>
                     <dl className='text-xs text-gray-500 space-y-0.5 text-right'>
                       <div className='flex justify-end gap-2'>
                         <dt>Collected</dt>
                         <dd className='tabular-nums min-w-[72px]'>
-                          {formatCurrency(event.totalRevenue, 'EUR')}
+                          {formatCurrency(event.totalRevenue, event.currency)}
                         </dd>
                       </div>
                       <div className='flex justify-end gap-2'>
                         <dt>− VAT</dt>
                         <dd className='tabular-nums min-w-[72px]'>
-                          {formatCurrency(event.totalVat, 'EUR')}
+                          {formatCurrency(event.totalVat, event.currency)}
                         </dd>
                       </div>
                       <div className='flex justify-end gap-2'>
                         <dt>Ex. VAT</dt>
                         <dd className='tabular-nums min-w-[72px]'>
-                          {formatCurrency(event.totalNet, 'EUR')}
+                          {formatCurrency(event.totalNet, event.currency)}
                         </dd>
                       </div>
                       <div className='flex justify-end gap-2'>
@@ -481,7 +541,7 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
                           {event.stripeFeesEstimated ? ' (est.)' : ''}
                         </dt>
                         <dd className='tabular-nums min-w-[72px]'>
-                          {formatCurrency(event.stripeFees, 'EUR')}
+                          {formatCurrency(event.stripeFees, event.currency)}
                         </dd>
                       </div>
                     </dl>
@@ -515,7 +575,7 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
                             tickets
                           </span>
                           <span className='text-sm font-semibold text-gray-800 min-w-[80px] text-right'>
-                            {formatCurrency(tierData.revenue, 'EUR')}
+                            {formatCurrency(tierData.revenue, event.currency)}
                           </span>
                         </div>
                       </div>
@@ -629,7 +689,7 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
                             <td className='px-4 py-3 whitespace-nowrap text-sm font-medium'>
                               {formatCurrency(
                                 ticketSale.ticketTotals.total,
-                                'EUR'
+                                getSaleCurrency(ticketSale)
                               )}
                             </td>
                             <td className='px-4 py-3 whitespace-nowrap text-sm'>

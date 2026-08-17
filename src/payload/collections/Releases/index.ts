@@ -7,6 +7,7 @@ import { adminsOrPublished } from '../../access/adminsOrPublished';
 export const Releases: CollectionConfig = {
   slug: 'releases',
   admin: {
+    group: 'Shop',
     useAsTitle: 'title',
     defaultColumns: [
       'title',

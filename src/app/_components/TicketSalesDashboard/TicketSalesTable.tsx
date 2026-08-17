@@ -2,6 +2,7 @@
 
 import { formatCurrency } from '../../_utilities/formatters';
 import type { TicketSale, Event } from '../../../payload/payload-types';
+import { normalizeCurrency, DEFAULT_CURRENCY } from '../../../utilities/currency';
 
 interface TicketSalesTableProps {
   ticketSales: TicketSale[];
@@ -162,7 +163,10 @@ export function TicketSalesTable({
                 {getTotalQuantity(ticketSale)}
               </td>
               <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                {formatCurrency(ticketSale.ticketTotals.total, 'EUR')}
+                {formatCurrency(
+                  ticketSale.ticketTotals.total,
+                  normalizeCurrency(ticketSale.currency) || DEFAULT_CURRENCY
+                )}
               </td>
               <td className='px-6 py-4 whitespace-nowrap text-sm'>
                 <span

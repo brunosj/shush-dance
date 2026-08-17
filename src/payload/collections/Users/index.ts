@@ -10,6 +10,7 @@ import { loginAfterCreate } from './hooks/loginAfterCreate'
 const Users: CollectionConfig = {
   slug: 'users',
   admin: {
+    group: 'Admin',
     useAsTitle: 'name',
     defaultColumns: ['name', 'email'],
   },

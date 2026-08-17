@@ -14,6 +14,10 @@ import {
   DEFAULT_TICKET_VAT_RATE,
   type OrderTotalsBreakdown,
 } from '../../../utilities/tax';
+import {
+  DEFAULT_CURRENCY,
+  getCartCurrency,
+} from '../../../utilities/currency';
 
 import EmptyCartState from './EmptyCartState';
 import CartView from './CartView';
@@ -157,6 +161,7 @@ const CartPage = () => {
   const merchVatCents = Math.round(
     (orderTotals.merchVat + orderTotals.shippingVat) * 100
   );
+  const checkoutCurrency = getCartCurrency(cartDetails) || DEFAULT_CURRENCY;
 
   const handleCustomerDataSubmit = (data: CustomerData) => {
     setCustomerData(data);
@@ -215,6 +220,7 @@ const CartPage = () => {
         hasTickets={hasTickets()}
         paymentRefreshKey={paymentRefreshKey}
         orderTotals={orderTotals}
+        currency={checkoutCurrency}
       />
     );
   }
@@ -239,6 +245,7 @@ const CartPage = () => {
       onProceedToCheckout={handleProceedToCheckout}
       isTicketOnlyCart={isTicketOnlyCart()}
       hasTickets={hasTickets()}
+      currency={checkoutCurrency}
     />
   );
 };

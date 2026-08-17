@@ -8,6 +8,7 @@ export const TicketSales: CollectionConfig = {
     plural: 'Ticket Sales',
   },
   admin: {
+    group: 'Events',
     useAsTitle: 'ticketNumber',
     defaultColumns: [
       'ticketNumber',
@@ -164,12 +165,26 @@ export const TicketSales: CollectionConfig = {
               },
             },
             {
+              name: 'currency',
+              type: 'select',
+              label: 'Currency',
+              defaultValue: 'EUR',
+              options: [
+                { label: 'EUR', value: 'EUR' },
+                { label: 'GBP', value: 'GBP' },
+              ],
+              admin: {
+                description: 'Currency charged for this ticket sale',
+                readOnly: true,
+              },
+            },
+            {
               name: 'stripeFee',
               type: 'number',
-              label: 'Stripe Fee (EUR)',
+              label: 'Stripe Fee',
               admin: {
                 description:
-                  'Actual Stripe processing fee for this sale (allocated share of the PaymentIntent fee).',
+                  'Actual Stripe processing fee for this sale (allocated share of the PaymentIntent fee), in the sale currency.',
                 step: 0.01,
                 readOnly: true,
               },

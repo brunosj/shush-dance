@@ -208,7 +208,6 @@ export const createPaymentIntentEndpoint: Endpoint = {
 
       console.log(`[${requestId}] 📋 Request payload:`, {
         amount,
-        currency: 'eur',
         hasCustomerData: !!customerData,
         hasOrderData: !!orderData,
         customerEmail: customerData?.email
@@ -292,7 +291,7 @@ export const createPaymentIntentEndpoint: Endpoint = {
       const isTestMode = process.env.STRIPE_SECRET_KEY.startsWith('sk_test_');
 
       console.log(
-        `[${requestId}] 💳 Creating payment intent for €${validatedAmount} (${amountInCents} cents) - ${isTestMode ? 'TEST' : 'LIVE'} mode`
+        `[${requestId}] 💳 Creating payment intent for ${validatedOrderData.currency} ${validatedAmount} (${amountInCents} cents) - ${isTestMode ? 'TEST' : 'LIVE'} mode`
       );
 
       // Prepare metadata with order data split into chunks (500 char limit per key)
@@ -349,7 +348,7 @@ export const createPaymentIntentEndpoint: Endpoint = {
       // Create payment intent data
       const paymentIntentData: Stripe.PaymentIntentCreateParams = {
         amount: amountInCents,
-        currency: 'eur',
+        currency: validatedOrderData.stripeCurrency,
         automatic_payment_methods: {
           enabled: true,
         },

@@ -73,18 +73,23 @@ export default buildConfig({
     graphQLPlayground: '/api/graphql-playground',
   },
   collections: [
+    // Events
     Events,
+    TicketSales,
+    // Shop
     Releases,
     Merch,
+    OnlineOrders,
+    Sales,
+    // Music
     Artists,
     Tracks,
-    Pages,
     Audio,
+    // Content
+    Pages,
     Media,
+    // Admin
     Users,
-    Sales,
-    OnlineOrders,
-    TicketSales,
   ],
   globals: [Socials, Settings],
   typescript: {

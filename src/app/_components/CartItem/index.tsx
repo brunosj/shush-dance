@@ -1,9 +1,9 @@
-// CartItem.tsx
 import { useState } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
 import { formatCurrencyString } from 'use-shopping-cart';
 import Image from 'next/image';
 import { resolveMediaUrl } from '../../_utilities/getMediaUrl';
+import { normalizeCurrency } from '../../../utilities/currency';
 
 type Props = {
   item: {
@@ -13,11 +13,13 @@ type Props = {
     price?: number;
     quantity: number;
     image?: string;
+    currency?: string;
     product_data?: {
       metadata?: {
         variant?: string;
         type?: string;
         itemId?: string;
+        currency?: string;
       };
     };
   };
@@ -27,6 +29,9 @@ const CartItem = ({ item }: Props) => {
   const { id, quantity, name, description, price, image, product_data } = item;
   const metadata = product_data?.metadata || {};
   const variant = metadata.variant;
+  const displayCurrency = normalizeCurrency(
+    item.currency || metadata.currency
+  );
 
   const { incrementItem, decrementItem, removeItem } = useShoppingCart();
   const [itemQuantity, setItemQuantity] = useState(quantity);
@@ -80,8 +85,8 @@ const CartItem = ({ item }: Props) => {
       <div className='flex items-center justify-around w-full lg:w-auto gap-6'>
         <div>
           {formatCurrencyString({
-            value: Math.round(totalPrice * 100), // Convert to cents for formatting
-            currency: 'EUR',
+            value: Math.round(totalPrice * 100),
+            currency: displayCurrency,
           })}
         </div>
         <div className='flex items-center gap-2'>

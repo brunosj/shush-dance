@@ -7,6 +7,7 @@ export const Sales: CollectionConfig = {
   slug: 'sales',
 
   admin: {
+    group: 'Shop',
     useAsTitle: 'itemName',
     defaultColumns: ['cmsItem', 'type', 'amount', 'pointOfSale', 'soldAt'],
     components: {

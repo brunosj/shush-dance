@@ -7,6 +7,7 @@ import { adminsOrPublished } from '../../access/adminsOrPublished';
 export const Artists: CollectionConfig = {
   slug: 'artists',
   admin: {
+    group: 'Music',
     useAsTitle: 'artistName',
     defaultColumns: ['artistName', 'slug', 'updatedAt'],
   },

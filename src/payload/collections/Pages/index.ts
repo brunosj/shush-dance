@@ -8,6 +8,7 @@ import { createRichTextField } from '../../fields/createRichTextField';
 export const Pages: CollectionConfig = {
   slug: 'pages',
   admin: {
+    group: 'Content',
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'updatedAt'],
     preview: (doc) => {

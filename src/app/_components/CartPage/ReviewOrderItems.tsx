@@ -1,26 +1,32 @@
 import React from 'react';
 import { formatCurrencyString } from 'use-shopping-cart';
+import {
+  DEFAULT_CURRENCY,
+  normalizeCurrency,
+  type CheckoutCurrency,
+} from '../../../utilities/currency';
 
 interface ReviewOrderItemsProps {
   cartDetails: any;
   className?: string;
+  currency?: CheckoutCurrency;
 }
 
 const ReviewOrderItems: React.FC<ReviewOrderItemsProps> = ({
   cartDetails,
   className = '',
+  currency = DEFAULT_CURRENCY,
 }) => {
   return (
     <div className={`bg-gray-50 p-6 rounded-lg ${className}`}>
       <h4 className='font-semibold mb-4'>Order Items</h4>
       <ul className='space-y-3'>
         {Object.entries(cartDetails || {}).map(([key, item]: [string, any]) => {
-          // Extract metadata from product_data
           const productData = item?.product_data as any;
           const metadata = productData?.metadata || {};
           const variant = metadata.variant;
+          const itemCurrency = normalizeCurrency(item?.currency || currency);
 
-          // Calculate proper price display
           const unitPrice = item?.price ? item.price / 100 : 0;
           const totalPrice = unitPrice * (item?.quantity || 1);
 
@@ -43,7 +49,7 @@ const ReviewOrderItems: React.FC<ReviewOrderItemsProps> = ({
                 <p className='text-gray-600 text-xs mt-1'>
                   {formatCurrencyString({
                     value: Math.round(unitPrice * 100),
-                    currency: 'EUR',
+                    currency: itemCurrency,
                   })}{' '}
                   × {item?.quantity}
                 </p>
@@ -52,7 +58,7 @@ const ReviewOrderItems: React.FC<ReviewOrderItemsProps> = ({
                 <p className='font-medium text-sm'>
                   {formatCurrencyString({
                     value: Math.round(totalPrice * 100),
-                    currency: 'EUR',
+                    currency: itemCurrency,
                   })}
                 </p>
               </div>

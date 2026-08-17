@@ -82,4 +82,28 @@ testQuantitiesAreAppliedOnce();
 testVatOverrides();
 testCartIdRoundTrip();
 
+function testCurrencyHelpers() {
+  const {
+    canAddCurrencyToCart,
+    getCartCurrency,
+    normalizeCurrency,
+    toStripeCurrency,
+  } = require('../src/utilities/currency');
+  assert.strictEqual(normalizeCurrency(undefined), 'EUR');
+  assert.strictEqual(normalizeCurrency('gbp'), 'GBP');
+  assert.strictEqual(toStripeCurrency('GBP'), 'gbp');
+  assert.strictEqual(getCartCurrency({ a: { currency: 'GBP' } }), 'GBP');
+  assert.strictEqual(
+    getCartCurrency({ a: { currency: 'EUR' }, b: { currency: 'GBP' } }),
+    null
+  );
+  assert.deepStrictEqual(canAddCurrencyToCart({}, 'GBP'), { ok: true });
+  assert.deepStrictEqual(
+    canAddCurrencyToCart({ a: { currency: 'EUR' } }, 'GBP'),
+    { ok: false, cartCurrency: 'EUR' }
+  );
+}
+
+testCurrencyHelpers();
+
 console.log('tax utility tests passed');

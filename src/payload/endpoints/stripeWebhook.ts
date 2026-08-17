@@ -107,7 +107,7 @@ async function processPaymentSuccess(
   const orderData = readValidatedOrderDataFromMetadata(paymentIntent.metadata);
   const expectedAmount = Math.round(orderData.totals.total * 100);
   if (
-    paymentIntent.currency !== 'eur' ||
+    paymentIntent.currency !== orderData.stripeCurrency ||
     paymentIntent.amount_received !== expectedAmount
   ) {
     throw new Error('Paid amount or currency does not match validated order');

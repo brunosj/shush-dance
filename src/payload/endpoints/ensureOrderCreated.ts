@@ -51,7 +51,7 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
       );
       const expectedAmount = Math.round(validatedOrderData.totals.total * 100);
       if (
-        paymentIntent.currency !== 'eur' ||
+        paymentIntent.currency !== validatedOrderData.stripeCurrency ||
         paymentIntent.amount_received !== expectedAmount
       ) {
         return res.status(400).json({

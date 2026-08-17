@@ -1,5 +1,9 @@
 import React from 'react';
 import { formatCurrencyString } from 'use-shopping-cart';
+import {
+  DEFAULT_CURRENCY,
+  type CheckoutCurrency,
+} from '../../../utilities/currency';
 
 interface OrderSummaryProps {
   subtotalExclVAT: number;
@@ -16,6 +20,7 @@ interface OrderSummaryProps {
   className?: string;
   isTicketOnlyCart?: boolean;
   hasTickets?: boolean;
+  currency?: CheckoutCurrency;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -33,9 +38,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   className = '',
   isTicketOnlyCart = false,
   hasTickets = false,
+  currency = DEFAULT_CURRENCY,
 }) => {
-  const merchVatRateLabel =
-    selectedRegion === 'germany' ? '19%' : '0%';
+  const merchVatRateLabel = selectedRegion === 'germany' ? '19%' : '0%';
 
   return (
     <div className={`bg-gray-50 p-6 rounded-lg ${className}`}>
@@ -48,7 +53,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           <span>
             {formatCurrencyString({
               value: subtotalExclVAT,
-              currency: 'EUR',
+              currency,
             })}
           </span>
         </div>
@@ -58,7 +63,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>
               {formatCurrencyString({
                 value: shippingCost,
-                currency: 'EUR',
+                currency,
               })}
             </span>
           </div>
@@ -69,7 +74,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>
               {formatCurrencyString({
                 value: ticketVatCents,
-                currency: 'EUR',
+                currency,
               })}
             </span>
           </div>
@@ -80,7 +85,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>
               {formatCurrencyString({
                 value: merchVatCents,
-                currency: 'EUR',
+                currency,
               })}
             </span>
           </div>
@@ -89,7 +94,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           <div className='flex justify-between'>
             <span>VAT ({merchVatRateLabel}):</span>
             <span>
-              {formatCurrencyString({ value: totalVAT, currency: 'EUR' })}
+              {formatCurrencyString({ value: totalVAT, currency })}
             </span>
           </div>
         )}
@@ -99,7 +104,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           <span>
             {formatCurrencyString({
               value: finalTotal,
-              currency: 'EUR',
+              currency,
             })}
           </span>
         </div>

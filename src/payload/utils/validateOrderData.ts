@@ -11,6 +11,12 @@ import {
   type OrderTotalsBreakdown,
 } from '../../utilities/tax';
 import {
+  DEFAULT_CURRENCY,
+  normalizeCurrency,
+  toStripeCurrency,
+  type CheckoutCurrency,
+} from '../../utilities/currency';
+import {
   calculateCartShipping,
   type ShippingPrices,
   type ShippingRegion,
@@ -36,6 +42,7 @@ export type ValidatedCartItem = {
   vatRate?: number;
   unitNet?: number;
   vatAmount?: number;
+  currency?: CheckoutCurrency;
 };
 
 export type ValidatedOrderData = {
@@ -45,6 +52,10 @@ export type ValidatedOrderData = {
   shippingRegion: ShippingRegion;
   paymentMethod?: string;
   orderNumber?: string;
+  /** Display/CMS currency (EUR | GBP). */
+  currency: CheckoutCurrency;
+  /** Stripe PaymentIntent currency (eur | gbp). */
+  stripeCurrency: 'eur' | 'gbp';
 };
 
 type IncomingCartItem = {
@@ -158,6 +169,7 @@ async function resolveTicketFromCms(
     tier,
     grossCents: Math.round(price * 100),
     vatRate,
+    currency: normalizeCurrency((event as { currency?: string | null }).currency),
   };
 }
 
@@ -190,6 +202,8 @@ export async function validateAndNormalizeOrderData(
   const shippingRegion = orderData.shippingRegion as ShippingRegion;
   const validatedItems: ValidatedCartItem[] = [];
   const taxInputs: CartItemTaxInput[] = [];
+  const ticketCurrencies = new Set<CheckoutCurrency>();
+  let hasPhysicalShopItems = false;
 
   for (const item of orderData.cartItems || []) {
     const quantity = parseQuantity(item.quantity);
@@ -210,6 +224,7 @@ export async function validateAndNormalizeOrderData(
       }
 
       const resolved = await resolveTicketFromCms(payload, eventId, tierId);
+      ticketCurrencies.add(resolved.currency);
       const lineGrossCents = resolved.grossCents * quantity;
       const { netCents, vatCents } = splitGrossIntoNetAndVatCents(
         lineGrossCents,
@@ -233,6 +248,7 @@ export async function validateAndNormalizeOrderData(
           tierId,
           tierName: resolved.tier.tierName,
           vatRate: resolved.vatRate,
+          currency: resolved.currency,
           eventTitle: resolved.event.title,
           eventDate: resolved.event.date,
           eventLocation: resolved.event.location,
@@ -245,6 +261,7 @@ export async function validateAndNormalizeOrderData(
         vatRate: resolved.vatRate,
         unitNet: centsToEuros(netCents) / quantity,
         vatAmount: centsToEuros(vatCents),
+        currency: resolved.currency,
       });
 
       taxInputs.push({
@@ -256,6 +273,7 @@ export async function validateAndNormalizeOrderData(
       continue;
     }
 
+    hasPhysicalShopItems = true;
     const itemType = item.type || (item.metadata?.type as string);
     if (itemType !== 'merch' && itemType !== 'release') {
       throw new Error(`Unsupported cart item type "${itemType || 'unknown'}"`);
@@ -343,6 +361,23 @@ export async function validateAndNormalizeOrderData(
     });
   }
 
+  if (ticketCurrencies.size > 1) {
+    throw new Error(
+      'Cart mixes ticket currencies. Please checkout EUR and GBP tickets separately.'
+    );
+  }
+
+  const orderCurrency: CheckoutCurrency =
+    ticketCurrencies.size === 1
+      ? (ticketCurrencies.values().next().value as CheckoutCurrency)
+      : DEFAULT_CURRENCY;
+
+  if (orderCurrency === 'GBP' && hasPhysicalShopItems) {
+    throw new Error(
+      'GBP ticket carts cannot include merch or releases. Please remove shop items or checkout tickets separately.'
+    );
+  }
+
   const shippingData = validatedItems
     .filter((item) => item.type !== 'ticket')
     .map((item) => {
@@ -398,6 +433,8 @@ export async function validateAndNormalizeOrderData(
     shippingRegion,
     paymentMethod: orderData.paymentMethod,
     orderNumber: orderData.orderNumber,
+    currency: orderCurrency,
+    stripeCurrency: toStripeCurrency(orderCurrency),
   };
 }
 
@@ -464,6 +501,17 @@ export function readValidatedOrderDataFromMetadata(
         : typeof item.metadata?.vatRate === 'number'
           ? item.metadata.vatRate
           : 0,
+    currency: normalizeCurrency(
+      item.currency ||
+        (typeof item.metadata?.currency === 'string'
+          ? item.metadata.currency
+          : undefined)
+    ),
   }));
+  orderData.currency = normalizeCurrency(
+    orderData.currency ||
+      orderData.cartItems.find((item) => item.currency)?.currency
+  );
+  orderData.stripeCurrency = toStripeCurrency(orderData.currency);
   return orderData;
 }

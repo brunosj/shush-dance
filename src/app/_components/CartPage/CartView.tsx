@@ -3,6 +3,10 @@ import StepIndicator from '../StepIndicator';
 import CartItemsList from './CartItemsList';
 import OrderSummary from './OrderSummary';
 import ShippingLocationSelector from '../ShippingLocationSelector';
+import {
+  DEFAULT_CURRENCY,
+  type CheckoutCurrency,
+} from '../../../utilities/currency';
 
 type CheckoutStep = 'cart' | 'customer-info' | 'payment';
 
@@ -25,6 +29,7 @@ interface CartViewProps {
   onProceedToCheckout: () => void;
   isTicketOnlyCart?: boolean;
   hasTickets?: boolean;
+  currency?: CheckoutCurrency;
 }
 
 const CartView: React.FC<CartViewProps> = ({
@@ -46,6 +51,7 @@ const CartView: React.FC<CartViewProps> = ({
   onProceedToCheckout,
   isTicketOnlyCart = false,
   hasTickets = false,
+  currency = DEFAULT_CURRENCY,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -60,6 +66,7 @@ const CartView: React.FC<CartViewProps> = ({
         incrementItem={incrementItem}
         decrementItem={decrementItem}
         removeItem={removeItem}
+        currency={currency}
       />
 
       {/* Shipping Location Selector - only show for physical items */}
@@ -83,6 +90,7 @@ const CartView: React.FC<CartViewProps> = ({
         showProceedButton={true}
         isTicketOnlyCart={isTicketOnlyCart}
         hasTickets={hasTickets}
+        currency={currency}
       />
     </div>
   );

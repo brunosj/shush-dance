@@ -1,12 +1,18 @@
 import React from 'react';
 import { BsTrash3 } from 'react-icons/bs';
 import { formatCurrencyString } from 'use-shopping-cart';
+import {
+  DEFAULT_CURRENCY,
+  normalizeCurrency,
+  type CheckoutCurrency,
+} from '../../../utilities/currency';
 
 interface CartItemsListProps {
   cartDetails: any;
   incrementItem: (id: string) => void;
   decrementItem: (id: string) => void;
   removeItem: (id: string) => void;
+  currency?: CheckoutCurrency;
 }
 
 const CartItemsList: React.FC<CartItemsListProps> = ({
@@ -14,16 +20,16 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
   incrementItem,
   decrementItem,
   removeItem,
+  currency = DEFAULT_CURRENCY,
 }) => {
   return (
     <ul className='space-y-4 pt-6'>
       {Object.entries(cartDetails || {}).map(([key, item]: [string, any]) => {
-        // Extract metadata from product_data
         const productData = item?.product_data as any;
         const metadata = productData?.metadata || {};
         const variant = metadata.variant;
+        const itemCurrency = normalizeCurrency(item?.currency || currency);
 
-        // Calculate proper price display
         const unitPrice = item?.price ? item.price / 100 : 0;
         const totalPrice = unitPrice * (item?.quantity || 1);
 
@@ -42,8 +48,8 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
                   ` | ${metadata.type === 'merch' ? 'Size' : 'Format'}: ${variant}`}{' '}
                 |{' '}
                 {formatCurrencyString({
-                  value: Math.round(unitPrice * 100), // Convert back to cents for formatting
-                  currency: 'EUR',
+                  value: Math.round(unitPrice * 100),
+                  currency: itemCurrency,
                 })}{' '}
                 per item
               </p>
@@ -66,8 +72,8 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
               <div className='h-6 border-l border-gray'></div>
               <p>
                 {formatCurrencyString({
-                  value: Math.round(totalPrice * 100), // Convert to cents for formatting
-                  currency: 'EUR',
+                  value: Math.round(totalPrice * 100),
+                  currency: itemCurrency,
                 })}
               </p>
               <div className='h-6 border-l border-gray'></div>

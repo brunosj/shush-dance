@@ -58,6 +58,8 @@ const orderData: ValidatedOrderData = {
     country: 'Germany',
   },
   shippingRegion: 'germany',
+  currency: 'EUR',
+  stripeCurrency: 'eur',
   totals: {
     subtotal: 40,
     shipping: 5.5,
@@ -151,6 +153,7 @@ async function run() {
     'clothing (Variant: XL)'
   );
   assert.strictEqual(records['ticket-sales'][0].ticketTotals.vat, 0.65);
+  assert.strictEqual(records['ticket-sales'][0].currency, 'EUR');
   assert.strictEqual(emailCount, 6);
   console.log('order processing tests passed');
 }

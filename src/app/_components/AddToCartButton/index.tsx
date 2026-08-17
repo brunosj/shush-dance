@@ -6,7 +6,14 @@ import { useShipping } from '../../_providers/ShippingProvider';
 import Button from '../Button';
 import type { Merch, Release } from '../../../payload/payload-types';
 import toast from 'react-hot-toast';
-import { resolveMediaResource, resolveMediaUrl } from '../../_utilities/getMediaUrl';
+import {
+  resolveMediaResource,
+  resolveMediaUrl,
+} from '../../_utilities/getMediaUrl';
+import {
+  canAddCurrencyToCart,
+  DEFAULT_CURRENCY,
+} from '../../../utilities/currency';
 
 interface AddToCartButtonProps {
   item: Merch | Release;
@@ -34,20 +41,26 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   selectedVariant,
   disabled,
 }) => {
-  const { addItem } = useShoppingCart();
-  const { selectedRegion, getVATRate } = useShipping();
+  const { addItem, cartDetails } = useShoppingCart();
+  const { selectedRegion } = useShipping();
   const [isAdding, setIsAdding] = useState(false);
 
   const handleAddToCart = async () => {
-    // Type guard to ensure item has required properties
     if (!hasPrice(item)) return;
+
+    const allowed = canAddCurrencyToCart(cartDetails, DEFAULT_CURRENCY);
+    if (allowed.ok === false) {
+      toast.error(
+        `Your cart is in ${allowed.cartCurrency}. Empty it (or remove other-currency items) before adding EUR shop items.`
+      );
+      return;
+    }
 
     setIsAdding(true);
 
     try {
       const basePrice = item.price;
 
-      // Get image URL safely
       const getImageUrl = () => {
         if (type === 'release') {
           const release = item as Release;
@@ -62,16 +75,15 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           : resolveMediaResource(merch.mainImage) || '';
       };
 
-      // Create cart item WITHOUT VAT (will be calculated at cart level)
       const cartItem = {
-        id: `${type}_${item.id}_${selectedRegion}${selectedVariant ? `_${selectedVariant}` : ''}`, // Include variant in ID
+        id: `${type}_${item.id}_${selectedRegion}${selectedVariant ? `_${selectedVariant}` : ''}`,
         name: item.title,
         description:
           type === 'release'
             ? `${(item as Release).catalogNumber} - ${(item as Release).releaseYear}`
             : (item as Merch).itemType,
-        price: Math.round(basePrice * 100), // Convert to cents, NO VAT added here
-        currency: 'EUR',
+        price: Math.round(basePrice * 100),
+        currency: DEFAULT_CURRENCY,
         image: getImageUrl(),
         product_data: {
           metadata: {
@@ -79,14 +91,13 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             itemId: item.id,
             shippingRegion: selectedRegion,
             basePrice: basePrice.toString(),
-            variant: selectedVariant || '', // For clothing sizes only
+            variant: selectedVariant || '',
             isDigital: ('isDigital' in item
               ? item.isDigital
               : false
             ).toString(),
-            // Store item type for shipping calculations
+            currency: DEFAULT_CURRENCY,
             itemType: type === 'merch' ? (item as Merch).itemType : 'vinyl',
-            // Store shipping prices for cart-level calculation
             shippingPrices: JSON.stringify(
               'shippingPrices' in item ? item.shippingPrices : {}
             ),
@@ -103,7 +114,6 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     }
   };
 
-  // Check availability
   const itemHasPrice = hasPrice(item);
   const isOutOfStock = hasStockQuantity(item) && item.stockQuantity <= 0;
 

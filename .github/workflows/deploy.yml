@@ -83,7 +83,7 @@ jobs:
             echo ""
             
             echo "📁 Directory Structure:"
-            ls -la /home/lando/app/
+            ls -la /home/lando/shush/repo/
           '
 
   notify:

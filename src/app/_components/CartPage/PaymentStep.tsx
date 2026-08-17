@@ -8,6 +8,10 @@ import PaymentErrorBoundary from './PaymentErrorBoundary';
 import { CustomerData } from '../../_providers/CheckoutProvider';
 import { type ShippingRegion } from '../../_types/shipping';
 import type { OrderTotalsBreakdown } from '../../../utilities/tax';
+import {
+  DEFAULT_CURRENCY,
+  type CheckoutCurrency,
+} from '../../../utilities/currency';
 
 type CheckoutStep = 'cart' | 'customer-info' | 'payment';
 
@@ -30,6 +34,7 @@ interface PaymentStepProps {
   hasTickets?: boolean;
   paymentRefreshKey?: number;
   orderTotals: OrderTotalsBreakdown;
+  currency?: CheckoutCurrency;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({
@@ -51,6 +56,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   hasTickets = false,
   paymentRefreshKey = 0,
   orderTotals,
+  currency = DEFAULT_CURRENCY,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -67,7 +73,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
       </div>
 
       <div className='mb-6'>
-        <ReviewOrderItems cartDetails={cartDetails} />
+        <ReviewOrderItems cartDetails={cartDetails} currency={currency} />
       </div>
 
       <div
@@ -87,6 +93,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
           title={'Order Summary'}
           isTicketOnlyCart={isTicketOnlyCart}
           hasTickets={hasTickets}
+          currency={currency}
         />
 
         {!isTicketOnlyCart && (

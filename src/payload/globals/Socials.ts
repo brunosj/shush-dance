@@ -4,6 +4,9 @@ import link from '../fields/link';
 
 export const Socials: GlobalConfig = {
   slug: 'socials',
+  admin: {
+    group: 'Admin',
+  },
   access: {
     read: () => true,
   },

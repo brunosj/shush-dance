@@ -11,6 +11,7 @@ export const Merch: CollectionConfig = {
     plural: 'Merch Items',
   },
   admin: {
+    group: 'Shop',
     useAsTitle: 'title',
     defaultColumns: ['title', 'itemType', 'price', 'updatedAt'],
   },

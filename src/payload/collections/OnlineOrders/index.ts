@@ -8,6 +8,7 @@ export const OnlineOrders: CollectionConfig = {
     plural: 'Online Orders',
   },
   admin: {
+    group: 'Shop',
     useAsTitle: 'orderNumber',
     defaultColumns: [
       'orderNumber',

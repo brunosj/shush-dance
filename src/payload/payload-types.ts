@@ -51,6 +51,7 @@ export interface Event {
   time?: string | null;
   location: string;
   artists?: (string | Artist)[] | null;
+  currency?: ('EUR' | 'GBP') | null;
   ticketsAvailable?: boolean | null;
   ticket_email_footer?:
     | {
@@ -388,6 +389,7 @@ export interface TicketSale {
   paymentMethod: 'stripe' | 'paypal';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   transactionId?: string | null;
+  currency?: ('EUR' | 'GBP') | null;
   stripeFee?: number | null;
   confirmationEmailSent?: boolean | null;
   customerEmail: string;

@@ -9,6 +9,7 @@ import {
   splitGrossIntoNetAndVatCents,
 } from '../../utilities/tax';
 import { allocateStripeFeeEuros } from './stripeFees';
+import { normalizeCurrency } from '../../utilities/currency';
 
 function splitItems(orderData: ValidatedOrderData) {
   const ticketItems = orderData.cartItems.filter(
@@ -149,12 +150,13 @@ export async function processStripeOrderSuccess(
   orderNumber: string,
   options?: {
     emailSubjectSuffix?: string;
-    /** Actual Stripe fee for the whole PaymentIntent, in euros. */
+    /** Actual Stripe fee for the whole PaymentIntent, in the charge currency. */
     stripeFeeEuros?: number | null;
   }
 ) {
   const { ticketItems, physicalItems } = splitItems(orderData);
   const emailSuffix = options?.emailSubjectSuffix || '';
+  const orderCurrency = normalizeCurrency(orderData.currency);
   const paymentStripeFeeEuros =
     typeof options?.stripeFeeEuros === 'number' && options.stripeFeeEuros >= 0
       ? options.stripeFeeEuros
@@ -270,6 +272,7 @@ export async function processStripeOrderSuccess(
           paymentMethod: detectedPaymentMethod,
           paymentStatus: 'paid',
           transactionId: paymentIntentId,
+          currency: orderCurrency,
           ...(typeof eventStripeFee === 'number'
             ? { stripeFee: eventStripeFee }
             : {}),

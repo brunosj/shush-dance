@@ -14,6 +14,9 @@ const ALLOWED_MIME_TYPES = [
 
 const Audio: CollectionConfig = {
   slug: 'audio',
+  admin: {
+    group: 'Music',
+  },
   upload: {
     staticDir: path.resolve(__dirname, '../../../../media/audio'),
     mimeTypes: ALLOWED_MIME_TYPES,

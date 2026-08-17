@@ -9,6 +9,7 @@ import {
 import { useShoppingCart } from 'use-shopping-cart';
 import { useRouter } from 'next/navigation';
 import type { OrderTotalsBreakdown } from '../../../utilities/tax';
+import { getCartCurrency } from '../../../utilities/currency';
 
 // Create a fresh Stripe promise for each component instance to avoid caching issues
 const createStripePromise = () => {
@@ -319,7 +320,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           },
           body: JSON.stringify({
             amount: orderTotals.total,
-            currency: 'eur',
+            currency: getCartCurrency(cartDetails as any)?.toLowerCase() || 'eur',
             customerData,
             orderData: orderDataForWebhook,
             // Add timestamp and retry info to ensure fresh requests

@@ -5,7 +5,8 @@ import {
 } from '../app/_types/shipping';
 
 export const DEFAULT_TICKET_VAT_RATE = 7;
-export const CART_SCHEMA_VERSION = 2;
+/** Bumped for per-event currency (EUR/GBP) cart metadata. */
+export const CART_SCHEMA_VERSION = 3;
 
 export type CartItemTaxInput = {
   type: 'ticket' | 'merch' | 'release' | string;

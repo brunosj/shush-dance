@@ -9,6 +9,7 @@ const docs: Record<string, Record<string, any>> = {
       ticketsAvailable: true,
       date: '2026-08-01',
       location: 'Berlin',
+      currency: 'EUR',
       ticketTiers: [
         {
           id: 'tier1',
@@ -25,6 +26,24 @@ const docs: Record<string, Record<string, any>> = {
           vatRate: 7,
           visible: true,
           strikeThrough: true,
+        },
+      ],
+    },
+    eventGbp: {
+      id: 'eventGbp',
+      title: 'London Event',
+      ticketsAvailable: true,
+      date: '2026-09-01',
+      location: 'London',
+      currency: 'GBP',
+      ticketTiers: [
+        {
+          id: 'gbpTier',
+          tierName: 'Door',
+          price: 12,
+          vatRate: 20,
+          visible: true,
+          strikeThrough: false,
         },
       ],
     },
@@ -102,6 +121,137 @@ async function testTicketQuantityAndVat() {
   assert.strictEqual(result.cartItems[0].lineTotal, 2000);
   assert.strictEqual(result.totals.total, 20);
   assert.strictEqual(result.totals.ticketVat, 1.31);
+  assert.strictEqual(result.currency, 'EUR');
+  assert.strictEqual(result.stripeCurrency, 'eur');
+}
+
+async function testGbpTicketCurrency() {
+  const result = await validateAndNormalizeOrderData(payload, {
+    customerData: {
+      email: customerData.email,
+      firstName: customerData.firstName,
+      lastName: customerData.lastName,
+    },
+    shippingRegion: 'germany',
+    cartItems: [
+      {
+        id: 'ticket-eventGbp-gbpTier',
+        quantity: 1,
+        metadata: {
+          type: 'ticket',
+          eventId: 'eventGbp',
+          tierId: 'gbpTier',
+        },
+      },
+    ],
+    totals: { total: 12 },
+  });
+  assert.strictEqual(result.currency, 'GBP');
+  assert.strictEqual(result.stripeCurrency, 'gbp');
+  assert.strictEqual(result.totals.total, 12);
+  assert.strictEqual(result.cartItems[0].currency, 'GBP');
+}
+
+async function testMixedCurrencyRejection() {
+  await assert.rejects(
+    validateAndNormalizeOrderData(payload, {
+      customerData,
+      shippingRegion: 'germany',
+      cartItems: [
+        {
+          id: 'ticket-event1-tier1',
+          quantity: 1,
+          metadata: { type: 'ticket', eventId: 'event1', tierId: 'tier1' },
+        },
+        {
+          id: 'ticket-eventGbp-gbpTier',
+          quantity: 1,
+          metadata: {
+            type: 'ticket',
+            eventId: 'eventGbp',
+            tierId: 'gbpTier',
+          },
+        },
+      ],
+      totals: { total: 22 },
+    }),
+    /mixes ticket currencies/
+  );
+}
+
+async function testGbpTicketWithMerchRejection() {
+  await assert.rejects(
+    validateAndNormalizeOrderData(payload, {
+      customerData,
+      shippingRegion: 'germany',
+      cartItems: [
+        {
+          id: 'ticket-eventGbp-gbpTier',
+          quantity: 1,
+          metadata: {
+            type: 'ticket',
+            eventId: 'eventGbp',
+            tierId: 'gbpTier',
+          },
+        },
+        {
+          id: 'merch',
+          quantity: 1,
+          metadata: {
+            type: 'merch',
+            itemId: 'merch1',
+            variant: 'M',
+          },
+        },
+      ],
+      totals: { total: 42 },
+    }),
+    /cannot include merch/
+  );
+}
+
+async function testLegacyEventDefaultsToEur() {
+  docs.events.eventLegacy = {
+    id: 'eventLegacy',
+    title: 'Legacy Event',
+    ticketsAvailable: true,
+    date: '2026-01-01',
+    location: 'Berlin',
+    // no currency field
+    ticketTiers: [
+      {
+        id: 'legacyTier',
+        tierName: 'GA',
+        price: 8,
+        vatRate: 7,
+        visible: true,
+        strikeThrough: false,
+      },
+    ],
+  };
+
+  const result = await validateAndNormalizeOrderData(payload, {
+    customerData: {
+      email: customerData.email,
+      firstName: customerData.firstName,
+      lastName: customerData.lastName,
+    },
+    shippingRegion: 'germany',
+    cartItems: [
+      {
+        id: 'ticket-eventLegacy-legacyTier',
+        quantity: 1,
+        metadata: {
+          type: 'ticket',
+          eventId: 'eventLegacy',
+          tierId: 'legacyTier',
+        },
+      },
+    ],
+    totals: { total: 8 },
+  });
+  assert.strictEqual(result.currency, 'EUR');
+  assert.strictEqual(result.stripeCurrency, 'eur');
 }
 
 async function testCmsMerchPriceAndShipping() {
@@ -222,6 +372,10 @@ async function testRejections() {
 
 async function run() {
   await testTicketQuantityAndVat();
+  await testGbpTicketCurrency();
+  await testMixedCurrencyRejection();
+  await testGbpTicketWithMerchRejection();
+  await testLegacyEventDefaultsToEur();
   await testCmsMerchPriceAndShipping();
   await testDigitalReleaseHasNoShipping();
   await testRejections();

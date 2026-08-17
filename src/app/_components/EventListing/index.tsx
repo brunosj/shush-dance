@@ -11,6 +11,11 @@ import {
   buildTicketCartId,
   DEFAULT_TICKET_VAT_RATE,
 } from '../../../utilities/tax';
+import {
+  canAddCurrencyToCart,
+  formatMoneyAmount,
+  normalizeCurrency,
+} from '../../../utilities/currency';
 
 interface EventListingProps {
   event: Event;
@@ -23,7 +28,10 @@ const EventListing: React.FC<EventListingProps> = ({
 }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const { addItem } = useShoppingCart();
+  const { addItem, cartDetails } = useShoppingCart();
+  const eventCurrency = normalizeCurrency(
+    (event as Event & { currency?: string | null }).currency
+  );
 
   const eventDate = new Date(event.date);
   const isPastEvent = eventDate.setHours(0, 0, 0, 0) < today.getTime();
@@ -55,23 +63,31 @@ const EventListing: React.FC<EventListingProps> = ({
   });
 
   const handleAddToCart = (tier) => {
+    const allowed = canAddCurrencyToCart(cartDetails, eventCurrency);
+    if (allowed.ok === false) {
+      toast.error(
+        `Your cart is in ${allowed.cartCurrency}. Empty it (or remove other-currency items) before adding ${eventCurrency} tickets.`
+      );
+      return;
+    }
+
     const vatRate =
       typeof tier.vatRate === 'number' ? tier.vatRate : DEFAULT_TICKET_VAT_RATE;
-    const priceEuros =
+    const priceMajor =
       typeof tier.price === 'number' ? tier.price : parseFloat(String(tier.price));
-    const priceCents = Math.round(priceEuros * 100);
+    const priceCents = Math.round(priceMajor * 100);
 
     const item = {
       id: buildTicketCartId(String(event.id), String(tier.id)),
       name: tier.tierName,
       parentItem: event.title,
       price: priceCents,
-      currency: 'EUR',
+      currency: eventCurrency,
       quantity: 1,
       description: `Ticket for ${event.title}`,
       priceObject: {
         value: priceCents,
-        currency: 'EUR',
+        currency: eventCurrency,
       },
       product_data: {
         metadata: {
@@ -82,6 +98,7 @@ const EventListing: React.FC<EventListingProps> = ({
           tierId: tier.id,
           tierName: tier.tierName,
           vatRate,
+          currency: eventCurrency,
           eventTitle: event.title,
           eventDate: event.date,
           eventLocation: event.location,
@@ -159,7 +176,7 @@ const EventListing: React.FC<EventListingProps> = ({
                   {tier.visible && (
                     <Button
                       onClick={() => handleAddToCart(tier)}
-                      label={`${tier.tierName} - €${tier.price}`}
+                      label={`${tier.tierName} - ${formatMoneyAmount(tier.price, eventCurrency)}`}
                       disabled={tier.strikeThrough}
                     />
                   )}

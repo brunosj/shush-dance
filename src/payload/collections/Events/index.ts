@@ -7,6 +7,7 @@ import { createRichTextField } from '../../fields/createRichTextField';
 export const Events: CollectionConfig = {
   slug: 'events',
   admin: {
+    group: 'Events',
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'updatedAt'],
   },
@@ -61,6 +62,21 @@ export const Events: CollectionConfig = {
               relationTo: 'artists',
               label: 'Artists',
               hasMany: true,
+            },
+            {
+              name: 'currency',
+              type: 'select',
+              label: 'Currency',
+              required: true,
+              defaultValue: 'EUR',
+              options: [
+                { label: 'EUR (€)', value: 'EUR' },
+                { label: 'GBP (£)', value: 'GBP' },
+              ],
+              admin: {
+                description:
+                  'Ticket prices and Stripe charges use this currency. Merch/releases remain EUR — do not mix currencies in one cart.',
+              },
             },
             slugField(),
           ],
@@ -127,12 +143,12 @@ export const Events: CollectionConfig = {
                     {
                       name: 'price',
                       type: 'number',
-                      label: 'Price (EUR, incl. VAT)',
+                      label: 'Price (incl. VAT)',
                       required: true,
                       min: 0.01,
                       admin: {
                         description:
-                          'Final customer-facing ticket price in euros, VAT included.',
+                          'Final customer-facing ticket price in the event currency, VAT included.',
                         step: 0.01,
                         width: '50%',
                       },
@@ -146,7 +162,7 @@ export const Events: CollectionConfig = {
                       max: 100,
                       admin: {
                         description:
-                          'VAT rate included in the price above. Defaults to 7% for event tickets.',
+                          'VAT rate included in the price above. Defaults to 7%. Override for UK events (e.g. 20% or 0%) as needed.',
                         step: 0.01,
                         width: '50%',
                       },
