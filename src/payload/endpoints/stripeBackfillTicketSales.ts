@@ -1,5 +1,10 @@
 import type { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+import {
+  fromStripeCurrency,
+  normalizeCurrency,
+  type CheckoutCurrency,
+} from '../../utilities/currency';
 import { splitGrossIntoNetAndVatCents } from '../../utilities/tax';
 
 let stripeInstance: Stripe | null = null;
@@ -450,6 +455,10 @@ async function createTicketSaleFromOrderDataPi(
       { netCents: 0, vatCents: 0 }
     );
 
+    const saleCurrency: CheckoutCurrency = orderData.currency
+      ? normalizeCurrency(orderData.currency)
+      : fromStripeCurrency(pi.currency);
+
     await payload.create({
       collection: 'ticket-sales',
       data: {
@@ -462,6 +471,7 @@ async function createTicketSaleFromOrderDataPi(
         paymentMethod: detectedPaymentMethod,
         paymentStatus: 'paid',
         transactionId: pi.id,
+        currency: saleCurrency,
         customerEmail: cd.email,
         customerPhone: cd.phone || '',
         firstName: cd.firstName,
@@ -571,6 +581,7 @@ async function createGenericKlarnaTicketSale(
       paymentMethod: 'stripe',
       paymentStatus: 'paid',
       transactionId: pi.id,
+      currency: fromStripeCurrency(pi.currency),
       customerEmail: email,
       customerPhone:
         (typeof ch === 'object' && ch && 'billing_details' in ch
@@ -911,6 +922,7 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
               paymentMethod: 'stripe',
               paymentStatus: 'paid',
               transactionId,
+              currency: fromStripeCurrency(session.currency),
               customerEmail: email,
               customerPhone: session.customer_details?.phone || '',
               firstName,

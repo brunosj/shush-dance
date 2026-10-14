@@ -302,7 +302,7 @@ export const TicketSales: CollectionConfig = {
                     {
                       name: 'unitPrice',
                       type: 'number',
-                      label: 'Unit Price (EUR)',
+                      label: 'Unit Price',
                       required: true,
                       admin: {
                         width: '33%',
@@ -312,7 +312,7 @@ export const TicketSales: CollectionConfig = {
                     {
                       name: 'lineTotal',
                       type: 'number',
-                      label: 'Line Total (EUR)',
+                      label: 'Line Total',
                       required: true,
                       admin: {
                         width: '34%',
@@ -324,10 +324,10 @@ export const TicketSales: CollectionConfig = {
                 {
                   name: 'stripePriceId',
                   type: 'text',
-                  label: 'Stripe Price ID (legacy)',
+                  label: 'Stripe Price ID',
                   admin: {
                     description:
-                      'Optional legacy Stripe price ID for historical Payment Link sales',
+                      'Stripe Price ID when this line came from a Payment Link / Checkout sync',
                   },
                 },
                 {
@@ -357,7 +357,7 @@ export const TicketSales: CollectionConfig = {
                 {
                   name: 'unitNet',
                   type: 'number',
-                  label: 'Unit Net (EUR)',
+                  label: 'Unit Net',
                   admin: {
                     step: 0.01,
                   },
@@ -365,7 +365,7 @@ export const TicketSales: CollectionConfig = {
                 {
                   name: 'vatAmount',
                   type: 'number',
-                  label: 'VAT Amount (EUR)',
+                  label: 'VAT Amount',
                   admin: {
                     step: 0.01,
                   },

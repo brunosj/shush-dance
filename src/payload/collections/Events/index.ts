@@ -189,25 +189,31 @@ export const Events: CollectionConfig = {
                   ],
                 },
                 {
-                  name: 'stripePriceId',
-                  type: 'text',
-                  label: 'Stripe Price ID (legacy)',
-                  required: false,
-                  admin: {
-                    hidden: true,
-                    description:
-                      'Optional legacy Stripe Price ID for historical Payment Link backfill.',
-                  },
-                },
-                {
-                  name: 'ticketLink',
-                  type: 'text',
-                  label: 'Ticket Link (legacy)',
-                  required: false,
-                  admin: {
-                    hidden: true,
-                    description: 'Optional legacy Stripe Payment Link URL.',
-                  },
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'stripePriceId',
+                      type: 'text',
+                      label: 'Stripe Price ID',
+                      required: false,
+                      admin: {
+                        width: '50%',
+                        description:
+                          'For tickets sold via Stripe Payment Links / Checkout (not the onsite cart). Paste the Price ID (price_…). Sync from Stripe on the dashboard uses this to count those sales.',
+                      },
+                    },
+                    {
+                      name: 'ticketLink',
+                      type: 'text',
+                      label: 'Ticket / Payment Link URL',
+                      required: false,
+                      admin: {
+                        width: '50%',
+                        description:
+                          'Optional reference URL for this tier’s Payment Link. Sync matches on Stripe Price ID above, not this URL.',
+                      },
+                    },
+                  ],
                 },
               ],
             },
@@ -224,12 +230,12 @@ export const Events: CollectionConfig = {
             {
               name: 'stripeCatalogMatchKey',
               type: 'text',
-              label: 'Stripe catalog match key (legacy)',
+              label: 'Stripe catalog match key',
               required: false,
               admin: {
-                hidden: true,
                 description:
-                  'Legacy field for Stripe Payment Link backfill only. Not required for onsite checkout.',
+                  'Optional fallback for Payment Link sync when a Price ID is missing. Must match Stripe Price/Product metadata cms_event_key or cms_catalog_key. Not needed for onsite checkout.',
+                condition: (data) => data.ticketsAvailable === true,
               },
             },
           ],
