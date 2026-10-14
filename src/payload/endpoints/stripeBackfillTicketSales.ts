@@ -6,6 +6,10 @@ import {
   type CheckoutCurrency,
 } from '../../utilities/currency';
 import { splitGrossIntoNetAndVatCents } from '../../utilities/tax';
+import {
+  buildStripeEventLookups as buildCheckoutEventLookups,
+  importPaidCheckoutSession,
+} from '../utils/importPaidCheckoutSession';
 
 let stripeInstance: Stripe | null = null;
 const getStripe = (): Stripe => {
@@ -51,11 +55,28 @@ function splitCustomerName(name: string | null | undefined): {
 
 type StripeEventLookups = {
   priceIdToInfo: Map<string, PriceEventInfo>;
+  productIdToInfo: Map<string, PriceEventInfo>;
   catalogKeyToInfo: Map<string, PriceEventInfo>;
   eventIdToInfo: Map<string, PriceEventInfo>;
   /** eventId → normalized tier label → tier-specific row (for Stripe cms_tier_name matching). */
   tiersByEventAndLabel: Map<string, Map<string, PriceEventInfo>>;
 };
+
+/** Register a CMS-stored Stripe id (price_… / prod_…) for Checkout line matching. */
+function registerStripeCatalogId(
+  raw: string | null | undefined,
+  info: PriceEventInfo,
+  lookups: Pick<StripeEventLookups, 'priceIdToInfo' | 'productIdToInfo'>
+): void {
+  const id = typeof raw === 'string' ? raw.trim() : '';
+  if (!id) return;
+  if (id.startsWith('price_') && !lookups.priceIdToInfo.has(id)) {
+    lookups.priceIdToInfo.set(id, info);
+  }
+  if (id.startsWith('prod_') && !lookups.productIdToInfo.has(id)) {
+    lookups.productIdToInfo.set(id, info);
+  }
+}
 
 function normalizeTierLabel(label: string): string {
   return label.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -81,9 +102,11 @@ async function buildStripeEventLookups(
   payload: any
 ): Promise<StripeEventLookups> {
   const priceIdToInfo = new Map<string, PriceEventInfo>();
+  const productIdToInfo = new Map<string, PriceEventInfo>();
   const catalogKeyToInfo = new Map<string, PriceEventInfo>();
   const eventIdToInfo = new Map<string, PriceEventInfo>();
   const tiersByEventAndLabel = new Map<string, Map<string, PriceEventInfo>>();
+  const idLookups = { priceIdToInfo, productIdToInfo };
 
   const res = await payload.find({
     collection: 'events',
@@ -95,13 +118,16 @@ async function buildStripeEventLookups(
     const idStr = String(ev.id);
     eventIdToInfo.set(idStr, infoFromEventDoc(ev));
 
-    const matchKey =
+    const catalogRaw =
       typeof ev.stripeCatalogMatchKey === 'string'
-        ? ev.stripeCatalogMatchKey.trim().toLowerCase()
+        ? ev.stripeCatalogMatchKey.trim()
         : '';
+    const matchKey = catalogRaw.toLowerCase();
     if (matchKey && !catalogKeyToInfo.has(matchKey)) {
       catalogKeyToInfo.set(matchKey, infoFromEventDoc(ev));
     }
+    // Also accept a Price/Product ID pasted into the catalog-match field by mistake.
+    registerStripeCatalogId(catalogRaw, infoFromEventDoc(ev), idLookups);
 
     const tiers = ev.ticketTiers;
     if (!Array.isArray(tiers)) continue;
@@ -120,18 +146,17 @@ async function buildStripeEventLookups(
         }
       }
 
-      const pid = tier?.stripePriceId?.trim();
-      if (pid && !priceIdToInfo.has(pid)) {
-        priceIdToInfo.set(
-          pid,
-          infoFromEventDoc(ev, tier.tierName || undefined)
-        );
-      }
+      registerStripeCatalogId(
+        tier?.stripePriceId,
+        infoFromEventDoc(ev, tier.tierName || undefined),
+        idLookups
+      );
     }
   }
 
   return {
     priceIdToInfo,
+    productIdToInfo,
     catalogKeyToInfo,
     eventIdToInfo,
     tiersByEventAndLabel,
@@ -174,6 +199,17 @@ function resolveEventForLine(
 
   const byPriceId = lookups.priceIdToInfo.get(price.id);
   if (byPriceId) return byPriceId;
+
+  const productId =
+    isLiveStripeProduct(product)
+      ? product.id
+      : typeof price.product === 'string'
+        ? price.product
+        : null;
+  if (productId) {
+    const byProductId = lookups.productIdToInfo.get(productId);
+    if (byProductId) return byProductId;
+  }
 
   const ckRaw =
     price.metadata?.cms_event_key ||
@@ -670,6 +706,7 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
 
     const stripe = getStripe();
     const eventLookups = await buildStripeEventLookups(req.payload);
+    const checkoutLookups = await buildCheckoutEventLookups(req.payload);
 
     const created: string[] = [];
     const skipped: string[] = [];
@@ -701,248 +738,18 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
         const piEarly = paymentIntentIdFromSession(session);
         if (piEarly) sessionPaymentIntentIds.add(piEarly);
 
-        if (session.mode !== 'payment') {
-          skipped.push(`${session.id} (mode=${session.mode})`);
-          continue;
-        }
-
-        if (
-          session.payment_status !== 'paid' &&
-          session.payment_status !== 'no_payment_required'
-        ) {
-          skipped.push(
-            `${session.id} (payment_status=${session.payment_status})`
-          );
-          continue;
-        }
-
-        const email = await checkoutSessionBuyerEmail(stripe, session);
-        if (!email) {
-          skipped.push(`${session.id} (no customer email)`);
-          continue;
-        }
-
-        const paymentIntentId = piEarly;
-        const transactionId = paymentIntentId || session.id;
-
-        const existing = await req.payload.find({
-          collection: 'ticket-sales',
-          where: { transactionId: { equals: transactionId } },
-          limit: 1,
-          depth: 0,
-        });
-        if (existing.docs?.length) {
-          skipped.push(`${session.id} (exists)`);
-          continue;
-        }
-
-        let lineItems: Stripe.LineItem[];
-        try {
-          lineItems = await listAllLineItems(stripe, session.id);
-        } catch (e: any) {
-          errors.push(`${session.id}: line items — ${e?.message || e}`);
-          continue;
-        }
-
-        const { firstName, lastName } = splitCustomerName(
-          session.customer_details?.name
+        const result = await importPaidCheckoutSession(
+          req.payload,
+          stripe,
+          session,
+          checkoutLookups
         );
-
-        const tickets: {
-          cartItemId: string;
-          ticketName: string;
-          ticketDescription: string;
-          quantity: number;
-          unitPrice: number;
-          lineTotal: number;
-          stripePriceId: string;
-        }[] = [];
-        const lineEventInfos: (PriceEventInfo | undefined)[] = [];
-
-        for (const li of lineItems) {
-          let price: Stripe.Price | null;
-          try {
-            price = await resolvePriceForLineItem(stripe, li);
-          } catch (e: any) {
-            errors.push(`${session.id}: price ${li.id} — ${e?.message || e}`);
-            price = null;
-          }
-          if (!price) continue;
-
-          const product =
-            typeof price.product === 'object' && price.product
-              ? (price.product as Stripe.Product | Stripe.DeletedProduct)
-              : null;
-          const qty = li.quantity || 1;
-          const unitAmountCents = price.unit_amount ?? 0;
-          const lineCents =
-            li.amount_total ??
-            (Number.isFinite(unitAmountCents) ? unitAmountCents * qty : 0);
-          const unitCents =
-            qty > 0 ? Math.round(lineCents / qty) : unitAmountCents;
-
-          const stripeTierLabel = readStripeTierMetadataLabel(price, product);
-          const lineInfo = resolveEventForLineRefined(
-            price,
-            product,
-            eventLookups
-          );
-          // This endpoint is ticket-only. Never import an unmapped Stripe
-          // catalog line as a ticket (it may be merchandise).
-          if (!lineInfo) continue;
-          const tierFromPriceId = eventLookups.priceIdToInfo.get(price.id);
-          const name =
-            stripeTierLabel ||
-            lineInfo?.tierName ||
-            tierFromPriceId?.tierName ||
-            li.description ||
-            (isLiveStripeProduct(product) ? product.name : null) ||
-            price.nickname ||
-            'Ticket';
-
-          tickets.push({
-            cartItemId: li.id,
-            ticketName: name,
-            ticketDescription: isLiveStripeProduct(product)
-              ? product.description || ''
-              : '',
-            quantity: qty,
-            unitPrice: unitCents / 100,
-            lineTotal: lineCents / 100,
-            stripePriceId: price.id,
-          });
-          lineEventInfos.push(lineInfo);
-        }
-
-        if (tickets.length === 0) {
-          skipped.push(`${session.id} (no price_* line items)`);
-          continue;
-        }
-
-        const subtotal = tickets.reduce((s, t) => s + t.lineTotal, 0);
-
-        const eventIds = new Set<string>();
-        for (let i = 0; i < tickets.length; i++) {
-          const id = lineEventInfos[i]?.eventId;
-          if (id) eventIds.add(id);
-        }
-        if (eventIds.size > 1) {
-          skipped.push(
-            `${session.id} (line items map to multiple CMS events; import separately)`
-          );
-          continue;
-        }
-
-        let primaryEventId: string | null = null;
-        let primaryInfo: PriceEventInfo | undefined;
-        if (eventIds.size === 1) {
-          primaryEventId = [...eventIds][0];
-          const idx = lineEventInfos.findIndex(
-            (inf) => inf?.eventId === primaryEventId
-          );
-          primaryInfo = idx >= 0 ? lineEventInfos[idx] : undefined;
+        if (result.status === 'created') {
+          created.push(result.sessionId);
+        } else if (result.status === 'skipped') {
+          skipped.push(`${result.sessionId} (${result.reason})`);
         } else {
-          for (const inf of lineEventInfos) {
-            if (inf) {
-              primaryEventId = inf.eventId;
-              primaryInfo = inf;
-              break;
-            }
-          }
-        }
-
-        const metaEventId =
-          session.metadata &&
-          (session.metadata.eventId ||
-            session.metadata.event_id ||
-            session.metadata.payloadEventId);
-        if (!primaryEventId && metaEventId && typeof metaEventId === 'string') {
-          const evLookup = await req.payload.find({
-            collection: 'events',
-            where: { id: { equals: metaEventId } },
-            limit: 1,
-            depth: 0,
-          });
-          const doc = evLookup.docs?.[0] as
-            | {
-                id: string;
-                date?: string | null;
-                location?: string | null;
-                title?: string | null;
-              }
-            | undefined;
-          if (doc) {
-            primaryEventId = String(doc.id);
-            primaryInfo = {
-              eventId: primaryEventId,
-              tierName: tickets[0]?.ticketName || 'Ticket',
-              eventDate: doc.date ?? null,
-              eventLocation: doc.location ?? null,
-              eventTitle: doc.title ?? null,
-            };
-          }
-        }
-
-        let pmNote = '';
-        if (paymentIntentId) {
-          try {
-            const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
-              expand: ['payment_method'],
-            });
-            const pm = pi.payment_method;
-            if (typeof pm === 'object' && pm?.type) {
-              pmNote = pm.type;
-            }
-          } catch {
-            // ignore
-          }
-        }
-
-        const internalNotes = [
-          `Backfilled from Stripe Checkout (session ${session.id}).`,
-          pmNote ? `Payment method type: ${pmNote}.` : '',
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .trim();
-
-        const ticketNumber = `TICKET-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-
-        try {
-          await req.payload.create({
-            collection: 'ticket-sales',
-            data: {
-              ticketNumber,
-              status: 'active',
-              event: primaryEventId,
-              ticketTier:
-                primaryInfo?.tierName ||
-                tickets[0]?.ticketName ||
-                'General Admission',
-              paymentMethod: 'stripe',
-              paymentStatus: 'paid',
-              transactionId,
-              currency: fromStripeCurrency(session.currency),
-              customerEmail: email,
-              customerPhone: session.customer_details?.phone || '',
-              firstName,
-              lastName,
-              tickets,
-              ticketTotals: {
-                subtotal,
-                vat: 0,
-                total: subtotal,
-              },
-              eventDate: primaryInfo?.eventDate || null,
-              eventLocation: primaryInfo?.eventLocation || null,
-              eventTitle: primaryInfo?.eventTitle || null,
-              customerNotes: '',
-              internalNotes,
-            },
-          });
-          created.push(session.id);
-        } catch (e: any) {
-          errors.push(`${session.id}: create — ${e?.message || e}`);
+          errors.push(`${result.sessionId}: ${result.error}`);
         }
       }
 

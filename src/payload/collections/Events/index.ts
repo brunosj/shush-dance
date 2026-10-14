@@ -199,7 +199,7 @@ export const Events: CollectionConfig = {
                       admin: {
                         width: '50%',
                         description:
-                          'For tickets sold via Stripe Payment Links / Checkout (not the onsite cart). Paste the Price ID (price_…). Sync from Stripe on the dashboard uses this to count those sales.',
+                          'For Payment Link / Checkout sales (not onsite cart). Paste the Stripe Price ID (price_…) — not prod_… or plink_…. Sync from Stripe matches this.',
                       },
                     },
                     {
@@ -234,7 +234,7 @@ export const Events: CollectionConfig = {
               required: false,
               admin: {
                 description:
-                  'Optional fallback for Payment Link sync when a Price ID is missing. Must match Stripe Price/Product metadata cms_event_key or cms_catalog_key. Not needed for onsite checkout.',
+                  'Optional fallback only. Prefer Stripe Price ID on each tier. If you paste a price_… / prod_… here it will also match, but the tier field is the right place. Metadata keys cms_event_key / cms_catalog_key still work too.',
                 condition: (data) => data.ticketsAvailable === true,
               },
             },

@@ -82,6 +82,17 @@ export function DashboardClient() {
           duration: 7000,
         });
       }
+      if (result.skippedSamples.length > 0) {
+        console.warn('Stripe sync skipped samples:', result.skippedSamples);
+        if (result.created === 0 && result.skipped > 0) {
+          toast(
+            `Skip samples: ${result.skippedSamples
+              .map((s) => s.replace(/^cs_[^ ]+\s*/, ''))
+              .join(' · ')}`,
+            { duration: 10000 }
+          );
+        }
+      }
       if (result.errorMessages.length > 0) {
         console.warn('Stripe sync errors:', result.errorMessages);
       }

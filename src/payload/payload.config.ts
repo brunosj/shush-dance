@@ -31,6 +31,7 @@ import { getPaymentStatusEndpoint } from './endpoints/getPaymentStatus';
 import { stripeBackfillTicketSalesEndpoint } from './endpoints/stripeBackfillTicketSales';
 import { backfillStripeFeesEndpoint } from './endpoints/backfillStripeFees';
 import { healthEndpoint } from './endpoints/health';
+import { publicEventTicketStatsEndpoint } from './endpoints/publicEventTicketStats';
 import { Settings } from './globals/settings';
 
 dotenv.config({
@@ -127,6 +128,7 @@ export default buildConfig({
     getPaymentStatusEndpoint,
     stripeBackfillTicketSalesEndpoint,
     backfillStripeFeesEndpoint,
+    publicEventTicketStatsEndpoint,
   ],
   email: {
     fromName: 'SHUSH',

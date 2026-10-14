@@ -9,6 +9,7 @@ export type SyncStripeTicketSalesResult =
       skipped: number;
       errors: number;
       errorMessages: string[];
+      skippedSamples: string[];
       checkoutSessionsListed: number;
       stripeKeyMode: string;
       windowSinceIso: string;
@@ -177,6 +178,10 @@ export async function syncStripeTicketSalesAction(
     feeErrorMessages = [error?.message || 'Stripe fee backfill failed'];
   }
 
+  const skippedSessionIds = Array.isArray(data.skippedSessionIds)
+    ? (data.skippedSessionIds as string[])
+    : [];
+
   return {
     ok: true,
     created: Number(data.created) || 0,
@@ -185,6 +190,7 @@ export async function syncStripeTicketSalesAction(
     errorMessages: Array.isArray(data.errorMessages)
       ? (data.errorMessages as string[])
       : [],
+    skippedSamples: skippedSessionIds.slice(0, 5),
     checkoutSessionsListed: Number(data.checkoutSessionsListed) || 0,
     stripeKeyMode: String(data.stripeKeyMode || 'unknown'),
     windowSinceIso: w?.sinceIso || win.since,

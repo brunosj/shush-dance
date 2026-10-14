@@ -5,6 +5,7 @@ import path from 'path';
 import express from 'express';
 import { getPayloadClient } from './payload/getPayload';
 import payload from 'payload';
+import { setupStripeTicketSalesCron } from './payload/services/stripeTicketSalesCron';
 
 dotenv.config({
   path: path.resolve(__dirname, '../.env'),
@@ -88,6 +89,7 @@ const start = async (): Promise<void> => {
       payload.logger.info(
         `Next.js App URL: ${process.env.PAYLOAD_PUBLIC_SERVER_URL}`
       );
+      setupStripeTicketSalesCron();
     });
   });
 };

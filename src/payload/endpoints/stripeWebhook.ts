@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { processStripeOrderSuccess } from '../utils/processStripeOrder';
 import { retrieveStripeProcessingFeeCents } from '../utils/stripeFees';
 import { readValidatedOrderDataFromMetadata } from '../utils/validateOrderData';
+import { importPaidCheckoutSession } from '../utils/importPaidCheckoutSession';
 
 let stripeInstance: Stripe | null = null;
 const getStripeInstance = (): Stripe => {
@@ -15,6 +16,13 @@ const getStripeInstance = (): Stripe => {
   return stripeInstance;
 };
 
+function hasCartOrderData(metadata: Stripe.Metadata | null | undefined): boolean {
+  if (!metadata) return false;
+  if (metadata.orderData) return true;
+  if (metadata.orderDataChunks) return true;
+  return false;
+}
+
 export const stripeWebhookEndpoint: Endpoint = {
   path: '/stripe-webhook',
   method: 'post',
@@ -26,12 +34,12 @@ export const stripeWebhookEndpoint: Endpoint = {
       process.env.PAYLOAD_PUBLIC_SERVER_URL?.includes('localhost') ||
       process.env.PAYLOAD_PUBLIC_SERVER_URL?.includes('127.0.0.1');
 
+    let event: Stripe.Event;
+
     if (isLocalDev) {
       console.log(
         '🚧 Development mode: processing webhook without signature verification'
       );
-
-      let event: Stripe.Event;
       try {
         const raw = Buffer.isBuffer(req.body)
           ? req.body.toString('utf8')
@@ -43,62 +51,80 @@ export const stripeWebhookEndpoint: Endpoint = {
         console.error('❌ Failed to parse webhook body:', error);
         return res.status(400).json({ error: 'Invalid webhook body' });
       }
+    } else {
+      const sig = req.headers['stripe-signature'];
+      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+      if (!sig || !endpointSecret) {
+        console.error('Missing Stripe signature or webhook secret');
+        return res.status(400).json({ error: 'Missing webhook configuration' });
+      }
+
+      try {
+        const stripe = getStripeInstance();
+        const rawBody = Buffer.isBuffer(req.body)
+          ? req.body
+          : typeof req.body === 'string'
+            ? req.body
+            : JSON.stringify(req.body);
+        event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
+        console.log('✅ Webhook signature verified:', event.type);
+      } catch (err: any) {
+        console.error('❌ Webhook signature verification failed:', err.message);
+        return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+      }
+    }
+
+    try {
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log(
-          '💳 Processing payment_intent.succeeded:',
-          paymentIntent.id
-        );
-
-        try {
+        if (!hasCartOrderData(paymentIntent.metadata)) {
+          // Payment Link / Checkout PIs have no onsite cart metadata —
+          // those are imported via checkout.session.completed (+ cron).
+          console.log(
+            `⏭ Skipping payment_intent.succeeded ${paymentIntent.id} (no cart orderData)`
+          );
+        } else {
+          console.log(
+            '💳 Processing payment_intent.succeeded:',
+            paymentIntent.id
+          );
           await processPaymentSuccess(paymentIntent, req);
-          return res.json({ received: true });
-        } catch (error: any) {
-          console.error('❌ Error processing payment:', error);
-          return res.status(500).json({ error: error.message });
         }
+      } else if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log('🧾 Processing checkout.session.completed:', session.id);
+        await processCheckoutSessionCompleted(session, req);
       }
-
-      return res.json({ received: true });
+    } catch (error: any) {
+      console.error('❌ Error processing webhook event:', error);
+      return res.status(500).json({ error: error.message });
     }
 
-    const sig = req.headers['stripe-signature'];
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-    if (!sig || !endpointSecret) {
-      console.error('Missing Stripe signature or webhook secret');
-      return res.status(400).json({ error: 'Missing webhook configuration' });
-    }
-
-    let event: Stripe.Event;
-    try {
-      const stripe = getStripeInstance();
-      const rawBody = Buffer.isBuffer(req.body)
-        ? req.body
-        : typeof req.body === 'string'
-          ? req.body
-          : JSON.stringify(req.body);
-      event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
-      console.log('✅ Webhook signature verified:', event.type);
-    } catch (err: any) {
-      console.error('❌ Webhook signature verification failed:', err.message);
-      return res.status(400).json({ error: `Webhook Error: ${err.message}` });
-    }
-
-    if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      try {
-        await processPaymentSuccess(paymentIntent, req);
-      } catch (error: any) {
-        console.error('❌ Error processing payment:', error);
-        return res.status(500).json({ error: error.message });
-      }
-    }
-
-    res.json({ received: true });
+    return res.json({ received: true });
   },
 };
+
+async function processCheckoutSessionCompleted(
+  session: Stripe.Checkout.Session,
+  req: any
+) {
+  const stripe = getStripeInstance();
+  // Re-fetch so line items / customer fields are complete.
+  const full = await stripe.checkout.sessions.retrieve(session.id);
+  const result = await importPaidCheckoutSession(req.payload, stripe, full);
+  if (result.status === 'created') {
+    console.log(
+      `🎉 Checkout session ${result.sessionId} imported as ticket sale (${result.transactionId})`
+    );
+  } else if (result.status === 'skipped') {
+    console.log(
+      `⏭ Checkout session ${result.sessionId} skipped: ${result.reason}`
+    );
+  } else {
+    throw new Error(`Checkout import failed: ${result.error}`);
+  }
+}
 
 async function processPaymentSuccess(
   paymentIntent: Stripe.PaymentIntent,
