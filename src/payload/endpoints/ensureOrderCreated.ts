@@ -88,7 +88,7 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
         validatedOrderData,
         detectedPaymentMethod,
         orderNumber,
-        { emailSubjectSuffix: ' (Fallback)', stripeFeeEuros }
+        { isFallback: true, stripeFeeEuros }
       );
 
       console.log('🎉 Fallback order creation completed successfully');

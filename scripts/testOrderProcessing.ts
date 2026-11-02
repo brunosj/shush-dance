@@ -155,6 +155,44 @@ async function run() {
   assert.strictEqual(records['ticket-sales'][0].ticketTotals.vat, 0.65);
   assert.strictEqual(records['ticket-sales'][0].currency, 'EUR');
   assert.strictEqual(emailCount, 6);
+
+  // Fallback after webhook already created records must not send again.
+  const emailsAfterPrimary = emailCount;
+  const fallback = await processStripeOrderSuccess(
+    payload,
+    'pi_test',
+    orderData,
+    'stripe',
+    'ignored',
+    { isFallback: true }
+  );
+  assert.strictEqual(fallback.created, false);
+  assert.strictEqual(emailCount, emailsAfterPrimary);
+
+  // Fallback that creates the sale still emails once (webhook missed).
+  const fallbackOnly = await processStripeOrderSuccess(
+    payload,
+    'pi_fallback_only',
+    {
+      ...orderData,
+      cartItems: orderData.cartItems.filter((item) => item.type === 'ticket'),
+      totals: {
+        ...orderData.totals,
+        shipping: 0,
+        merchVat: 0,
+        shippingVat: 0,
+        merchNet: 0,
+        total: 20,
+      },
+    },
+    'stripe',
+    'ignored',
+    { isFallback: true }
+  );
+  assert.strictEqual(fallbackOnly.created, true);
+  // 2 ticket events × (customer + admin) = 4
+  assert.strictEqual(emailCount, emailsAfterPrimary + 4);
+
   console.log('order processing tests passed');
 }
 

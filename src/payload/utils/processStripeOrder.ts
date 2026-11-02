@@ -25,6 +25,49 @@ function splitItems(orderData: ValidatedOrderData) {
   return { ticketItems, physicalItems };
 }
 
+function shouldSendConfirmationEmail(args: {
+  isFallback: boolean;
+  createdThisInvocation: boolean;
+  alreadySent: boolean;
+}): boolean {
+  if (args.alreadySent) return false;
+  // Fallback path only emails when it created the record; otherwise the
+  // webhook owns confirmation (avoids duplicate "Fallback Processing" mail).
+  if (args.isFallback) return args.createdThisInvocation;
+  return true;
+}
+
+async function claimConfirmationEmailSent(
+  payload: Payload,
+  collection: 'ticket-sales' | 'online-orders',
+  id: string
+) {
+  await payload.update({
+    collection,
+    id,
+    data: { confirmationEmailSent: true },
+  });
+}
+
+async function releaseConfirmationEmailSent(
+  payload: Payload,
+  collection: 'ticket-sales' | 'online-orders',
+  id: string
+) {
+  try {
+    await payload.update({
+      collection,
+      id,
+      data: { confirmationEmailSent: false },
+    });
+  } catch (error) {
+    console.error(
+      `Failed to release confirmationEmailSent on ${collection}/${id}:`,
+      error
+    );
+  }
+}
+
 function buildPhysicalOrderTotals(
   orderData: ValidatedOrderData,
   physicalItems: ValidatedCartItem[]
@@ -161,13 +204,18 @@ export async function processStripeOrderSuccess(
   detectedPaymentMethod: 'stripe' | 'paypal',
   orderNumber: string,
   options?: {
-    emailSubjectSuffix?: string;
+    /**
+     * When true (client `/ensure-order-created` fallback), only send emails if
+     * this invocation created the sale/order. Avoids duplicate "Fallback
+     * Processing" emails when the Stripe webhook already handled the order.
+     */
+    isFallback?: boolean;
     /** Actual Stripe fee for the whole PaymentIntent, in the charge currency. */
     stripeFeeEuros?: number | null;
   }
 ) {
   const { ticketItems, physicalItems } = splitItems(orderData);
-  const emailSuffix = options?.emailSubjectSuffix || '';
+  const isFallback = Boolean(options?.isFallback);
   const orderCurrency = normalizeCurrency(orderData.currency);
   const paymentStripeFeeEuros =
     typeof options?.stripeFeeEuros === 'number' && options.stripeFeeEuros >= 0
@@ -180,6 +228,7 @@ export async function processStripeOrderSuccess(
     physicalItems.length > 0
       ? await findRecord(payload, 'online-orders', paymentIntentId)
       : null;
+  let createdOnlineOrder = false;
   if (physicalItems.length > 0 && !onlineOrder) {
     const physicalTotals = buildPhysicalOrderTotals(orderData, physicalItems);
     onlineOrder = await payload.create({
@@ -218,30 +267,39 @@ export async function processStripeOrderSuccess(
     });
 
     createdAny = true;
+    createdOnlineOrder = true;
     console.log('✅ Created online order:', onlineOrder.id);
   }
   if (
     physicalItems.length > 0 &&
     onlineOrder &&
-    !onlineOrder.confirmationEmailSent
+    shouldSendConfirmationEmail({
+      isFallback,
+      createdThisInvocation: createdOnlineOrder,
+      alreadySent: Boolean(onlineOrder.confirmationEmailSent),
+    })
   ) {
     try {
+      await claimConfirmationEmailSent(
+        payload,
+        'online-orders',
+        onlineOrder.id
+      );
       await sendOrderEmails(
         physicalItems,
         orderData,
         orderNumber,
         detectedPaymentMethod,
         paymentIntentId,
-        payload,
-        emailSuffix
+        payload
       );
-      await payload.update({
-        collection: 'online-orders',
-        id: onlineOrder.id,
-        data: { confirmationEmailSent: true },
-      });
     } catch (error) {
       console.error('Failed to send physical order emails:', error);
+      await releaseConfirmationEmailSent(
+        payload,
+        'online-orders',
+        onlineOrder.id
+      );
     }
   }
 
@@ -273,6 +331,7 @@ export async function processStripeOrderSuccess(
             paymentTotalEuros
           );
 
+    let createdTicketSale = false;
     if (!ticketSale) {
       ticketSale = await payload.create({
         collection: 'ticket-sales',
@@ -306,6 +365,7 @@ export async function processStripeOrderSuccess(
 
       console.log('✅ Created ticket sale:', ticketSale.id);
       createdAny = true;
+      createdTicketSale = true;
     } else if (
       typeof eventStripeFee === 'number' &&
       (typeof ticketSale.stripeFee !== 'number' || ticketSale.stripeFee <= 0)
@@ -316,26 +376,36 @@ export async function processStripeOrderSuccess(
         data: { stripeFee: eventStripeFee },
       });
     }
-    if (!ticketSale.confirmationEmailSent) {
+    if (
+      shouldSendConfirmationEmail({
+        isFallback,
+        createdThisInvocation: createdTicketSale,
+        alreadySent: Boolean(ticketSale.confirmationEmailSent),
+      })
+    ) {
       try {
+        await claimConfirmationEmailSent(
+          payload,
+          'ticket-sales',
+          ticketSale.id
+        );
         await sendTicketEmails(
           eventTickets,
           orderData,
           ticketNumber,
           detectedPaymentMethod,
           paymentIntentId,
-          payload,
-          emailSuffix
+          payload
         );
-        await payload.update({
-          collection: 'ticket-sales',
-          id: ticketSale.id,
-          data: { confirmationEmailSent: true },
-        });
       } catch (error) {
         console.error(
           `Failed to send ticket emails for event ${eventId}:`,
           error
+        );
+        await releaseConfirmationEmailSent(
+          payload,
+          'ticket-sales',
+          ticketSale.id
         );
       }
     }
@@ -399,8 +469,7 @@ async function sendOrderEmails(
   orderNumber: string,
   paymentMethod: string,
   transactionId: string,
-  payload: Payload,
-  emailSuffix: string
+  payload: Payload
 ) {
   const itemsList = physicalItems
     .map(
@@ -438,7 +507,7 @@ ${orderData.customerData.country}
     to: orderData.customerData.email as string,
     from: `SHUSH <${process.env.SMTP_USER}>`,
     replyTo: 'SHUSH <hello@shush.dance>',
-    subject: `Order Confirmation - ${orderNumber}${emailSuffix}`,
+    subject: `Order Confirmation - ${orderNumber}`,
     html: `
       <h2>Thank you for your order!</h2>
       <p>Hi ${orderData.customerData.firstName},</p>
@@ -458,9 +527,9 @@ ${orderData.customerData.country}
     to: 'hello@shush.dance',
     from: `SHUSH <${process.env.SMTP_USER}>`,
     replyTo: 'SHUSH <hello@shush.dance>',
-    subject: `New Order${emailSuffix} - ${orderNumber}`,
+    subject: `New Order - ${orderNumber}`,
     html: `
-      <h2>New Order Received${emailSuffix ? ' (Fallback Processing)' : ''}</h2>
+      <h2>New Order Received</h2>
       <p>A new order has been placed:</p>
       <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${orderSummary}</pre>
       <p>Payment Method: ${paymentMethod}</p>
@@ -475,8 +544,7 @@ async function sendTicketEmails(
   ticketNumber: string,
   paymentMethod: string,
   transactionId: string,
-  payload: Payload,
-  emailSuffix: string
+  payload: Payload
 ) {
   const ticketsList = ticketItems
     .map((item) => {
@@ -513,7 +581,7 @@ Transaction ID: ${transactionId}
     to: orderData.customerData.email as string,
     from: `SHUSH <${process.env.SMTP_USER}>`,
     replyTo: 'SHUSH <hello@shush.dance>',
-    subject: `Ticket Confirmation - ${ticketNumber}${emailSuffix}`,
+    subject: `Ticket Confirmation - ${ticketNumber}`,
     html: `
       <h2>SHUSH - Ticket Purchase Confirmation</h2>
       <p>Hi ${orderData.customerData.firstName},</p>
@@ -535,9 +603,9 @@ Transaction ID: ${transactionId}
     to: 'events@shush.dance',
     from: `SHUSH <${process.env.SMTP_USER}>`,
     replyTo: 'SHUSH <hello@shush.dance>',
-    subject: `New Ticket Sale${emailSuffix} - ${ticketNumber}`,
+    subject: `New Ticket Sale - ${ticketNumber}`,
     html: `
-      <h2>New Ticket Sale${emailSuffix ? ' (Fallback Processing)' : ''}</h2>
+      <h2>New Ticket Sale</h2>
       <p>New tickets have been sold:</p>
       <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;">${ticketSummary}</pre>
     `,
