@@ -370,6 +370,38 @@ export const TicketSales: CollectionConfig = {
                     step: 0.01,
                   },
                 },
+                {
+                  name: 'answerSets',
+                  type: 'array',
+                  label: 'Per-unit buyer answers',
+                  admin: {
+                    description:
+                      'One entry per ticket unit when checkout questions were answered',
+                  },
+                  fields: [
+                    {
+                      name: 'answers',
+                      type: 'array',
+                      label: 'Answers',
+                      fields: [
+                        {
+                          name: 'key',
+                          type: 'text',
+                          required: true,
+                        },
+                        {
+                          name: 'label',
+                          type: 'text',
+                          required: true,
+                        },
+                        {
+                          name: 'value',
+                          type: 'textarea',
+                        },
+                      ],
+                    },
+                  ],
+                },
               ],
             },
             {

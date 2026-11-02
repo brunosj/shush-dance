@@ -8,7 +8,7 @@ import {
   type CheckoutCurrency,
 } from '../../../utilities/currency';
 
-type CheckoutStep = 'cart' | 'customer-info' | 'payment';
+import type { CheckoutStep } from '../../../utilities/checkoutSteps';
 
 interface CartViewProps {
   currentStep: CheckoutStep;
@@ -30,6 +30,7 @@ interface CartViewProps {
   isTicketOnlyCart?: boolean;
   hasTickets?: boolean;
   currency?: CheckoutCurrency;
+  includeTicketDetailsStep?: boolean;
 }
 
 const CartView: React.FC<CartViewProps> = ({
@@ -52,6 +53,7 @@ const CartView: React.FC<CartViewProps> = ({
   isTicketOnlyCart = false,
   hasTickets = false,
   currency = DEFAULT_CURRENCY,
+  includeTicketDetailsStep = false,
 }) => {
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
@@ -59,6 +61,7 @@ const CartView: React.FC<CartViewProps> = ({
         currentStep={currentStep}
         onStepClick={onStepNavigation}
         completedSteps={completedSteps}
+        includeTicketDetails={includeTicketDetailsStep}
       />
 
       <CartItemsList

@@ -16,6 +16,7 @@ import {
   formatMoneyAmount,
   normalizeCurrency,
 } from '../../../utilities/currency';
+import { normalizeBuyerQuestionDefs } from '../../../utilities/buyerQuestions';
 
 interface EventListingProps {
   event: Event;
@@ -103,6 +104,12 @@ const EventListing: React.FC<EventListingProps> = ({
           eventDate: event.date,
           eventLocation: event.location,
           stripePriceId: tier.stripePriceId || null,
+          buyerQuestionsJson: (() => {
+            const normalized = normalizeBuyerQuestionDefs(
+              (tier as { buyerQuestions?: unknown }).buyerQuestions
+            );
+            return normalized.length > 0 ? JSON.stringify(normalized) : '';
+          })(),
         },
       },
     };

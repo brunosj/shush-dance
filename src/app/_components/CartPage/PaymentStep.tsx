@@ -13,7 +13,8 @@ import {
   type CheckoutCurrency,
 } from '../../../utilities/currency';
 
-type CheckoutStep = 'cart' | 'customer-info' | 'payment';
+import type { CheckoutStep } from '../../../utilities/checkoutSteps';
+import { useCheckout } from '../../_providers/CheckoutProvider';
 
 interface PaymentStepProps {
   currentStep: CheckoutStep;
@@ -35,6 +36,7 @@ interface PaymentStepProps {
   paymentRefreshKey?: number;
   orderTotals: OrderTotalsBreakdown;
   currency?: CheckoutCurrency;
+  includeTicketDetailsStep?: boolean;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({
@@ -57,13 +59,17 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   paymentRefreshKey = 0,
   orderTotals,
   currency = DEFAULT_CURRENCY,
+  includeTicketDetailsStep = false,
 }) => {
+  const { ticketBuyerAnswers } = useCheckout();
+
   return (
     <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
       <StepIndicator
         currentStep={currentStep}
         onStepClick={onStepNavigation}
         completedSteps={completedSteps}
+        includeTicketDetails={includeTicketDetailsStep}
       />
       <div className='mb-6'>
         <h2 className=' font-bold mb-2'>Review & Pay</h2>
@@ -73,7 +79,11 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
       </div>
 
       <div className='mb-6'>
-        <ReviewOrderItems cartDetails={cartDetails} currency={currency} />
+        <ReviewOrderItems
+          cartDetails={cartDetails}
+          currency={currency}
+          ticketBuyerAnswers={ticketBuyerAnswers}
+        />
       </div>
 
       <div

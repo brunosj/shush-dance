@@ -12,7 +12,10 @@ import {
   normalizeCurrency,
   type CheckoutCurrency,
 } from '../../../utilities/currency';
-import * as XLSX from 'xlsx';
+import { formatPayloadAnswerSetsForDisplay } from '../../../utilities/buyerQuestions';
+import { buildCheckoutAnswersExportRows } from '../../../utilities/ticketAnswersExport';
+import { downloadXlsx } from '../../../utilities/downloadXlsx';
+import toast from 'react-hot-toast';
 
 /** Standard Stripe DE/EEA card rate used for EUR dashboard fee estimates only. */
 const STRIPE_FEE_PERCENT = 1.5;
@@ -253,6 +256,16 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
     );
   };
 
+  const formatSaleTicketDetails = (ticketSale: TicketSale) => {
+    return (ticketSale.tickets || [])
+      .map((line) => {
+        const detail = formatPayloadAnswerSetsForDisplay(line.answerSets);
+        return detail ? `${line.ticketName}: ${detail}` : '';
+      })
+      .filter(Boolean)
+      .join(' | ');
+  };
+
   const getEventTitle = (event: string | Event | null | undefined) => {
     if (!event) return 'N/A';
     if (typeof event === 'string') return 'Event ID: ' + event;
@@ -293,6 +306,7 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
     const currency = event.currency || DEFAULT_CURRENCY;
     const exportData = event.tickets.map((ticketSale) => {
       const totalQty = getTotalQuantity(ticketSale);
+      const ticketDetails = formatSaleTicketDetails(ticketSale);
 
       return {
         'Ticket Number': ticketSale.ticketNumber,
@@ -315,47 +329,78 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
         'Payment Method': ticketSale.paymentMethod,
         'Transaction ID': ticketSale.transactionId || '',
         'Customer Notes': ticketSale.customerNotes || '',
+        'Ticket details': ticketDetails,
       };
     });
 
-    // Create workbook and worksheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(exportData);
-
-    // Set column widths
     const colWidths = [
-      { wch: 15 }, // Ticket Number
-      { wch: 18 }, // Date
-      { wch: 15 }, // First Name
-      { wch: 15 }, // Last Name
-      { wch: 25 }, // Email
-      { wch: 15 }, // Phone
-      { wch: 30 }, // Event
-      { wch: 12 }, // Event Date
-      { wch: 20 }, // Location
-      { wch: 20 }, // Tier
-      { wch: 10 }, // Quantity
-      { wch: 12 }, // Subtotal
-      { wch: 10 }, // VAT
-      { wch: 12 }, // Total
-      { wch: 12 }, // Status
-      { wch: 15 }, // Payment Status
-      { wch: 15 }, // Payment Method
-      { wch: 20 }, // Transaction ID
-      { wch: 30 }, // Customer Notes
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 12 },
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 30 },
+      { wch: 36 },
     ];
-    ws['!cols'] = colWidths;
 
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Ticket Sales');
-
-    // Generate filename
     const eventName = event.eventTitle.replace(/[^a-z0-9]/gi, '_');
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `Ticket_Sales_${eventName}_${dateStr}.xlsx`;
 
-    // Download file
-    XLSX.writeFile(wb, filename);
+    downloadXlsx(filename, 'Ticket Sales', exportData, colWidths);
+  };
+
+  const exportCheckoutAnswersToExcel = (event: EventTierSummary) => {
+    const { rows, questionColumns } = buildCheckoutAnswersExportRows(
+      event.tickets,
+      {
+        title: event.eventTitle,
+        date: event.eventDate,
+        location: event.eventLocation,
+      }
+    );
+
+    if (rows.length === 0) {
+      toast('No checkout answers for this event yet.');
+      return;
+    }
+
+    const prefixColWidths = [
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 22 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 15 },
+    ];
+    const colWidths = [
+      ...prefixColWidths,
+      ...questionColumns.map(() => ({ wch: 22 })),
+    ];
+
+    const eventName = event.eventTitle.replace(/[^a-z0-9]/gi, '_');
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filename = `Ticket_Checkout_Answers_${eventName}_${dateStr}.xlsx`;
+
+    downloadXlsx(filename, 'Checkout answers', rows, colWidths);
   };
 
   // Calculate overall totals split by currency (never sum EUR + GBP).
@@ -608,6 +653,28 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
                     Details ({event.tickets.length})
                   </button>
                   <button
+                    type='button'
+                    onClick={() => exportCheckoutAnswersToExcel(event)}
+                    title='Only tiers with meal/allergy answers collected at checkout.'
+                    className='flex items-center justify-center gap-2 px-4 py-2 border-2 border-green-600 text-green-700 bg-white rounded-md hover:bg-green-50 transition-colors text-sm'
+                  >
+                    <svg
+                      className='w-5 h-5 shrink-0'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                      />
+                    </svg>
+                    Export checkout answers
+                  </button>
+                  <button
+                    type='button'
                     onClick={() => exportEventToExcel(event)}
                     className='flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors'
                   >
@@ -648,6 +715,9 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
                             Tier
                           </th>
                           <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                            Ticket details
+                          </th>
+                          <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                             Qty
                           </th>
                           <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -682,6 +752,9 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
                             </td>
                             <td className='px-4 py-3 text-sm'>
                               {ticketSale.ticketTier || 'N/A'}
+                            </td>
+                            <td className='px-4 py-3 text-sm text-gray-600 max-w-xs'>
+                              {formatSaleTicketDetails(ticketSale) || '—'}
                             </td>
                             <td className='px-4 py-3 whitespace-nowrap text-sm font-semibold'>
                               {getTotalQuantity(ticketSale)}

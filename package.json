@@ -19,7 +19,7 @@
     "generate:types": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload generate:types",
     "generate:graphQLSchema": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload generate:graphQLSchema",
     "lint": "eslint src",
-    "lint:fix": "eslint --fix --ext .ts,.tsx src",
+    "lint:fix": "eslint --fix src",
     "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload",
     "export:events": "node scripts/exportEvents.cjs ./events.json",
     "export:products": "node scripts/exportProducts.cjs ./products.json",
@@ -67,6 +67,7 @@
     "yet-another-react-lightbox": "^3.25.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@next/eslint-plugin-next": "^14.2.33",
     "@payloadcms/eslint-config": "^1.1.1",
     "@swc/core": "1.7.36",

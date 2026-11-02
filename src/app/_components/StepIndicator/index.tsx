@@ -1,34 +1,48 @@
 'use client';
 
-import React from 'react';
-
-type CheckoutStep = 'cart' | 'customer-info' | 'payment';
+import React, { useMemo } from 'react';
+import type { CheckoutStep } from '../../../utilities/checkoutSteps';
 
 interface StepIndicatorProps {
   currentStep: CheckoutStep;
   onStepClick?: (step: CheckoutStep) => void;
   completedSteps?: CheckoutStep[];
+  includeTicketDetails?: boolean;
 }
-
-const steps = [
-  { key: 'cart' as CheckoutStep, label: 'Cart', number: 1 },
-  { key: 'customer-info' as CheckoutStep, label: 'Customer Info', number: 2 },
-  { key: 'payment' as CheckoutStep, label: 'Review Order', number: 3 },
-];
 
 const StepIndicator: React.FC<StepIndicatorProps> = ({
   currentStep,
   onStepClick,
   completedSteps = [],
+  includeTicketDetails = false,
 }) => {
+  const steps = useMemo(() => {
+    const base: { key: CheckoutStep; label: string; number: number }[] = [
+      { key: 'cart', label: 'Cart', number: 1 },
+      { key: 'customer-info', label: 'Customer Info', number: 2 },
+    ];
+    if (includeTicketDetails) {
+      base.push({
+        key: 'ticket-details',
+        label: 'Ticket Details',
+        number: 3,
+      });
+    }
+    base.push({
+      key: 'payment',
+      label: 'Review Order',
+      number: includeTicketDetails ? 4 : 3,
+    });
+    return base;
+  }, [includeTicketDetails]);
+
   const getCurrentStepIndex = () => {
     return steps.findIndex((step) => step.key === currentStep);
   };
 
   const currentStepIndex = getCurrentStepIndex();
 
-  const isStepClickable = (stepKey: CheckoutStep, index: number) => {
-    // Can click on completed steps, current step, or cart (always accessible)
+  const isStepClickable = (stepKey: CheckoutStep) => {
     return (
       stepKey === 'cart' ||
       completedSteps.includes(stepKey) ||
@@ -36,19 +50,21 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
     );
   };
 
-  const handleStepClick = (stepKey: CheckoutStep, index: number) => {
-    if (isStepClickable(stepKey, index) && onStepClick) {
+  const handleStepClick = (stepKey: CheckoutStep) => {
+    if (isStepClickable(stepKey) && onStepClick) {
       onStepClick(stepKey);
     }
   };
 
+  const gridCols = includeTicketDetails ? 'grid-cols-4' : 'grid-cols-3';
+
   return (
     <div className='mb-8'>
-      <div className='grid grid-cols-3 gap-4 max-w-md mx-auto'>
+      <div className={`grid ${gridCols} gap-4 max-w-2xl mx-auto`}>
         {steps.map((step, index) => {
           const isCompleted = completedSteps.includes(step.key);
           const isCurrent = step.key === currentStep;
-          const isClickable = isStepClickable(step.key, index);
+          const isClickable = isStepClickable(step.key);
 
           return (
             <div
@@ -56,9 +72,8 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
               className={`relative flex flex-col items-center ${
                 isClickable ? 'cursor-pointer' : 'cursor-default'
               }`}
-              onClick={() => handleStepClick(step.key, index)}
+              onClick={() => handleStepClick(step.key)}
             >
-              {/* Step Circle */}
               <div
                 className={`
                   w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200
@@ -84,7 +99,6 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                 {step.label}
               </span>
 
-              {/* Connecting Line - positioned absolutely to connect steps */}
               {index < steps.length - 1 && (
                 <div
                   className={`

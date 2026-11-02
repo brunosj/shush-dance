@@ -10,6 +10,9 @@ import { useShoppingCart } from 'use-shopping-cart';
 import { useRouter } from 'next/navigation';
 import type { OrderTotalsBreakdown } from '../../../utilities/tax';
 import { getCartCurrency } from '../../../utilities/currency';
+import { buildOrderCartItemsFromCart } from '../../../utilities/buildOrderCartItems';
+import { cartNeedsTicketDetails } from '../../../utilities/checkoutCart';
+import { useCheckout } from '../../_providers/CheckoutProvider';
 
 // Create a fresh Stripe promise for each component instance to avoid caching issues
 const createStripePromise = () => {
@@ -46,30 +49,22 @@ const CheckoutForm: React.FC<{
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const { clearCart, cartDetails } = useShoppingCart();
+  const {
+    ticketBuyerAnswers,
+    buyerQuestionDefsByLine,
+    areTicketBuyerAnswersCompleteForCart,
+    isHydratingBuyerQuestions,
+  } = useCheckout();
 
   const buildOrderData = () => {
     const orderNumber = `SHUSH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     return {
       orderNumber,
       customerData,
-      cartItems: Object.entries(cartDetails || {}).map(([key, item]) => {
-        const productData = item?.product_data as any;
-        const metadata = productData?.metadata || {};
-
-        return {
-          id: key,
-          name: item.name,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          lineTotal: item.price * item.quantity,
-          type: metadata.type || 'merch',
-          metadata: metadata,
-          parentItem: item.parentItem || null,
-          tierId: metadata.tierId || null,
-          stripePriceId: metadata.stripePriceId || null,
-        };
-      }),
+      cartItems: buildOrderCartItemsFromCart(
+        cartDetails as any,
+        ticketBuyerAnswers
+      ),
       totals: orderTotals,
       shippingRegion,
       paymentMethod: 'stripe',
@@ -182,6 +177,12 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   const abortControllerRef = useRef<AbortController | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { cartDetails } = useShoppingCart();
+  const {
+    ticketBuyerAnswers,
+    buyerQuestionDefsByLine,
+    areTicketBuyerAnswersCompleteForCart,
+    isHydratingBuyerQuestions,
+  } = useCheckout();
 
   // Create a fresh Stripe instance whenever the component mounts or key data changes
   useEffect(() => {
@@ -248,6 +249,27 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
       return;
     }
 
+    if (isHydratingBuyerQuestions) {
+      return;
+    }
+
+    const needsTicketDetails = cartNeedsTicketDetails(
+      cartDetails as Record<string, unknown> | null | undefined,
+      buyerQuestionDefsByLine
+    );
+    if (
+      needsTicketDetails &&
+      !areTicketBuyerAnswersCompleteForCart(
+        cartDetails as Record<string, unknown> | null | undefined
+      )
+    ) {
+      setError(
+        'Please complete ticket details (meal choice, allergies, etc.) before paying.'
+      );
+      setIsLoading(false);
+      return;
+    }
+
     const createPaymentIntent = async (retryCount = 0) => {
       const maxRetries = 3;
       const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff
@@ -281,24 +303,10 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
         // Prepare order data for webhook processing
         const orderDataForWebhook = {
           customerData,
-          cartItems: Object.entries(cartDetails || {}).map(([key, item]) => {
-            const productData = (item as any)?.product_data as any;
-            const metadata = productData?.metadata || {};
-
-            return {
-              id: key,
-              name: (item as any).name,
-              description: (item as any).description,
-              quantity: (item as any).quantity,
-              unitPrice: (item as any).price,
-              lineTotal: (item as any).price * (item as any).quantity,
-              type: metadata.type || 'merch',
-              metadata: metadata,
-              parentItem: (item as any).parentItem || null,
-              tierId: metadata.tierId || null,
-              stripePriceId: metadata.stripePriceId || null,
-            };
-          }),
+          cartItems: buildOrderCartItemsFromCart(
+            cartDetails as any,
+            ticketBuyerAnswers
+          ),
           totals: orderTotals,
           shippingRegion,
         };
@@ -457,7 +465,16 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
         timeoutRef.current = null;
       }
     };
-  }, [orderTotals, customerData, cartDetails, stripePromise]); // Include all dependencies
+  }, [
+    orderTotals,
+    customerData,
+    cartDetails,
+    stripePromise,
+    ticketBuyerAnswers,
+    buyerQuestionDefsByLine,
+    isHydratingBuyerQuestions,
+    areTicketBuyerAnswersCompleteForCart,
+  ]);
 
   const handleSuccess = () => {
     router.push('/success');

@@ -5,17 +5,23 @@ import {
   normalizeCurrency,
   type CheckoutCurrency,
 } from '../../../utilities/currency';
+import {
+  formatBuyerAnswerSetsForDisplay,
+  type BuyerAnswerSet,
+} from '../../../utilities/buyerQuestions';
 
 interface ReviewOrderItemsProps {
   cartDetails: any;
   className?: string;
   currency?: CheckoutCurrency;
+  ticketBuyerAnswers?: Record<string, BuyerAnswerSet[]>;
 }
 
 const ReviewOrderItems: React.FC<ReviewOrderItemsProps> = ({
   cartDetails,
   className = '',
   currency = DEFAULT_CURRENCY,
+  ticketBuyerAnswers = {},
 }) => {
   return (
     <div className={`bg-gray-50 p-6 rounded-lg ${className}`}>
@@ -29,6 +35,10 @@ const ReviewOrderItems: React.FC<ReviewOrderItemsProps> = ({
 
           const unitPrice = item?.price ? item.price / 100 : 0;
           const totalPrice = unitPrice * (item?.quantity || 1);
+          const buyerDetails =
+            metadata.type === 'ticket'
+              ? formatBuyerAnswerSetsForDisplay(ticketBuyerAnswers[key])
+              : '';
 
           return (
             <li
@@ -53,6 +63,9 @@ const ReviewOrderItems: React.FC<ReviewOrderItemsProps> = ({
                   })}{' '}
                   × {item?.quantity}
                 </p>
+                {buyerDetails ? (
+                  <p className='text-gray-600 text-xs mt-1'>{buyerDetails}</p>
+                ) : null}
               </div>
               <div className='text-right'>
                 <p className='font-medium text-sm'>

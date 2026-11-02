@@ -22,6 +22,12 @@ import {
   type ShippingRegion,
 } from '../../app/_types/shipping';
 import { isValidTshirtSize } from '../../utilities/productVariants';
+import {
+  normalizeBuyerQuestionDefs,
+  parseIncomingBuyerAnswerSets,
+  validateBuyerAnswerSetsForTier,
+  type BuyerAnswerSet,
+} from '../../utilities/buyerQuestions';
 
 export type ValidatedCartItem = {
   id: string;
@@ -43,6 +49,7 @@ export type ValidatedCartItem = {
   unitNet?: number;
   vatAmount?: number;
   currency?: CheckoutCurrency;
+  buyerAnswerSets?: BuyerAnswerSet[];
 };
 
 export type ValidatedOrderData = {
@@ -70,6 +77,7 @@ type IncomingCartItem = {
   parentItem?: string | null;
   tierId?: string;
   stripePriceId?: string | null;
+  buyerAnswerSets?: BuyerAnswerSet[];
 };
 
 const VALID_SHIPPING_REGIONS: ShippingRegion[] = [
@@ -231,6 +239,15 @@ export async function validateAndNormalizeOrderData(
         resolved.vatRate
       );
 
+      const questions = normalizeBuyerQuestionDefs(
+        resolved.tier.buyerQuestions
+      );
+      const buyerAnswerSets = validateBuyerAnswerSetsForTier(
+        questions,
+        quantity,
+        parseIncomingBuyerAnswerSets(item)
+      );
+
       const cartId = buildTicketCartId(eventId, tierId);
       validatedItems.push({
         id: cartId,
@@ -253,6 +270,7 @@ export async function validateAndNormalizeOrderData(
           eventDate: resolved.event.date,
           eventLocation: resolved.event.location,
           stripePriceId: resolved.tier.stripePriceId || null,
+          ...(buyerAnswerSets.length ? { buyerAnswerSets } : {}),
         },
         parentItem: String(resolved.event.title || ''),
         eventId,
@@ -262,6 +280,7 @@ export async function validateAndNormalizeOrderData(
         unitNet: centsToEuros(netCents) / quantity,
         vatAmount: centsToEuros(vatCents),
         currency: resolved.currency,
+        buyerAnswerSets: buyerAnswerSets.length ? buyerAnswerSets : undefined,
       });
 
       taxInputs.push({

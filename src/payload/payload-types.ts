@@ -9,17 +9,17 @@
 export interface Config {
   collections: {
     events: Event;
+    'ticket-sales': TicketSale;
     releases: Release;
     merch: Merch;
+    'online-orders': OnlineOrder;
+    sales: Sale;
     artists: Artist;
     tracks: Track;
-    pages: Page;
     audio: Audio;
+    pages: Page;
     media: Media;
     users: User;
-    sales: Sale;
-    'online-orders': OnlineOrder;
-    'ticket-sales': TicketSale;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
@@ -35,6 +35,12 @@ export interface Config {
 export interface Event {
   id: string;
   title: string;
+  date: string;
+  time?: string | null;
+  location: string;
+  artists?: (string | Artist)[] | null;
+  currency: 'EUR' | 'GBP';
+  slug?: string | null;
   event_information?:
     | {
         [k: string]: unknown;
@@ -47,18 +53,7 @@ export interface Event {
       }[]
     | null;
   image?: string | Media | null;
-  date: string;
-  time?: string | null;
-  location: string;
-  artists?: (string | Artist)[] | null;
-  currency?: ('EUR' | 'GBP') | null;
   ticketsAvailable?: boolean | null;
-  ticket_email_footer?:
-    | {
-        [k: string]: unknown;
-      }[]
-    | null;
-  stripeCatalogMatchKey?: string | null;
   ticketTiers?:
     | {
         tierName: string;
@@ -66,11 +61,49 @@ export interface Event {
         vatRate?: number | null;
         visible?: boolean | null;
         strikeThrough?: boolean | null;
+        buyerQuestions?:
+          | {
+              key: string;
+              label: string;
+              type: 'select' | 'text' | 'textarea';
+              required?: boolean | null;
+              options?:
+                | {
+                    value: string;
+                    id?: string | null;
+                  }[]
+                | null;
+              helpText?: string | null;
+              id?: string | null;
+            }[]
+          | null;
         stripePriceId?: string | null;
         ticketLink?: string | null;
         id?: string | null;
       }[]
     | null;
+  ticket_email_footer?:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
+  stripeCatalogMatchKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "artists".
+ */
+export interface Artist {
+  id: string;
+  artistName: string;
+  artist_bio?:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
+  image?: string | Media | null;
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -100,18 +133,64 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "artists".
+ * via the `definition` "ticket-sales".
  */
-export interface Artist {
+export interface TicketSale {
   id: string;
-  artistName: string;
-  artist_bio?:
-    | {
-        [k: string]: unknown;
-      }[]
-    | null;
-  image?: string | Media | null;
-  slug?: string | null;
+  totalQuantity?: number | null;
+  total?: number | null;
+  ticketNumber: string;
+  status: 'active' | 'used' | 'cancelled' | 'refunded';
+  event?: (string | null) | Event;
+  ticketTier: string;
+  paymentMethod: 'stripe' | 'paypal';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  transactionId?: string | null;
+  currency?: ('EUR' | 'GBP') | null;
+  stripeFee?: number | null;
+  confirmationEmailSent?: boolean | null;
+  customerEmail: string;
+  customerPhone?: string | null;
+  firstName: string;
+  lastName: string;
+  tickets: {
+    cartItemId?: string | null;
+    ticketName: string;
+    ticketDescription?: string | null;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+    stripePriceId?: string | null;
+    tierId?: string | null;
+    eventId?: string | null;
+    vatRate?: number | null;
+    unitNet?: number | null;
+    vatAmount?: number | null;
+    answerSets?:
+      | {
+          answers?:
+            | {
+                key: string;
+                label: string;
+                value?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    id?: string | null;
+  }[];
+  ticketTotals: {
+    subtotal: number;
+    vat: number;
+    total: number;
+  };
+  eventDate?: string | null;
+  eventLocation?: string | null;
+  eventTitle?: string | null;
+  customerNotes?: string | null;
+  internalNotes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -232,40 +311,55 @@ export interface Merch {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages".
+ * via the `definition` "online-orders".
  */
-export interface Page {
+export interface OnlineOrder {
   id: string;
-  title: string;
-  content?:
-    | {
-        [k: string]: unknown;
-      }[]
-    | null;
-  showEventsFirst?: boolean | null;
-  slug?: string | null;
+  orderNumber: string;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentMethod: 'stripe' | 'paypal';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  transactionId?: string | null;
+  confirmationEmailSent?: boolean | null;
+  customerEmail: string;
+  customerPhone?: string | null;
+  firstName: string;
+  lastName: string;
+  shippingAddress?: {
+    street?: string | null;
+    city?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+    shippingRegion?: ('germany' | 'eu' | 'restOfWorld') | null;
+  };
+  items: {
+    product?:
+      | ({
+          relationTo: 'releases';
+          value: string | Release;
+        } | null)
+      | ({
+          relationTo: 'merch';
+          value: string | Merch;
+        } | null);
+    cartItemId?: string | null;
+    cartItemName?: string | null;
+    cartItemDescription?: string | null;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+    id?: string | null;
+  }[];
+  orderTotals: {
+    subtotal: number;
+    shipping: number;
+    vat: number;
+    total: number;
+  };
+  customerNotes?: string | null;
+  internalNotes?: string | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: string;
-  name?: string | null;
-  roles?: ('admin' | 'user')[] | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  password: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -324,105 +418,40 @@ export interface Sale {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "online-orders".
+ * via the `definition` "pages".
  */
-export interface OnlineOrder {
+export interface Page {
   id: string;
-  orderNumber: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  paymentMethod: 'stripe' | 'paypal';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  transactionId?: string | null;
-  confirmationEmailSent?: boolean | null;
-  customerEmail: string;
-  customerPhone?: string | null;
-  firstName: string;
-  lastName: string;
-  shippingAddress?: {
-    street?: string | null;
-    city?: string | null;
-    postalCode?: string | null;
-    country?: string | null;
-    shippingRegion?: ('germany' | 'eu' | 'restOfWorld') | null;
-  };
-  items: {
-    product?:
-      | ({
-          relationTo: 'releases';
-          value: string | Release;
-        } | null)
-      | ({
-          relationTo: 'merch';
-          value: string | Merch;
-        } | null);
-    cartItemId?: string | null;
-    cartItemName?: string | null;
-    cartItemDescription?: string | null;
-    quantity: number;
-    unitPrice: number;
-    lineTotal: number;
-    id?: string | null;
-  }[];
-  orderTotals: {
-    subtotal: number;
-    shipping: number;
-    vat: number;
-    total: number;
-  };
-  customerNotes?: string | null;
-  internalNotes?: string | null;
+  title: string;
+  content?:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
+  showEventsFirst?: boolean | null;
+  slug?: string | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ticket-sales".
+ * via the `definition` "users".
  */
-export interface TicketSale {
+export interface User {
   id: string;
-  totalQuantity?: number | null;
-  total?: number | null;
-  ticketNumber: string;
-  status: 'active' | 'used' | 'cancelled' | 'refunded';
-  event?: (string | null) | Event;
-  ticketTier: string;
-  paymentMethod: 'stripe' | 'paypal';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  transactionId?: string | null;
-  currency?: ('EUR' | 'GBP') | null;
-  stripeFee?: number | null;
-  confirmationEmailSent?: boolean | null;
-  customerEmail: string;
-  customerPhone?: string | null;
-  firstName: string;
-  lastName: string;
-  tickets: {
-    cartItemId?: string | null;
-    ticketName: string;
-    ticketDescription?: string | null;
-    quantity: number;
-    unitPrice: number;
-    lineTotal: number;
-    stripePriceId?: string | null;
-    eventId?: string | null;
-    tierId?: string | null;
-    vatRate?: number | null;
-    unitNet?: number | null;
-    vatAmount?: number | null;
-    id?: string | null;
-  }[];
-  ticketTotals: {
-    subtotal: number;
-    vat: number;
-    total: number;
-  };
-  eventDate?: string | null;
-  eventLocation?: string | null;
-  eventTitle?: string | null;
-  customerNotes?: string | null;
-  internalNotes?: string | null;
+  name?: string | null;
+  roles?: ('admin' | 'user')[] | null;
   updatedAt: string;
   createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  password: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

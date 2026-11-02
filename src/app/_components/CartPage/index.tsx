@@ -18,14 +18,17 @@ import {
   DEFAULT_CURRENCY,
   getCartCurrency,
 } from '../../../utilities/currency';
+import type { CheckoutStep } from '../../../utilities/checkoutSteps';
+import {
+  cartNeedsTicketDetails,
+} from '../../../utilities/checkoutCart';
 
 import EmptyCartState from './EmptyCartState';
 import CartView from './CartView';
 import CustomerInfoStep from './CustomerInfoStep';
+import TicketDetailsStep from './TicketDetailsStep';
 import PaymentStep from './PaymentStep';
 import LoadingSpinner from './LoadingSpinner';
-
-type CheckoutStep = 'cart' | 'customer-info' | 'payment';
 
 function getCartTaxInputs(cartDetails: Record<string, any> | null) {
   if (!cartDetails) return [];
@@ -57,12 +60,26 @@ const CartPage = () => {
   } = useShoppingCart();
 
   const { selectedRegion, getRegionLabel } = useShipping();
-  const { customerData, setCustomerData, hasCustomerData } = useCheckout();
+  const {
+    customerData,
+    setCustomerData,
+    hasCustomerData,
+    syncTicketBuyerAnswersForCart,
+    areTicketBuyerAnswersCompleteForCart,
+    buyerQuestionDefsByLine,
+    hydrateBuyerQuestionsForCart,
+    isHydratingBuyerQuestions,
+  } = useCheckout();
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('cart');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [paymentRefreshKey, setPaymentRefreshKey] = useState(0);
+
+  const includeTicketDetailsStep = cartNeedsTicketDetails(
+    cartDetails as Record<string, any> | null,
+    buyerQuestionDefsByLine
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -72,11 +89,51 @@ const CartPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    syncTicketBuyerAnswersForCart(
+      cartDetails as Record<string, any> | null | undefined
+    );
+  }, [cartDetails, syncTicketBuyerAnswersForCart]);
+
+  useEffect(() => {
+    void hydrateBuyerQuestionsForCart(
+      cartDetails as Record<string, any> | null | undefined
+    );
+  }, [cartDetails, hydrateBuyerQuestionsForCart]);
+
+  useEffect(() => {
+    if (checkoutStep !== 'payment') return;
+    if (isHydratingBuyerQuestions) return;
+    if (
+      includeTicketDetailsStep &&
+      !areTicketBuyerAnswersCompleteForCart(
+        cartDetails as Record<string, any> | null
+      )
+    ) {
+      setCheckoutStep('ticket-details');
+    }
+  }, [
+    checkoutStep,
+    includeTicketDetailsStep,
+    isHydratingBuyerQuestions,
+    cartDetails,
+    areTicketBuyerAnswersCompleteForCart,
+  ]);
+
   const getCompletedSteps = (): CheckoutStep[] => {
     const completed: CheckoutStep[] = ['cart'];
 
     if (hasCustomerData()) {
       completed.push('customer-info');
+    }
+
+    if (
+      includeTicketDetailsStep &&
+      areTicketBuyerAnswersCompleteForCart(
+        cartDetails as Record<string, any> | null
+      )
+    ) {
+      completed.push('ticket-details');
     }
 
     return completed;
@@ -163,14 +220,37 @@ const CartPage = () => {
   );
   const checkoutCurrency = getCartCurrency(cartDetails) || DEFAULT_CURRENCY;
 
-  const handleCustomerDataSubmit = (data: CustomerData) => {
-    setCustomerData(data);
+  const goToPayment = () => {
     setPaymentRefreshKey((prev) => prev + 1);
     setCheckoutStep('payment');
   };
 
+  const handleCustomerDataSubmit = (data: CustomerData) => {
+    setCustomerData(data);
+    if (includeTicketDetailsStep) {
+      setCheckoutStep('ticket-details');
+    } else {
+      goToPayment();
+    }
+  };
+
+  const handleTicketDetailsSubmit = () => {
+    if (
+      !areTicketBuyerAnswersCompleteForCart(
+        cartDetails as Record<string, any> | null
+      )
+    ) {
+      return;
+    }
+    goToPayment();
+  };
+
   const handleProceedToCheckout = () => {
     setCheckoutStep('customer-info');
+  };
+
+  const stepProps = {
+    includeTicketDetailsStep,
   };
 
   if (isInitialLoad) {
@@ -195,6 +275,21 @@ const CartPage = () => {
         isProcessing={isProcessing}
         customerData={customerData}
         isTicketOnlyCart={isTicketOnlyCart()}
+        {...stepProps}
+      />
+    );
+  }
+
+  if (checkoutStep === 'ticket-details') {
+    return (
+      <TicketDetailsStep
+        currentStep={checkoutStep}
+        completedSteps={getCompletedSteps()}
+        onStepNavigation={handleStepNavigation}
+        cartDetails={cartDetails}
+        onSubmit={handleTicketDetailsSubmit}
+        isProcessing={isProcessing}
+        {...stepProps}
       />
     );
   }
@@ -221,6 +316,7 @@ const CartPage = () => {
         paymentRefreshKey={paymentRefreshKey}
         orderTotals={orderTotals}
         currency={checkoutCurrency}
+        {...stepProps}
       />
     );
   }
@@ -246,6 +342,7 @@ const CartPage = () => {
       isTicketOnlyCart={isTicketOnlyCart()}
       hasTickets={hasTickets()}
       currency={checkoutCurrency}
+      {...stepProps}
     />
   );
 };

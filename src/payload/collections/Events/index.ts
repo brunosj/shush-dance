@@ -189,6 +189,78 @@ export const Events: CollectionConfig = {
                   ],
                 },
                 {
+                  name: 'buyerQuestions',
+                  type: 'array',
+                  label: 'Checkout questions (onsite cart)',
+                  admin: {
+                    description:
+                      'Optional questions asked at checkout, once per ticket unit (e.g. meal choice, allergies). Not used for Payment Links.',
+                  },
+                  fields: [
+                    {
+                      name: 'key',
+                      type: 'text',
+                      label: 'Field key',
+                      required: true,
+                      admin: {
+                        description: 'Stable id, e.g. meal or allergies',
+                      },
+                    },
+                    {
+                      name: 'label',
+                      type: 'text',
+                      label: 'Label',
+                      required: true,
+                    },
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'type',
+                          type: 'select',
+                          label: 'Type',
+                          required: true,
+                          defaultValue: 'select',
+                          options: [
+                            { label: 'Select', value: 'select' },
+                            { label: 'Short text', value: 'text' },
+                            { label: 'Long text', value: 'textarea' },
+                          ],
+                          admin: { width: '50%' },
+                        },
+                        {
+                          name: 'required',
+                          type: 'checkbox',
+                          label: 'Required',
+                          defaultValue: true,
+                          admin: { width: '50%' },
+                        },
+                      ],
+                    },
+                    {
+                      name: 'options',
+                      type: 'array',
+                      label: 'Select options',
+                      admin: {
+                        condition: (_, siblingData) =>
+                          siblingData?.type === 'select',
+                      },
+                      fields: [
+                        {
+                          name: 'value',
+                          type: 'text',
+                          required: true,
+                        },
+                      ],
+                    },
+                    {
+                      name: 'helpText',
+                      type: 'text',
+                      label: 'Help text',
+                    },
+                  ],
+                },
+                {
                   type: 'row',
                   fields: [
                     {

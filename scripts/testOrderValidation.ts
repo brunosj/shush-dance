@@ -27,6 +27,29 @@ const docs: Record<string, Record<string, any>> = {
           visible: true,
           strikeThrough: true,
         },
+        {
+          id: 'dinnerTier',
+          tierName: 'Dinner add-on',
+          price: 15,
+          vatRate: 7,
+          visible: true,
+          strikeThrough: false,
+          buyerQuestions: [
+            {
+              key: 'meal',
+              label: 'Meal preference',
+              type: 'select',
+              required: true,
+              options: [{ value: 'Vegan' }, { value: 'Meat' }],
+            },
+            {
+              key: 'allergies',
+              label: 'Allergies',
+              type: 'textarea',
+              required: false,
+            },
+          ],
+        },
       ],
     },
     eventGbp: {
@@ -300,6 +323,67 @@ async function testDigitalReleaseHasNoShipping() {
   assert.strictEqual(result.totals.total, 17.85);
 }
 
+async function testBuyerQuestionsValid() {
+  const result = await validateAndNormalizeOrderData(payload, {
+    customerData: {
+      email: customerData.email,
+      firstName: customerData.firstName,
+      lastName: customerData.lastName,
+    },
+    shippingRegion: 'germany',
+    cartItems: [
+      {
+        id: 'ticket-event1-dinnerTier',
+        quantity: 2,
+        metadata: { type: 'ticket', eventId: 'event1', tierId: 'dinnerTier' },
+        buyerAnswerSets: [
+          [
+            { key: 'meal', label: 'Meal preference', value: 'Vegan' },
+            { key: 'allergies', label: 'Allergies', value: '' },
+          ],
+          [
+            { key: 'meal', label: 'Meal preference', value: 'Meat' },
+            { key: 'allergies', label: 'Allergies', value: 'Nuts' },
+          ],
+        ],
+      },
+    ],
+    totals: { total: 30 },
+  });
+
+  assert.strictEqual(result.cartItems[0].buyerAnswerSets?.length, 2);
+  assert.strictEqual(
+    result.cartItems[0].buyerAnswerSets?.[1].find((a) => a.key === 'meal')
+      ?.value,
+    'Meat'
+  );
+}
+
+async function testBuyerQuestionsMissingRequired() {
+  await assert.rejects(
+    validateAndNormalizeOrderData(payload, {
+      customerData: {
+        email: customerData.email,
+        firstName: customerData.firstName,
+        lastName: customerData.lastName,
+      },
+      shippingRegion: 'germany',
+      cartItems: [
+        {
+          id: 'ticket-event1-dinnerTier',
+          quantity: 1,
+          metadata: { type: 'ticket', eventId: 'event1', tierId: 'dinnerTier' },
+          buyerAnswerSets: [
+            [{ key: 'allergies', label: 'Allergies', value: 'Gluten' }],
+          ],
+        },
+      ],
+      totals: { total: 15 },
+    }),
+    /Meal preference.*required/i
+  );
+}
+
 async function testRejections() {
   await assert.rejects(
     validateAndNormalizeOrderData(payload, {
@@ -378,6 +462,8 @@ async function run() {
   await testLegacyEventDefaultsToEur();
   await testCmsMerchPriceAndShipping();
   await testDigitalReleaseHasNoShipping();
+  await testBuyerQuestionsValid();
+  await testBuyerQuestionsMissingRequired();
   await testRejections();
   console.log('order validation tests passed');
 }

@@ -10,6 +10,10 @@ import {
 } from '../../utilities/tax';
 import { allocateStripeFeeEuros } from './stripeFees';
 import { normalizeCurrency } from '../../utilities/currency';
+import {
+  formatBuyerAnswerSetsForDisplay,
+  type BuyerAnswerSet,
+} from '../../utilities/buyerQuestions';
 
 function splitItems(orderData: ValidatedOrderData) {
   const ticketItems = orderData.cartItems.filter(
@@ -62,8 +66,16 @@ function buildTicketLineRecords(ticketItems: ValidatedCartItem[]) {
       unitNet: netCents / 100 / item.quantity,
       vatAmount: vatCents / 100,
       stripePriceId: item.stripePriceId || '',
+      answerSets: toPayloadAnswerSets(item.buyerAnswerSets),
     };
   });
+}
+
+function toPayloadAnswerSets(
+  sets: BuyerAnswerSet[] | undefined
+): { answers: BuyerAnswerSet }[] | undefined {
+  if (!sets?.length) return undefined;
+  return sets.map((answers) => ({ answers }));
 }
 
 function buildTicketTotals(ticketItems: ValidatedCartItem[]) {
@@ -467,10 +479,11 @@ async function sendTicketEmails(
   emailSuffix: string
 ) {
   const ticketsList = ticketItems
-    .map(
-      (item) =>
-        `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
-    )
+    .map((item) => {
+      const base = `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`;
+      const details = formatBuyerAnswerSetsForDisplay(item.buyerAnswerSets);
+      return details ? `${base}\n  ${details}` : base;
+    })
     .join('\n');
 
   const ticketTotals = buildTicketTotals(ticketItems);

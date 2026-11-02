@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import StepIndicator from '../StepIndicator';
 import CustomerDataForm from '../CustomerDataForm';
 import { CustomerData } from '../../_providers/CheckoutProvider';
-
-type CheckoutStep = 'cart' | 'customer-info' | 'payment';
+import type { CheckoutStep } from '../../../utilities/checkoutSteps';
 
 interface CustomerInfoStepProps {
   currentStep: CheckoutStep;
@@ -13,6 +12,7 @@ interface CustomerInfoStepProps {
   isProcessing: boolean;
   customerData: CustomerData | null;
   isTicketOnlyCart?: boolean;
+  includeTicketDetailsStep?: boolean;
 }
 
 const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
@@ -23,6 +23,7 @@ const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
   isProcessing,
   customerData,
   isTicketOnlyCart = false,
+  includeTicketDetailsStep = false,
 }) => {
   const [ticketCustomerData, setTicketCustomerData] = useState({
     firstName: customerData?.firstName || '',
@@ -57,6 +58,7 @@ const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
         currentStep={currentStep}
         onStepClick={onStepNavigation}
         completedSteps={completedSteps}
+        includeTicketDetails={includeTicketDetailsStep}
       />
 
       {isTicketOnlyCart ? (
@@ -143,7 +145,11 @@ const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
                 disabled={isProcessing}
                 className='w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm'
               >
-                {isProcessing ? 'Processing...' : 'Continue to Payment'}
+                {isProcessing
+                  ? 'Processing...'
+                  : includeTicketDetailsStep
+                    ? 'Continue to ticket details'
+                    : 'Continue to payment'}
               </button>
             </div>
           </form>
