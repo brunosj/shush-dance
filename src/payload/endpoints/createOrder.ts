@@ -1,7 +1,8 @@
 import { Endpoint } from 'payload/config';
+
 import {
-  splitGrossIntoNetAndVatCents,
   DEFAULT_TICKET_VAT_RATE,
+  splitGrossIntoNetAndVatCents,
 } from '../../utilities/tax';
 import {
   fetchEventFooterHtml,
@@ -42,7 +43,7 @@ export const createOrderEndpoint: Endpoint = {
       const physicalItems = cartItems.filter(
         (item: any) =>
           item.type !== 'ticket' &&
-          (!item.metadata || item.metadata.type !== 'ticket')
+          (!item.metadata || item.metadata.type !== 'ticket'),
       );
 
       let order = null;
@@ -95,7 +96,7 @@ export const createOrderEndpoint: Endpoint = {
           const itemsList = physicalItems
             .map(
               (item: any) =>
-                `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
+                `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`,
             )
             .join('\n');
 
@@ -103,7 +104,7 @@ export const createOrderEndpoint: Endpoint = {
           const physicalSubtotal =
             physicalItems.reduce(
               (sum: number, item: any) => sum + item.lineTotal,
-              0
+              0,
             ) / 100;
           const physicalTotal = physicalSubtotal + totals.shipping + totals.vat;
 
@@ -178,7 +179,7 @@ ${customerData.country}
           const ticketSubtotal =
             ticketItems.reduce(
               (sum: number, item: any) => sum + item.lineTotal,
-              0
+              0,
             ) / 100;
           let ticketNet = 0;
           let ticketVAT = 0;
@@ -189,7 +190,7 @@ ${customerData.country}
                 : DEFAULT_TICKET_VAT_RATE;
             const { netCents, vatCents } = splitGrossIntoNetAndVatCents(
               item.lineTotal,
-              rate
+              rate,
             );
             ticketNet += netCents / 100;
             ticketVAT += vatCents / 100;
@@ -219,7 +220,7 @@ ${customerData.country}
                   : DEFAULT_TICKET_VAT_RATE;
               const { netCents, vatCents } = splitGrossIntoNetAndVatCents(
                 item.unitPrice,
-                rate
+                rate,
               );
               return {
                 cartItemId: item.id,
@@ -232,7 +233,8 @@ ${customerData.country}
                 vatRate: rate,
                 unitNet: netCents / 100,
                 vatAmount: (vatCents / 100) * item.quantity,
-                stripePriceId: item.stripePriceId || item.metadata?.stripePriceId || '',
+                stripePriceId:
+                  item.stripePriceId || item.metadata?.stripePriceId || '',
               };
             }),
             ticketTotals: {
@@ -261,7 +263,7 @@ ${customerData.country}
             const ticketsList = ticketItems
               .map(
                 (item: any) =>
-                  `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
+                  `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`,
               )
               .join('\n');
 
@@ -281,7 +283,7 @@ Transaction ID: ${transactionId}
 
             const eventFooterHtml = await fetchEventFooterHtml(
               req,
-              ticketItems[0]?.metadata?.eventId
+              ticketItems[0]?.metadata?.eventId,
             );
 
             // Send ticket confirmation email to customer
@@ -327,7 +329,7 @@ Transaction ID: ${transactionId}
         } catch (ticketSaleError) {
           console.error(
             'Failed to create ticket sale record:',
-            ticketSaleError
+            ticketSaleError,
           );
           // Continue with order creation even if ticket sale fails
         }
@@ -337,7 +339,7 @@ Transaction ID: ${transactionId}
       if (physicalItems.length > 0) {
         const totalItemsValue = physicalItems.reduce(
           (sum: number, item: any) => sum + item.lineTotal,
-          0
+          0,
         );
 
         for (const item of physicalItems) {
@@ -375,7 +377,7 @@ Transaction ID: ${transactionId}
           } catch (saleError) {
             console.error(
               `Failed to create sale record for item ${item.name}:`,
-              saleError
+              saleError,
             );
             // Continue with other items even if one fails
           }

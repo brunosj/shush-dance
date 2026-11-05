@@ -4,53 +4,59 @@ import { slateEditor } from '@payloadcms/richtext-slate';
 import dotenv from 'dotenv';
 import path from 'path';
 import { buildConfig } from 'payload/config';
-import Logo from './components/Logo';
-import Icon from './components/Icon';
 
-import { Media } from './collections/Media';
-import { Pages } from './collections/Pages';
-import Audio from './collections/Audio';
-import Tracks from './collections/Tracks';
-import { Events } from './collections/Events';
+import { extendAdminWebpack } from './adminWebpack';
 import { Artists } from './collections/Artists';
-import { Releases } from './collections/Releases';
+import Audio from './collections/Audio';
+import { Documents } from './collections/Documents';
+import { Events } from './collections/Events';
+import { Media } from './collections/Media';
 import { Merch } from './collections/Merch';
 import { OnlineOrders } from './collections/OnlineOrders';
-import { TicketSales } from './collections/TicketSales';
-import Users from './collections/Users';
-import { Socials } from './globals/Socials';
+import { Pages } from './collections/Pages';
+import { Releases } from './collections/Releases';
 import { Sales } from './collections/Sales';
-import { testBandcampEndpoint } from './endpoints/testBandcamp';
-import { syncBandcampEndpoint } from './endpoints/syncBandcamp';
+import { TicketSales } from './collections/TicketSales';
+import Tracks from './collections/Tracks';
+import Users from './collections/Users';
+import Icon from './components/Icon';
+import Logo from './components/Logo';
+import { backfillStripeFeesEndpoint } from './endpoints/backfillStripeFees';
 import { createPaymentIntentEndpoint } from './endpoints/createPaymentIntent';
 import { createSaleEndpoint } from './endpoints/createSale';
-import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
-import { stripeWebhookEndpoint } from './endpoints/stripeWebhook';
 import { ensureOrderCreatedEndpoint } from './endpoints/ensureOrderCreated';
 import { getPaymentStatusEndpoint } from './endpoints/getPaymentStatus';
-import { stripeBackfillTicketSalesEndpoint } from './endpoints/stripeBackfillTicketSales';
-import { backfillStripeFeesEndpoint } from './endpoints/backfillStripeFees';
 import { healthEndpoint } from './endpoints/health';
+import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
 import { publicEventTicketStatsEndpoint } from './endpoints/publicEventTicketStats';
+import { stripeBackfillTicketSalesEndpoint } from './endpoints/stripeBackfillTicketSales';
+import { stripeWebhookEndpoint } from './endpoints/stripeWebhook';
+import { syncBandcampEndpoint } from './endpoints/syncBandcamp';
+import { testBandcampEndpoint } from './endpoints/testBandcamp';
 import { Settings } from './globals/settings';
+import { Socials } from './globals/Socials';
+import { getEnvFilePath } from './paths';
 
 dotenv.config({
-  path: path.resolve(__dirname, '../../.env'),
+  path: getEnvFilePath(),
 });
 
 /** Node 17+ resolves `localhost` to IPv6 (::1) first; mongod often only listens on 127.0.0.1. */
 function resolveDatabaseUri(uri: string | undefined): string | undefined {
   if (!uri) return uri;
-  return uri.replace(
-    /^(mongodb(?:\+srv)?:\/\/[^@/]*@)localhost(?=[:/]|$)/i,
-    '$1127.0.0.1'
-  ).replace(/^(mongodb(?:\+srv)?:\/\/)localhost(?=[:/]|$)/i, '$1127.0.0.1');
+  return uri
+    .replace(
+      /^(mongodb(?:\+srv)?:\/\/[^@/]*@)localhost(?=[:/]|$)/i,
+      '$1127.0.0.1',
+    )
+    .replace(/^(mongodb(?:\+srv)?:\/\/)localhost(?=[:/]|$)/i, '$1127.0.0.1');
 }
 
 export default buildConfig({
   admin: {
     user: Users.slug,
     bundler: webpackBundler(),
+    webpack: extendAdminWebpack,
     components: {
       graphics: {
         Logo,
@@ -88,6 +94,7 @@ export default buildConfig({
     Audio,
     // Content
     Pages,
+    Documents,
     Media,
     // Admin
     Users,

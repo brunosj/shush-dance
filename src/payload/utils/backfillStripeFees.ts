@@ -1,5 +1,6 @@
 import type { Payload } from 'payload';
 import Stripe from 'stripe';
+
 import {
   allocateStripeFeeEuros,
   retrieveStripeFeeLookupForTransactionId,
@@ -66,7 +67,7 @@ function saleGrossEuros(sale: any): number {
   if (!Array.isArray(sale.tickets)) return 0;
   return sale.tickets.reduce(
     (sum: number, ticket: any) => sum + (ticket.lineTotal || 0),
-    0
+    0,
   );
 }
 
@@ -98,14 +99,12 @@ async function loadPaidTicketSales(payload: Payload): Promise<any[]> {
 
 export async function backfillStripeFees(
   payload: Payload,
-  options: BackfillStripeFeesOptions = {}
+  options: BackfillStripeFeesOptions = {},
 ): Promise<BackfillStripeFeesResult> {
   const dryRun = Boolean(options.dryRun);
   const force = Boolean(options.force);
   const limit =
-    typeof options.limit === 'number' && options.limit > 0
-      ? options.limit
-      : 0;
+    typeof options.limit === 'number' && options.limit > 0 ? options.limit : 0;
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
@@ -147,7 +146,7 @@ export async function backfillStripeFees(
       const lookup = await retrieveStripeFeeLookupForTransactionId(
         stripe,
         transactionId,
-        { retries: 1, delayMs: 400 }
+        { retries: 1, delayMs: 400 },
       );
 
       if (!lookup) {
@@ -164,7 +163,7 @@ export async function backfillStripeFees(
         const allocated = allocateStripeFeeEuros(
           feeEuros,
           partAmount,
-          paymentTotalEuros
+          paymentTotalEuros,
         );
 
         if (samples.length < 20) {

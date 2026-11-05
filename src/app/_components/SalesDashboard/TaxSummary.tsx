@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { formatCurrency, formatNumber } from '../../_utilities/formatters';
+
 import type { Sale } from '../../../payload/payload-types';
+import { formatCurrency } from '../../_utilities/formatters';
 
 interface TaxSummaryProps {
   sales: Sale[];
@@ -41,18 +42,18 @@ export function TaxSummary({ sales, selectedCountry }: TaxSummaryProps) {
 
   if (Object.keys(taxSummary).length === 0) {
     return (
-      <div className='bg-white rounded-lg border border-gray-200 p-6'>
-        <h2 className='text-lg font-semibold mb-4'>
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold mb-4">
           {selectedCountry ? 'German Tax Summary' : 'Tax Summary'}
         </h2>
-        <p className='text-gray-500 text-center'>No tax data available</p>
+        <p className="text-gray-500 text-center">No tax data available</p>
       </div>
     );
   }
 
   // Sort tax rates by count (most transactions first)
   const sortedSummaries = Object.values(taxSummary).sort(
-    (a: any, b: any) => b.count - a.count
+    (a: any, b: any) => b.count - a.count,
   );
 
   // Slice the array based on showAll state
@@ -61,38 +62,38 @@ export function TaxSummary({ sales, selectedCountry }: TaxSummaryProps) {
     : sortedSummaries.slice(0, INITIAL_DISPLAY_COUNT);
 
   return (
-    <div className='bg-white rounded-lg border border-gray-200 p-6'>
-      <h2 className='text-lg font-semibold mb-4'>
+    <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <h2 className="text-lg font-semibold mb-4">
         {selectedCountry ? 'German Tax Summary' : 'Tax Summary'}
       </h2>
-      <div className='space-y-6'>
+      <div className="space-y-6">
         {displayedSummaries.map((summary: any) => (
           <div
             key={`${summary.taxRate}_${summary.currency}`}
-            className='border-b border-gray-100 pb-4 last:border-0'
+            className="border-b border-gray-100 pb-4 last:border-0"
           >
-            <div className='flex justify-between items-center mb-2'>
-              <span className='font-medium'>{summary.taxRate}% Tax Rate</span>
-              <span className='text-sm text-gray-500'>
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-medium">{summary.taxRate}% Tax Rate</span>
+              <span className="text-sm text-gray-500">
                 {summary.count} transactions
               </span>
             </div>
-            <div className='grid grid-cols-3 gap-4'>
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <p className='text-sm text-gray-500'>Net Amount</p>
-                <p className='text-lg font-medium'>
+                <p className="text-sm text-gray-500">Net Amount</p>
+                <p className="text-lg font-medium">
                   {formatCurrency(summary.totalNet, summary.currency)}
                 </p>
               </div>
               <div>
-                <p className='text-sm text-gray-500'>Tax Amount</p>
-                <p className='text-lg font-medium'>
+                <p className="text-sm text-gray-500">Tax Amount</p>
+                <p className="text-lg font-medium">
                   {formatCurrency(summary.totalTax, summary.currency)}
                 </p>
               </div>
               <div>
-                <p className='text-sm text-gray-500'>Gross Amount</p>
-                <p className='text-lg font-medium'>
+                <p className="text-sm text-gray-500">Gross Amount</p>
+                <p className="text-lg font-medium">
                   {formatCurrency(summary.totalGross, summary.currency)}
                 </p>
               </div>
@@ -102,10 +103,10 @@ export function TaxSummary({ sales, selectedCountry }: TaxSummaryProps) {
       </div>
 
       {sortedSummaries.length > INITIAL_DISPLAY_COUNT && (
-        <div className='mt-4 text-center'>
+        <div className="mt-4 text-center">
           <button
             onClick={() => setShowAll(!showAll)}
-            className='text-blue-500 hover:text-blue-600 text-sm font-medium'
+            className="text-blue-500 hover:text-blue-600 text-sm font-medium"
           >
             {showAll
               ? 'Show Less'

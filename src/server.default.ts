@@ -1,12 +1,11 @@
 import dotenv from 'dotenv';
+import express from 'express';
 import path from 'path';
+import payload from 'payload';
 
 dotenv.config({
   path: path.resolve(__dirname, '../.env'),
 });
-
-import express from 'express';
-import payload from 'payload';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

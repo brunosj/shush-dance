@@ -1,15 +1,16 @@
-import React from 'react';
+import './_css/globals.css';
+
 import type { Viewport } from 'next';
-import localFont from 'next/font/local';
 import { Metadata } from 'next';
-import { Providers } from './_providers';
-import { InitTheme } from './_providers/Theme/InitTheme';
-import { siteMetadata } from './_components/Metadata';
-import { Header } from './_components/Header';
-import { Footer } from './_components/Footer/footer';
+import localFont from 'next/font/local';
+import React from 'react';
 import { Toaster } from 'react-hot-toast';
 
-import './_css/globals.css';
+import { Footer } from './_components/Footer/footer';
+import { Header } from './_components/Header';
+import { siteMetadata } from './_components/Metadata';
+import { Providers } from './_providers';
+import { InitTheme } from './_providers/Theme/InitTheme';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -17,7 +18,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-const EditorialRegular = localFont({
+const _EditorialRegular = localFont({
   src: '../app/_fonts/EditorialNew-Regular.otf',
   display: 'swap',
   variable: '--editorial',
@@ -42,7 +43,7 @@ export default async function RootLayout({
 }) {
   return (
     <html
-      lang='en'
+      lang="en"
       suppressHydrationWarning
       className={`${RobotoMono.className}`}
     >
@@ -52,7 +53,7 @@ export default async function RootLayout({
       <body>
         <Providers>
           <Toaster
-            position='top-right'
+            position="top-right"
             toastOptions={{
               success: {
                 iconTheme: {

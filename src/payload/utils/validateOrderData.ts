@@ -1,33 +1,34 @@
 import type { Payload } from 'payload';
-import {
-  buildTicketCartId,
-  calculateOrderTotalsFromCartItems,
-  centsToEuros,
-  DEFAULT_TICKET_VAT_RATE,
-  isLegacyStripeTicketCartId,
-  parseTicketCartId,
-  splitGrossIntoNetAndVatCents,
-  type CartItemTaxInput,
-  type OrderTotalsBreakdown,
-} from '../../utilities/tax';
-import {
-  DEFAULT_CURRENCY,
-  normalizeCurrency,
-  toStripeCurrency,
-  type CheckoutCurrency,
-} from '../../utilities/currency';
+
 import {
   calculateCartShipping,
   type ShippingPrices,
   type ShippingRegion,
 } from '../../app/_types/shipping';
-import { isValidTshirtSize } from '../../utilities/productVariants';
 import {
+  type BuyerAnswerSet,
   normalizeBuyerQuestionDefs,
   parseIncomingBuyerAnswerSets,
   validateBuyerAnswerSetsForTier,
-  type BuyerAnswerSet,
 } from '../../utilities/buyerQuestions';
+import {
+  type CheckoutCurrency,
+  DEFAULT_CURRENCY,
+  normalizeCurrency,
+  toStripeCurrency,
+} from '../../utilities/currency';
+import { isValidTshirtSize } from '../../utilities/productVariants';
+import {
+  buildTicketCartId,
+  calculateOrderTotalsFromCartItems,
+  type CartItemTaxInput,
+  centsToEuros,
+  DEFAULT_TICKET_VAT_RATE,
+  isLegacyStripeTicketCartId,
+  type OrderTotalsBreakdown,
+  parseTicketCartId,
+  splitGrossIntoNetAndVatCents,
+} from '../../utilities/tax';
 
 export type ValidatedCartItem = {
   id: string;
@@ -96,14 +97,14 @@ function parseQuantity(value: unknown): number {
     quantity > MAX_ITEM_QUANTITY
   ) {
     throw new Error(
-      `Quantity must be a whole number between 1 and ${MAX_ITEM_QUANTITY}`
+      `Quantity must be a whole number between 1 and ${MAX_ITEM_QUANTITY}`,
     );
   }
   return quantity;
 }
 
 function validateCustomerData(
-  customerData: Record<string, unknown> | undefined
+  customerData: Record<string, unknown> | undefined,
 ): Record<string, unknown> {
   if (
     !customerData ||
@@ -131,7 +132,7 @@ function isTicketItem(item: IncomingCartItem): boolean {
 async function resolveTicketFromCms(
   payload: Payload,
   eventId: string,
-  tierId: string
+  tierId: string,
 ) {
   const event = await payload.findByID({
     collection: 'events',
@@ -177,7 +178,9 @@ async function resolveTicketFromCms(
     tier,
     grossCents: Math.round(price * 100),
     vatRate,
-    currency: normalizeCurrency((event as { currency?: string | null }).currency),
+    currency: normalizeCurrency(
+      (event as { currency?: string | null }).currency,
+    ),
   };
 }
 
@@ -195,7 +198,7 @@ export async function validateAndNormalizeOrderData(
     shippingRegion?: string;
     paymentMethod?: string;
     orderNumber?: string;
-  }
+  },
 ): Promise<ValidatedOrderData> {
   if (!Array.isArray(orderData.cartItems) || orderData.cartItems.length > 50) {
     throw new Error('Cart must contain between 1 and 50 items');
@@ -227,7 +230,7 @@ export async function validateAndNormalizeOrderData(
 
       if (!eventId || !tierId) {
         throw new Error(
-          'Ticket cart item is missing event/tier identity. Please refresh your cart.'
+          'Ticket cart item is missing event/tier identity. Please refresh your cart.',
         );
       }
 
@@ -236,16 +239,16 @@ export async function validateAndNormalizeOrderData(
       const lineGrossCents = resolved.grossCents * quantity;
       const { netCents, vatCents } = splitGrossIntoNetAndVatCents(
         lineGrossCents,
-        resolved.vatRate
+        resolved.vatRate,
       );
 
       const questions = normalizeBuyerQuestionDefs(
-        resolved.tier.buyerQuestions
+        resolved.tier.buyerQuestions,
       );
       const buyerAnswerSets = validateBuyerAnswerSetsForTier(
         questions,
         quantity,
-        parseIncomingBuyerAnswerSets(item)
+        parseIncomingBuyerAnswerSets(item),
       );
 
       const cartId = buildTicketCartId(eventId, tierId);
@@ -341,10 +344,7 @@ export async function validateAndNormalizeOrderData(
     ) {
       throw new Error(`Select a valid size for "${cmsItem.title}"`);
     }
-    if (
-      variant &&
-      (itemType !== 'merch' || cmsItem.itemType !== 'clothing')
-    ) {
+    if (variant && (itemType !== 'merch' || cmsItem.itemType !== 'clothing')) {
       throw new Error(`"${cmsItem.title}" does not support variants`);
     }
 
@@ -382,7 +382,7 @@ export async function validateAndNormalizeOrderData(
 
   if (ticketCurrencies.size > 1) {
     throw new Error(
-      'Cart mixes ticket currencies. Please checkout EUR and GBP tickets separately.'
+      'Cart mixes ticket currencies. Please checkout EUR and GBP tickets separately.',
     );
   }
 
@@ -393,7 +393,7 @@ export async function validateAndNormalizeOrderData(
 
   if (orderCurrency === 'GBP' && hasPhysicalShopItems) {
     throw new Error(
-      'GBP ticket carts cannot include merch or releases. Please remove shop items or checkout tickets separately.'
+      'GBP ticket carts cannot include merch or releases. Please remove shop items or checkout tickets separately.',
     );
   }
 
@@ -414,7 +414,7 @@ export async function validateAndNormalizeOrderData(
 
   const shippingCostEuros = calculateCartShipping(shippingData, shippingRegion);
   const hasShippableItems = validatedItems.some(
-    (item) => item.type !== 'ticket' && !item.isDigital
+    (item) => item.type !== 'ticket' && !item.isDigital,
   );
   if (
     hasShippableItems &&
@@ -432,7 +432,7 @@ export async function validateAndNormalizeOrderData(
   const totals = calculateOrderTotalsFromCartItems(
     taxInputs,
     shippingCostEuros,
-    shippingRegion
+    shippingRegion,
   );
 
   const submittedTotal = Number(orderData.totals?.total);
@@ -441,7 +441,7 @@ export async function validateAndNormalizeOrderData(
   }
   if (Math.abs(submittedTotal - totals.total) > 0.02) {
     throw new Error(
-      'Cart total is out of date. Please refresh your cart and try again.'
+      'Cart total is out of date. Please refresh your cart and try again.',
     );
   }
 
@@ -458,7 +458,7 @@ export async function validateAndNormalizeOrderData(
 }
 
 export function readValidatedOrderDataFromMetadata(
-  metadata: Record<string, string>
+  metadata: Record<string, string>,
 ): ValidatedOrderData {
   let serialized = metadata.orderData || '';
   if (!serialized && metadata.orderDataChunks) {
@@ -484,16 +484,17 @@ export function readValidatedOrderDataFromMetadata(
     throw new Error('Invalid validated order data in payment metadata');
   }
   const ticketItems = orderData.cartItems.filter(
-    (item) => item.type === 'ticket' || item.metadata?.type === 'ticket'
+    (item) => item.type === 'ticket' || item.metadata?.type === 'ticket',
   );
   const physicalItems = orderData.cartItems.filter(
-    (item) => item.type !== 'ticket' && item.metadata?.type !== 'ticket'
+    (item) => item.type !== 'ticket' && item.metadata?.type !== 'ticket',
   );
   const ticketGross =
     ticketItems.reduce((sum, item) => sum + item.lineTotal, 0) / 100;
   orderData.totals = {
     ...orderData.totals,
-    merchVat: Number(orderData.totals.merchVat) || Number(orderData.totals.vat) || 0,
+    merchVat:
+      Number(orderData.totals.merchVat) || Number(orderData.totals.vat) || 0,
     shippingVat: Number(orderData.totals.shippingVat) || 0,
     ticketVat: Number(orderData.totals.ticketVat) || 0,
     ticketNet: Number(orderData.totals.ticketNet) || ticketGross,
@@ -524,12 +525,12 @@ export function readValidatedOrderDataFromMetadata(
       item.currency ||
         (typeof item.metadata?.currency === 'string'
           ? item.metadata.currency
-          : undefined)
+          : undefined),
     ),
   }));
   orderData.currency = normalizeCurrency(
     orderData.currency ||
-      orderData.cartItems.find((item) => item.currency)?.currency
+      orderData.cartItems.find((item) => item.currency)?.currency,
   );
   orderData.stripeCurrency = toStripeCurrency(orderData.currency);
   return orderData;

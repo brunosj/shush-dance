@@ -1,10 +1,14 @@
-import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Release, Merch } from '../../../payload/payload-types';
-import { RichText } from '../RichText';
+import React from 'react';
+
+import type { Merch, Release } from '../../../payload/payload-types';
+import {
+  resolveMediaResource,
+  resolveMediaUrl,
+} from '../../_utilities/getMediaUrl';
 import Button from '../Button';
-import { resolveMediaResource, resolveMediaUrl } from '../../_utilities/getMediaUrl';
+import { RichText } from '../RichText';
 
 interface ProductCardProps {
   product: Release | Merch;
@@ -51,25 +55,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, type }) => {
   return (
     <li
       key={product.id}
-      className='relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-12 group'
+      className="relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-12 group"
     >
-      <div className='relative w-32 h-32 lg:w-40 lg:h-40'>
-        <Link href={linkHref} className=''>
+      <div className="relative w-32 h-32 lg:w-40 lg:h-40">
+        <Link href={linkHref} className="">
           {/* Image */}
           {imageUrl && (
             <Image
               src={imageUrl}
               alt={product.title}
               fill
-              className='object-contain w-full'
+              className="object-contain w-full"
             />
           )}
         </Link>
       </div>
-      <div className='col-span-4'>
+      <div className="col-span-4">
         <div className={`space-y-4 pb-3 lg:pb-0`}>
           <div>
-            <h3 className='font-semibold'>{product.title}</h3>
+            <h3 className="font-semibold">{product.title}</h3>
             {isRelease && artistName && <p>{artistName}</p>}
           </div>
 
@@ -89,14 +93,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, type }) => {
             <div>
               <RichText
                 content={product.description}
-                className='richTextSmallP'
+                className="richTextSmallP"
               />
             </div>
           )}
 
           {/* Learn More Button */}
-          <div className='pt-3'>
-            <Button href={linkHref} label='Learn More' />
+          <div className="pt-3">
+            <Button href={linkHref} label="Learn More" />
           </div>
         </div>
       </div>

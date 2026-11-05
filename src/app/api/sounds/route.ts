@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    const file = formData.get('file') as File;
+    const _file = formData.get('file') as File;
 
     console.log('Form Data:', formData.entries()); // Log form data entries
 
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
           'Content-Type': 'application/json', // Corrected header
           Authorization: `Bearer ${process.env.PAYLOAD_API_TOKEN}`,
         },
-      }
+      },
     );
 
     if (!audioUploadResponse.ok) {
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     // payloadData.append('tags', formData.get('tags') as string);
     payloadData.append(
       'contributorName',
-      formData.get('contributorName') as string
+      formData.get('contributorName') as string,
     );
     payloadData.append('status', 'draft');
     payloadData.append('audioGroup[audioUpload]', fileId);
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         headers: {
           Authorization: `Bearer ${process.env.PAYLOAD_API_TOKEN}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     console.error('Error:', error);
     return NextResponse.json(
       { error: 'Error creating sound' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

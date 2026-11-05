@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+
 import type { CheckoutStep } from '../../../utilities/checkoutSteps';
 
 interface StepIndicatorProps {
@@ -59,7 +60,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
   const gridCols = includeTicketDetails ? 'grid-cols-4' : 'grid-cols-3';
 
   return (
-    <div className='mb-8'>
+    <div className="mb-8">
       <div className={`grid ${gridCols} gap-4 max-w-2xl mx-auto`}>
         {steps.map((step, index) => {
           const isCompleted = completedSteps.includes(step.key);

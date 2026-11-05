@@ -11,13 +11,12 @@
  *   pnpm ts-node scripts/fixMediaUrls.ts --media-dir /home/lando/media
  *   pnpm ts-node scripts/fixMediaUrls.ts --static-url /media
  */
-/* eslint-disable no-console */
 
 import fs from 'fs';
 import path from 'path';
+import { getPayload } from 'payload';
 
 import config from '../src/payload/payload.config';
-import { getPayload } from 'payload';
 
 type Args = {
   dryRun: boolean;
@@ -46,7 +45,9 @@ const normalizeStaticURL = (staticURL: string) => {
   if (!staticURL) return '/media';
   const trimmed = staticURL.trim();
   if (trimmed === '/') return '';
-  return trimmed.startsWith('/') ? trimmed.replace(/\/+$/, '') : `/${trimmed.replace(/\/+$/, '')}`;
+  return trimmed.startsWith('/')
+    ? trimmed.replace(/\/+$/, '')
+    : `/${trimmed.replace(/\/+$/, '')}`;
 };
 
 const desiredUrlForFilename = (staticURL: string, filename: string) => {
@@ -80,7 +81,6 @@ const run = async () => {
   let skipped = 0;
   let missingFiles = 0;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const res = await payload.find({
       collection: 'media',
@@ -145,4 +145,3 @@ const run = async () => {
 };
 
 void run();
-

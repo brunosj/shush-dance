@@ -1,30 +1,25 @@
 import dotenv from 'dotenv';
+import express from 'express';
 import next from 'next';
 import nextBuild from 'next/dist/build';
-import path from 'path';
-import express from 'express';
+
 import { getPayloadClient } from './payload/getPayload';
-import payload from 'payload';
+import { getEnvFilePath, getMediaRoot, getProjectRoot } from './payload/paths';
 import { setupStripeTicketSalesCron } from './payload/services/stripeTicketSalesCron';
 
 dotenv.config({
-  path: path.resolve(__dirname, '../.env'),
+  path: getEnvFilePath(),
 });
 
 const app = express();
 
-// Media path: use env var or resolve to /home/lando/media in production
-const mediaPath =
-  process.env.MEDIA_DIR || path.resolve(__dirname, '../../../media');
+const mediaPath = getMediaRoot();
 console.log('Serving media from:', mediaPath);
 app.use('/media', express.static(mediaPath));
 
 // Stripe needs the untouched raw body to verify the webhook signature.
 // Must be registered before Payload attaches its JSON body parser.
-app.use(
-  '/api/stripe-webhook',
-  express.raw({ type: 'application/json' })
-);
+app.use('/api/stripe-webhook', express.raw({ type: 'application/json' }));
 
 const PORT = process.env.PORT || 3000;
 const start = async (): Promise<void> => {
@@ -35,7 +30,7 @@ const start = async (): Promise<void> => {
       express: app,
       onInit: async (newPayload) => {
         newPayload.logger.info(
-          `Payload Admin URL: ${newPayload.getAdminURL()}`
+          `Payload Admin URL: ${newPayload.getAdminURL()}`,
         );
       },
     },
@@ -46,9 +41,11 @@ const start = async (): Promise<void> => {
     // PORT (package.json uses 3999) so this never clashes with a live PM2
     // process on 3000 during deploy.
     app.listen(PORT, async () => {
-      payload.logger.info(`Next.js is now building on temporary port ${PORT}...`);
-      // @ts-expect-error
-      await nextBuild(path.join(__dirname, '../'));
+      payload.logger.info(
+        `Next.js is now building on temporary port ${PORT}...`,
+      );
+      // @ts-expect-error nextBuild's typings expect extra args at runtime it doesn't need
+      await nextBuild(getProjectRoot());
       process.exit(0);
     });
 
@@ -87,7 +84,7 @@ const start = async (): Promise<void> => {
 
     app.listen(PORT, async () => {
       payload.logger.info(
-        `Next.js App URL: ${process.env.PAYLOAD_PUBLIC_SERVER_URL}`
+        `Next.js App URL: ${process.env.PAYLOAD_PUBLIC_SERVER_URL}`,
       );
       setupStripeTicketSalesCron();
     });

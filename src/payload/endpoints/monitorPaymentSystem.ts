@@ -1,4 +1,5 @@
-import { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload/config';
+import Stripe from 'stripe';
 
 interface MonitoringResult {
   timestamp: string;
@@ -74,7 +75,7 @@ const testCriticalConfig = (): {
 
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
     missing.push(
-      'STRIPE_WEBHOOK_SECRET (webhook signature verification will fail → orders only via fallback)'
+      'STRIPE_WEBHOOK_SECRET (webhook signature verification will fail → orders only via fallback)',
     );
   }
 
@@ -84,7 +85,7 @@ const testCriticalConfig = (): {
   if (!process.env.SMTP_PASS) smtpMissing.push('SMTP_PASS');
   if (smtpMissing.length > 0) {
     missing.push(
-      `SMTP config (${smtpMissing.join(', ')}) → confirmation emails will not send`
+      `SMTP config (${smtpMissing.join(', ')}) → confirmation emails will not send`,
     );
   }
 
@@ -110,14 +111,13 @@ const testStripeConnectivity = async (): Promise<{
 
   try {
     console.log(
-      `[${testId}] 🧪 Testing Stripe connectivity (no payment intents)...`
+      `[${testId}] 🧪 Testing Stripe connectivity (no payment intents)...`,
     );
 
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error('STRIPE_SECRET_KEY not configured');
     }
 
-    const Stripe = require('stripe');
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       maxNetworkRetries: 2,
       timeout: 8000, // 8 second timeout (matching production)
@@ -138,7 +138,7 @@ const testStripeConnectivity = async (): Promise<{
     const responseTime = Date.now() - startTime;
 
     console.log(
-      `[${testId}] ✅ Stripe connectivity test successful (${responseTime}ms)`
+      `[${testId}] ✅ Stripe connectivity test successful (${responseTime}ms)`,
     );
     return {
       success: true,
@@ -180,7 +180,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
   }> = [];
 
   console.log(
-    `[${testId}] 🧪 Testing production endpoint (${testAttempts} initial request)...`
+    `[${testId}] 🧪 Testing production endpoint (${testAttempts} initial request)...`,
   );
 
   for (let i = 1; i <= testAttempts; i++) {
@@ -205,7 +205,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
       const testUrl = `${publicUrl}/api/create-payment-intent`;
 
       console.log(
-        `[${testId}] 🌐 Testing via public URL: ${testUrl} (attempt ${i})`
+        `[${testId}] 🌐 Testing via public URL: ${testUrl} (attempt ${i})`,
       );
 
       // Add network debugging info
@@ -253,7 +253,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
 
       try {
         responseData = await response.json();
-      } catch (jsonError) {
+      } catch (_jsonError) {
         // Handle cases where response is not JSON (like 502 errors)
         try {
           const rawText = await response.text();
@@ -329,7 +329,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
       firstResult.error?.includes('ECONNRESET'))
   ) {
     console.log(
-      `[${testId}] ⚠️ First attempt failed with potential stale instance issue, doing 2 more attempts...`
+      `[${testId}] ⚠️ First attempt failed with potential stale instance issue, doing 2 more attempts...`,
     );
 
     // Do 2 more attempts to confirm the issue
@@ -382,7 +382,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
         let responseData: any = {};
         try {
           responseData = await response.json();
-        } catch (jsonError) {
+        } catch (_jsonError) {
           try {
             const rawText = await response.text();
             responseData = {
@@ -449,12 +449,12 @@ const testPaymentIntentEndpoint = async (): Promise<{
   const successCount = results.filter((r) => r.success).length;
   const failureCount = results.filter((r) => !r.success).length;
   const avgResponseTime = Math.round(
-    results.reduce((sum, r) => sum + r.responseTime, 0) / results.length
+    results.reduce((sum, r) => sum + r.responseTime, 0) / results.length,
   );
   const has502Errors = results.some((r) => r.status === 502);
   const hasTimeouts = results.some((r) => r.error?.includes('timeout'));
   const hasConnectionErrors = results.some(
-    (r) => r.error?.includes('connection') || r.error?.includes('ECONNRESET')
+    (r) => r.error?.includes('connection') || r.error?.includes('ECONNRESET'),
   );
 
   // Determine error pattern
@@ -486,7 +486,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
 
   if (overallSuccess) {
     console.log(
-      `[${testId}] ✅ Production endpoint test passed (${successCount}/${totalAttempts} attempts)`
+      `[${testId}] ✅ Production endpoint test passed (${successCount}/${totalAttempts} attempts)`,
     );
     return {
       success: true,
@@ -497,13 +497,13 @@ const testPaymentIntentEndpoint = async (): Promise<{
   } else {
     const mainError = results.find((r) => !r.success)?.error || 'Unknown error';
     console.log(
-      `[${testId}] ❌ Production endpoint test failed (${failureCount}/${totalAttempts} attempts failed)`
+      `[${testId}] ❌ Production endpoint test failed (${failureCount}/${totalAttempts} attempts failed)`,
     );
 
     // Special handling for 502 errors (the main issue)
     if (has502Errors) {
       console.log(
-        `[${testId}] 🚨 CRITICAL: 502 Bad Gateway detected - this is the client issue!`
+        `[${testId}] 🚨 CRITICAL: 502 Bad Gateway detected - this is the client issue!`,
       );
     }
 
@@ -519,7 +519,7 @@ const testPaymentIntentEndpoint = async (): Promise<{
 
 // Test database connectivity without creating orders
 const testDatabaseConnectivity = async (
-  payload: any
+  payload: any,
 ): Promise<{
   success: boolean;
   error?: string;
@@ -540,7 +540,7 @@ const testDatabaseConnectivity = async (
     ]);
 
     console.log(
-      `[${testId}] ✅ Database connectivity test successful (${orderCount.totalDocs} online orders, ${ticketCount.totalDocs} ticket sales)`
+      `[${testId}] ✅ Database connectivity test successful (${orderCount.totalDocs} online orders, ${ticketCount.totalDocs} ticket sales)`,
     );
     return {
       success: true,
@@ -561,7 +561,7 @@ const sendAlert = async (
   payload: any,
   subject: string,
   errorDetails: string,
-  errorPattern?: string
+  errorPattern?: string,
 ) => {
   try {
     const alertEmail = process.env.ALERT_EMAIL || 'hello@shush.dance';
@@ -621,7 +621,7 @@ const sendAlert = async (
     });
 
     console.log(
-      `📧 ${isUrgent ? 'URGENT' : 'Normal'} alert email sent to ${alertEmail}`
+      `📧 ${isUrgent ? 'URGENT' : 'Normal'} alert email sent to ${alertEmail}`,
     );
     return true;
   } catch (error: any) {
@@ -683,7 +683,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
     try {
       // Test 1: Direct Stripe API (no transactions)
       console.log(
-        `[${monitorId}] 🧪 Running direct Stripe connectivity test...`
+        `[${monitorId}] 🧪 Running direct Stripe connectivity test...`,
       );
       results.stripe = await testStripeConnectivity();
       if (!results.stripe.success) {
@@ -694,7 +694,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
       // Test 2: Actual production endpoint (creates transactions)
       if (skipPaymentIntents) {
         console.log(
-          `[${monitorId}] ⏭️ Skipping payment intent endpoint test (skipPaymentIntents=true)`
+          `[${monitorId}] ⏭️ Skipping payment intent endpoint test (skipPaymentIntents=true)`,
         );
         results.endpoint = {
           success: true,
@@ -726,11 +726,11 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
       if (!results.config.success) {
         results.overall = false;
         console.log(
-          `[${monitorId}] ❌ Critical config check failed: ${results.config.error}`
+          `[${monitorId}] ❌ Critical config check failed: ${results.config.error}`,
         );
       } else if (results.config.warnings?.length) {
         console.warn(
-          `[${monitorId}] ⚠️ Config warnings: ${results.config.warnings.join('; ')}`
+          `[${monitorId}] ⚠️ Config warnings: ${results.config.warnings.join('; ')}`,
         );
       }
 
@@ -847,7 +847,7 @@ Recommended Actions:
           req.payload,
           'Payment System Failure Detected',
           enhancedErrorDetails,
-          errorPattern
+          errorPattern,
         );
 
         return res.status(500).json({
@@ -876,13 +876,13 @@ Recommended Actions:
       }
     } catch (error: any) {
       console.error(
-        `[${monitorId}] 💥 Payment system monitoring failed: ${error.message}`
+        `[${monitorId}] 💥 Payment system monitoring failed: ${error.message}`,
       );
 
       await sendAlert(
         req.payload,
         'Payment System Monitor Error',
-        `Monitoring script crashed: ${error.message}`
+        `Monitoring script crashed: ${error.message}`,
       );
 
       return res.status(500).json({

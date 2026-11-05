@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function DashboardPage() {
   return (
-    <main className='container mx-auto px-4 py-16'>
+    <main className="container mx-auto px-4 py-16">
       <DashboardClient />
     </main>
   );

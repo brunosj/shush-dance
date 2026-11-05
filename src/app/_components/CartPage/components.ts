@@ -1,10 +1,10 @@
 // Export all CartPage components for better organization
-export { default as EmptyCartState } from './EmptyCartState';
 export { default as CartItemsList } from './CartItemsList';
-export { default as OrderSummary } from './OrderSummary';
-export { default as ShippingAddressDisplay } from './ShippingAddressDisplay';
-export { default as PaymentSection } from './PaymentSection';
-export { default as CustomerInfoStep } from './CustomerInfoStep';
-export { default as PaymentStep } from './PaymentStep';
 export { default as CartView } from './CartView';
+export { default as CustomerInfoStep } from './CustomerInfoStep';
+export { default as EmptyCartState } from './EmptyCartState';
 export { default as LoadingSpinner } from './LoadingSpinner';
+export { default as OrderSummary } from './OrderSummary';
+export { default as PaymentSection } from './PaymentSection';
+export { default as PaymentStep } from './PaymentStep';
+export { default as ShippingAddressDisplay } from './ShippingAddressDisplay';

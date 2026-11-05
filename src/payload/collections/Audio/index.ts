@@ -1,8 +1,8 @@
 // collections/AudioFiles.ts
-import { CollectionConfig } from 'payload/types';
 import path from 'path';
+import { CollectionConfig } from 'payload/types';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const _MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = [
   'audio/mpeg',
   'audio/vnd.wav',
@@ -28,7 +28,7 @@ const Audio: CollectionConfig = {
     {
       path: '/custom-upload',
       method: 'post',
-      handler: async (req, res, next) => {
+      handler: async (req, res, _next) => {
         try {
           const { title } = req.body;
           const file = req.files.file;

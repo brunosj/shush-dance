@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     payloadData.append('tags', formData.get('tags') as string);
     payloadData.append(
       'contributorName',
-      formData.get('contributorName') as string
+      formData.get('contributorName') as string,
     );
     payloadData.append('status', 'draft'); // Default status
     payloadData.append('file', file as any, (file as File).name);
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         headers: {
           Authorization: `Bearer ${process.env.PAYLOAD_API_TOKEN}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     console.error('Error:', error);
     return NextResponse.json(
       { error: 'Error creating sound' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

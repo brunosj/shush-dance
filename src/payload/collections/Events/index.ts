@@ -1,8 +1,8 @@
 import type { CollectionConfig } from 'payload/types';
+
 import { admins } from '../../access/admins';
-import { adminsOrPublished } from '../../access/adminsOrPublished';
-import { slugField } from '../../fields/slug';
 import { createRichTextField } from '../../fields/createRichTextField';
+import { slugField } from '../../fields/slug';
 
 export const Events: CollectionConfig = {
   slug: 'events',
@@ -109,7 +109,8 @@ export const Events: CollectionConfig = {
               required: false,
               admin: {
                 hidden: true,
-                description: 'Legacy single-image field. Use Event Flyers instead.',
+                description:
+                  'Legacy single-image field. Use Event Flyers instead.',
               },
             },
           ],

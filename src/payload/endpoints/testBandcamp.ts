@@ -1,4 +1,5 @@
 import { Endpoint } from 'payload/config';
+
 import { fetchBands, fetchSalesForBand } from '../services/bandcamp';
 
 export const testBandcampEndpoint: Endpoint = {
@@ -20,7 +21,7 @@ export const testBandcampEndpoint: Endpoint = {
           const salesData = await fetchSalesForBand(
             band.band_id,
             startDate,
-            endDate
+            endDate,
           );
           return {
             band: {
@@ -30,7 +31,7 @@ export const testBandcampEndpoint: Endpoint = {
             },
             sales: salesData,
           };
-        })
+        }),
       );
 
       res.status(200).json({

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
+
 import { fetchPageData } from '../../_api/fetchPageData';
 import { PageTemplate } from './page.client';
-import { fetchPages } from '../../_api/fetchPages';
 
 interface PageParams {
   params: { slug: string };

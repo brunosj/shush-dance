@@ -21,7 +21,7 @@ export const stripeWebhookEndpoint: Endpoint = {
     // For development, skip signature verification and just process the event
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        '🚧 Development mode: processing webhook without signature verification'
+        '🚧 Development mode: processing webhook without signature verification',
       );
 
       let event: Stripe.Event;
@@ -36,7 +36,7 @@ export const stripeWebhookEndpoint: Endpoint = {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log(
           '💳 Processing payment_intent.succeeded:',
-          paymentIntent.id
+          paymentIntent.id,
         );
 
         try {
@@ -88,7 +88,7 @@ export const stripeWebhookEndpoint: Endpoint = {
 
 async function processPaymentSuccess(
   paymentIntent: Stripe.PaymentIntent,
-  req: any
+  req: any,
 ) {
   // Extract order data from metadata
   const metadata = paymentIntent.metadata;
@@ -116,7 +116,7 @@ async function processPaymentSuccess(
   try {
     if (paymentIntent.payment_method) {
       const paymentMethod = await stripe.paymentMethods.retrieve(
-        paymentIntent.payment_method as string
+        paymentIntent.payment_method as string,
       );
       paymentMethodType = paymentMethod.type;
     }
@@ -131,12 +131,12 @@ async function processPaymentSuccess(
   const ticketItems = orderData.cartItems.filter(
     (item: any) =>
       item.type === 'ticket' ||
-      (item.metadata && item.metadata.type === 'ticket')
+      (item.metadata && item.metadata.type === 'ticket'),
   );
   const physicalItems = orderData.cartItems.filter(
     (item: any) =>
       item.type !== 'ticket' &&
-      (!item.metadata || item.metadata.type !== 'ticket')
+      (!item.metadata || item.metadata.type !== 'ticket'),
   );
 
   // Create online order for physical items
@@ -183,7 +183,7 @@ async function processPaymentSuccess(
       orderNumber,
       detectedPaymentMethod,
       paymentIntent.id,
-      req
+      req,
     );
   }
 
@@ -241,7 +241,7 @@ async function processPaymentSuccess(
       ticketNumber,
       detectedPaymentMethod,
       paymentIntent.id,
-      req
+      req,
     );
   }
 
@@ -249,7 +249,7 @@ async function processPaymentSuccess(
   if (physicalItems.length > 0) {
     const totalItemsValue = physicalItems.reduce(
       (sum: number, item: any) => sum + item.lineTotal,
-      0
+      0,
     );
 
     for (const item of physicalItems) {
@@ -281,7 +281,7 @@ async function processPaymentSuccess(
       } catch (saleError) {
         console.error(
           `Failed to create sale record for ${item.name}:`,
-          saleError
+          saleError,
         );
       }
     }
@@ -296,12 +296,12 @@ async function sendOrderEmails(
   orderNumber: string,
   paymentMethod: string,
   transactionId: string,
-  req: any
+  req: any,
 ) {
   const itemsList = physicalItems
     .map(
       (item: any) =>
-        `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
+        `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`,
     )
     .join('\n');
 
@@ -370,12 +370,12 @@ async function sendTicketEmails(
   ticketNumber: string,
   paymentMethod: string,
   transactionId: string,
-  req: any
+  req: any,
 ) {
   const ticketsList = ticketItems
     .map(
       (item: any) =>
-        `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
+        `• ${item.name} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`,
     )
     .join('\n');
 

@@ -1,20 +1,19 @@
 import React from 'react';
-import StepIndicator from '../StepIndicator';
-import OrderSummary from './OrderSummary';
-import ReviewOrderItems from './ReviewOrderItems';
-import ShippingAddressDisplay from './ShippingAddressDisplay';
-import PaymentSection from './PaymentSection';
-import PaymentErrorBoundary from './PaymentErrorBoundary';
-import { CustomerData } from '../../_providers/CheckoutProvider';
-import { type ShippingRegion } from '../../_types/shipping';
-import type { OrderTotalsBreakdown } from '../../../utilities/tax';
-import {
-  DEFAULT_CURRENCY,
-  type CheckoutCurrency,
-} from '../../../utilities/currency';
 
 import type { CheckoutStep } from '../../../utilities/checkoutSteps';
-import { useCheckout } from '../../_providers/CheckoutProvider';
+import {
+  type CheckoutCurrency,
+  DEFAULT_CURRENCY,
+} from '../../../utilities/currency';
+import type { OrderTotalsBreakdown } from '../../../utilities/tax';
+import { CustomerData, useCheckout } from '../../_providers/CheckoutProvider';
+import { type ShippingRegion } from '../../_types/shipping';
+import StepIndicator from '../StepIndicator';
+import OrderSummary from './OrderSummary';
+import PaymentErrorBoundary from './PaymentErrorBoundary';
+import PaymentSection from './PaymentSection';
+import ReviewOrderItems from './ReviewOrderItems';
+import ShippingAddressDisplay from './ShippingAddressDisplay';
 
 interface PaymentStepProps {
   currentStep: CheckoutStep;
@@ -64,21 +63,21 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const { ticketBuyerAnswers } = useCheckout();
 
   return (
-    <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
+    <div className="max-w-3xl mx-2 md:mx-auto mt-24 mb-12">
       <StepIndicator
         currentStep={currentStep}
         onStepClick={onStepNavigation}
         completedSteps={completedSteps}
         includeTicketDetails={includeTicketDetailsStep}
       />
-      <div className='mb-6'>
-        <h2 className=' font-bold mb-2'>Review & Pay</h2>
-        <p className='text-gray-600'>
+      <div className="mb-6">
+        <h2 className=" font-bold mb-2">Review & Pay</h2>
+        <p className="text-gray-600">
           Review your order details and complete payment.
         </p>
       </div>
 
-      <div className='mb-6'>
+      <div className="mb-6">
         <ReviewOrderItems
           cartDetails={cartDetails}
           currency={currency}

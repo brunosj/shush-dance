@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useShoppingCart } from 'use-shopping-cart';
-import { IoTicketOutline } from 'react-icons/io5';
-import { HiOutlineShoppingBag } from 'react-icons/hi2';
 import { Fade as Hamburger } from 'hamburger-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { HiOutlineShoppingBag } from 'react-icons/hi2';
+import { useShoppingCart } from 'use-shopping-cart';
+
 import { menuItems } from '../Menu';
 
 const logoSrc = '/shush_triple_logo_black.png';
@@ -48,14 +48,14 @@ export function Header() {
   }, [isOpen]);
 
   return (
-    <header className='fixed top-0 w-full z-30 filter-top'>
-      <div className='relative py-2 px-3 flex items-center z-40'>
+    <header className="fixed top-0 w-full z-30 filter-top">
+      <div className="relative py-2 px-3 flex items-center z-40">
         {/* Logo on the left */}
-        <div className='flex-shrink-0'>
-          <Link href='/' onClick={closeMenu}>
+        <div className="flex-shrink-0">
+          <Link href="/" onClick={closeMenu}>
             <Image
               src={logoSrc}
-              alt='SHUSH'
+              alt="SHUSH"
               width={logoSize.width}
               height={logoSize.height}
             />
@@ -63,16 +63,16 @@ export function Header() {
         </div>
 
         {/* Centered Hamburger */}
-        <div className='absolute left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto'>
+        <div className="absolute left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto">
           <Hamburger toggled={isOpen} toggle={setOpen} size={25} />
         </div>
 
         {/* Cart Icon on the right */}
-        <div className='ml-auto z-40 group relative'>
-          <Link href='/cart' onClick={closeMenu}>
-            <HiOutlineShoppingBag className='w-8 h-8 group-hover:opacity-75' />
+        <div className="ml-auto z-40 group relative">
+          <Link href="/cart" onClick={closeMenu}>
+            <HiOutlineShoppingBag className="w-8 h-8 group-hover:opacity-75" />
             {cartCount > 0 && (
-              <div className='rounded-full flex justify-center items-center text-xs bg-black text-pri absolute w-5 h-5 -mt-3 group-hover:opacity-75 -left-1'>
+              <div className="rounded-full flex justify-center items-center text-xs bg-black text-pri absolute w-5 h-5 -mt-3 group-hover:opacity-75 -left-1">
                 {cartCount}
               </div>
             )}
@@ -82,13 +82,13 @@ export function Header() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <nav className='absolute top-0 left-0 w-full bg-pri shadow-md'>
-          <ul className='flex flex-col items-center pb-4 lg:pb-6 pt-12 space-y-2 lg:space-y-4 lg:pt-16'>
+        <nav className="absolute top-0 left-0 w-full bg-pri shadow-md">
+          <ul className="flex flex-col items-center pb-4 lg:pb-6 pt-12 space-y-2 lg:space-y-4 lg:pt-16">
             {menuItems.map((item, index) => (
-              <li key={index} className=''>
+              <li key={index} className="">
                 <Link
                   href={item.href}
-                  className='text-sm lg:text-base textHover'
+                  className="text-sm lg:text-base textHover"
                   onClick={closeMenu}
                 >
                   {item.label}

@@ -1,21 +1,10 @@
 import payload from 'payload';
-import { fetchBands, fetchSalesForBand } from '../services/bandcamp';
 
-interface BandcampSaleItem {
-  bandcamp_transaction_id: number;
-  date: string;
-  item_type: string;
-  item_name: string;
-  currency: string;
-  item_total: number;
-  country: string;
-  package: string;
-  artist: string;
-}
+import { fetchBands, fetchSalesForBand } from '../services/bandcamp';
 
 const determineItemType = (
   itemType: string,
-  packageType: string
+  packageType: string,
 ): 'record' | 'merch' | 'digital' => {
   // Handle digital sales
   if (
@@ -60,7 +49,7 @@ export const syncBandcampSales = async () => {
       const salesData = await fetchSalesForBand(
         band.band_id,
         startDate,
-        endDate
+        endDate,
       );
 
       if (salesData.report && Array.isArray(salesData.report)) {
@@ -115,16 +104,11 @@ export const syncBandcampSales = async () => {
   }
 };
 
-// Only export the cron setup if we're on the server side
+/**
+ * Optional daily Bandcamp sync hook.
+ * Not wired — Stripe ticket cron is the active scheduler.
+ * Keep as a no-op so callers don't crash without `node-cron`.
+ */
 export const setupBandcampCron = () => {
-  // This ensures the code only runs on the server
-  if (typeof window === 'undefined') {
-    const cron = require('node-cron');
-
-    // Run every day at midnight
-    cron.schedule('0 0 * * *', async () => {
-      console.log('Running Bandcamp sales sync...');
-      await syncBandcampSales();
-    });
-  }
+  // intentionally empty
 };

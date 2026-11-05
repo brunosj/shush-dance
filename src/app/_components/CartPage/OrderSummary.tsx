@@ -1,8 +1,9 @@
 import React from 'react';
 import { formatCurrencyString } from 'use-shopping-cart';
+
 import {
-  DEFAULT_CURRENCY,
   type CheckoutCurrency,
+  DEFAULT_CURRENCY,
 } from '../../../utilities/currency';
 
 interface OrderSummaryProps {
@@ -44,9 +45,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   return (
     <div className={`bg-gray-50 p-6 rounded-lg ${className}`}>
-      <h4 className='font-semibold mb-4'>{title}</h4>
-      <div className='space-y-2 text-sm lg:text-base'>
-        <div className='flex justify-between'>
+      <h4 className="font-semibold mb-4">{title}</h4>
+      <div className="space-y-2 text-sm lg:text-base">
+        <div className="flex justify-between">
           <span>
             {isTicketOnlyCart ? 'Subtotal:' : 'Subtotal (incl. tickets):'}
           </span>
@@ -58,7 +59,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           </span>
         </div>
         {!isTicketOnlyCart && (
-          <div className='flex justify-between'>
+          <div className="flex justify-between">
             <span>Shipping ({regionLabel}):</span>
             <span>
               {formatCurrencyString({
@@ -69,7 +70,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           </div>
         )}
         {hasTickets && ticketVatCents > 0 && (
-          <div className='flex justify-between text-gray-700'>
+          <div className="flex justify-between text-gray-700">
             <span>Ticket VAT (included):</span>
             <span>
               {formatCurrencyString({
@@ -80,7 +81,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           </div>
         )}
         {!isTicketOnlyCart && merchVatCents > 0 && (
-          <div className='flex justify-between'>
+          <div className="flex justify-between">
             <span>Merch & shipping VAT ({merchVatRateLabel}):</span>
             <span>
               {formatCurrencyString({
@@ -91,15 +92,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           </div>
         )}
         {!isTicketOnlyCart && merchVatCents === 0 && totalVAT > 0 && (
-          <div className='flex justify-between'>
+          <div className="flex justify-between">
             <span>VAT ({merchVatRateLabel}):</span>
-            <span>
-              {formatCurrencyString({ value: totalVAT, currency })}
-            </span>
+            <span>{formatCurrencyString({ value: totalVAT, currency })}</span>
           </div>
         )}
-        <hr className='my-2' />
-        <div className='flex justify-between font-semibold text-sm lg:text-lg'>
+        <hr className="my-2" />
+        <div className="flex justify-between font-semibold text-sm lg:text-lg">
           <span>Total:</span>
           <span>
             {formatCurrencyString({
@@ -113,7 +112,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       {showProceedButton && onProceedToCheckout && (
         <button
           onClick={onProceedToCheckout}
-          className='w-full mt-6 bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors text-sm'
+          className="w-full mt-6 bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors text-sm"
         >
           Proceed to Checkout
         </button>

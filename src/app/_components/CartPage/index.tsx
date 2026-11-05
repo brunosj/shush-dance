@@ -1,34 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
 
-import { useShipping } from '../../_providers/ShippingProvider';
-import { useCheckout, CustomerData } from '../../_providers/CheckoutProvider';
-import {
-  calculateCartShipping,
-  type ShippingRegion,
-} from '../../_types/shipping';
+import { cartNeedsTicketDetails } from '../../../utilities/checkoutCart';
+import type { CheckoutStep } from '../../../utilities/checkoutSteps';
+import { DEFAULT_CURRENCY, getCartCurrency } from '../../../utilities/currency';
 import {
   calculateOrderTotalsFromCartItems,
   DEFAULT_TICKET_VAT_RATE,
   type OrderTotalsBreakdown,
 } from '../../../utilities/tax';
+import { CustomerData, useCheckout } from '../../_providers/CheckoutProvider';
+import { useShipping } from '../../_providers/ShippingProvider';
 import {
-  DEFAULT_CURRENCY,
-  getCartCurrency,
-} from '../../../utilities/currency';
-import type { CheckoutStep } from '../../../utilities/checkoutSteps';
-import {
-  cartNeedsTicketDetails,
-} from '../../../utilities/checkoutCart';
-
-import EmptyCartState from './EmptyCartState';
+  calculateCartShipping,
+  type ShippingRegion,
+} from '../../_types/shipping';
 import CartView from './CartView';
 import CustomerInfoStep from './CustomerInfoStep';
-import TicketDetailsStep from './TicketDetailsStep';
-import PaymentStep from './PaymentStep';
+import EmptyCartState from './EmptyCartState';
 import LoadingSpinner from './LoadingSpinner';
+import PaymentStep from './PaymentStep';
+import TicketDetailsStep from './TicketDetailsStep';
 
 function getCartTaxInputs(cartDetails: Record<string, any> | null) {
   if (!cartDetails) return [];
@@ -51,13 +45,8 @@ function getCartTaxInputs(cartDetails: Record<string, any> | null) {
 }
 
 const CartPage = () => {
-  const {
-    cartDetails,
-    cartCount,
-    incrementItem,
-    decrementItem,
-    removeItem,
-  } = useShoppingCart();
+  const { cartDetails, cartCount, incrementItem, decrementItem, removeItem } =
+    useShoppingCart();
 
   const { selectedRegion, getRegionLabel } = useShipping();
   const {
@@ -71,14 +60,14 @@ const CartPage = () => {
     isHydratingBuyerQuestions,
   } = useCheckout();
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('cart');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [isProcessing] = useState(false);
+  const [paymentProcessing] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [paymentRefreshKey, setPaymentRefreshKey] = useState(0);
 
   const includeTicketDetailsStep = cartNeedsTicketDetails(
     cartDetails as Record<string, any> | null,
-    buyerQuestionDefsByLine
+    buyerQuestionDefsByLine,
   );
 
   useEffect(() => {
@@ -91,13 +80,13 @@ const CartPage = () => {
 
   useEffect(() => {
     syncTicketBuyerAnswersForCart(
-      cartDetails as Record<string, any> | null | undefined
+      cartDetails as Record<string, any> | null | undefined,
     );
   }, [cartDetails, syncTicketBuyerAnswersForCart]);
 
   useEffect(() => {
     void hydrateBuyerQuestionsForCart(
-      cartDetails as Record<string, any> | null | undefined
+      cartDetails as Record<string, any> | null | undefined,
     );
   }, [cartDetails, hydrateBuyerQuestionsForCart]);
 
@@ -107,7 +96,7 @@ const CartPage = () => {
     if (
       includeTicketDetailsStep &&
       !areTicketBuyerAnswersCompleteForCart(
-        cartDetails as Record<string, any> | null
+        cartDetails as Record<string, any> | null,
       )
     ) {
       setCheckoutStep('ticket-details');
@@ -130,7 +119,7 @@ const CartPage = () => {
     if (
       includeTicketDetailsStep &&
       areTicketBuyerAnswersCompleteForCart(
-        cartDetails as Record<string, any> | null
+        cartDetails as Record<string, any> | null,
       )
     ) {
       completed.push('ticket-details');
@@ -201,14 +190,14 @@ const CartPage = () => {
 
   const shippingCostEuros = calculateCartShipping(
     getCartShippingData(),
-    selectedRegion as ShippingRegion
+    selectedRegion as ShippingRegion,
   );
   const shippingCost = Math.round(shippingCostEuros * 100);
 
   const orderTotals: OrderTotalsBreakdown = calculateOrderTotalsFromCartItems(
     getCartTaxInputs(cartDetails),
     shippingCostEuros,
-    selectedRegion as ShippingRegion
+    selectedRegion as ShippingRegion,
   );
 
   const subtotalExclVAT = Math.round(orderTotals.subtotal * 100);
@@ -216,7 +205,7 @@ const CartPage = () => {
   const finalTotal = Math.round(orderTotals.total * 100);
   const ticketVatCents = Math.round(orderTotals.ticketVat * 100);
   const merchVatCents = Math.round(
-    (orderTotals.merchVat + orderTotals.shippingVat) * 100
+    (orderTotals.merchVat + orderTotals.shippingVat) * 100,
   );
   const checkoutCurrency = getCartCurrency(cartDetails) || DEFAULT_CURRENCY;
 
@@ -237,7 +226,7 @@ const CartPage = () => {
   const handleTicketDetailsSubmit = () => {
     if (
       !areTicketBuyerAnswersCompleteForCart(
-        cartDetails as Record<string, any> | null
+        cartDetails as Record<string, any> | null,
       )
     ) {
       return;
@@ -254,11 +243,11 @@ const CartPage = () => {
   };
 
   if (isInitialLoad) {
-    return <LoadingSpinner message='Loading your cart...' />;
+    return <LoadingSpinner message="Loading your cart..." />;
   }
 
   if (paymentProcessing) {
-    return <LoadingSpinner message='Processing your payment...' />;
+    return <LoadingSpinner message="Processing your payment..." />;
   }
 
   if (!cartDetails || cartCount === 0) {

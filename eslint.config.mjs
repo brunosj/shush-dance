@@ -1,13 +1,13 @@
-import { defineConfig, globalIgnores } from 'eslint/config'
-import js from '@eslint/js'
-import nextPlugin from '@next/eslint-plugin-next'
-import tsPlugin from '@typescript-eslint/eslint-plugin'
-import tsParser from '@typescript-eslint/parser'
-import eslintConfigPrettier from 'eslint-config-prettier'
-import importPlugin from 'eslint-plugin-import'
-import prettierPlugin from 'eslint-plugin-prettier'
-import reactHooks from 'eslint-plugin-react-hooks'
-import simpleImportSort from 'eslint-plugin-simple-import-sort'
+import js from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import importPlugin from 'eslint-plugin-import';
+import prettierPlugin from 'eslint-plugin-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 /** Minimal globals so we don't need the `globals` package. */
 const sharedGlobals = {
@@ -45,7 +45,7 @@ const sharedGlobals = {
   // react / TS
   React: 'readonly',
   JSX: 'readonly',
-}
+};
 
 export default defineConfig([
   globalIgnores([
@@ -56,10 +56,14 @@ export default defineConfig([
     '**/coverage/**',
     '**/*.config.js',
     '**/payload-types.ts',
+    // CommonJS bootstrap scripts; require() is intentional.
+    '**/*.cjs',
+    // Archived components are not shipped.
+    '**/_archive/**',
   ]),
   js.configs.recommended,
   {
-    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
+    files: ['**/*.{js,jsx,mjs,ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -115,4 +119,4 @@ export default defineConfig([
     },
   },
   eslintConfigPrettier,
-])
+]);

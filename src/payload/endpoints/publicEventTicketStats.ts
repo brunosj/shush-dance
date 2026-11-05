@@ -1,8 +1,9 @@
 import type { Endpoint } from 'payload/config';
+
 import {
+  type CheckoutCurrency,
   DEFAULT_CURRENCY,
   normalizeCurrency,
-  type CheckoutCurrency,
 } from '../../utilities/currency';
 
 const DEFAULT_ALLOWED_SLUGS = ['shush-x-shai-space'];
@@ -14,7 +15,7 @@ function allowedSlugs(): Set<string> {
     raw
       .split(',')
       .map((s) => s.trim().toLowerCase())
-      .filter(Boolean)
+      .filter(Boolean),
   );
 }
 
@@ -100,7 +101,7 @@ export const publicEventTicketStatsEndpoint: Endpoint = {
       });
 
       const currency: CheckoutCurrency = normalizeCurrency(
-        event.currency || DEFAULT_CURRENCY
+        event.currency || DEFAULT_CURRENCY,
       );
 
       const tiers: Record<string, TierAgg> = {};
@@ -126,7 +127,7 @@ export const publicEventTicketStatsEndpoint: Endpoint = {
             ? s.ticketTotals.total
             : (s.tickets || []).reduce(
                 (sum, t) => sum + (Number(t.lineTotal) || 0),
-                0
+                0,
               );
         totalRevenue += saleTotal;
 
@@ -160,7 +161,7 @@ export const publicEventTicketStatsEndpoint: Endpoint = {
       }
 
       const tierList = Object.values(tiers).sort((a, b) =>
-        a.name.localeCompare(b.name)
+        a.name.localeCompare(b.name),
       );
 
       // If CMS defines tiers with zero sales, still list them at 0.

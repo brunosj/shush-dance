@@ -14,16 +14,16 @@ const PaymentMethodRadio: React.FC<PaymentMethodRadioProps> = ({
   onChange,
 }) => {
   return (
-    <label className='flex items-center gap-3'>
+    <label className="flex items-center gap-3">
       <input
-        type='radio'
-        name='paymentMethod'
+        type="radio"
+        name="paymentMethod"
         value={value}
         checked={selectedPaymentMethod === value}
         onChange={() => onChange(value)}
-        className='w-5 h-5'
+        className="w-5 h-5"
       />
-      <span className='flex items-center gap-2'>
+      <span className="flex items-center gap-2">
         {icon}
         <span>{label}</span>
       </span>

@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
-import { formatDate } from '../../_utilities/formatDateTime';
-import type { Event, Artist, Media } from '../../../payload/payload-types';
-import { useShoppingCart } from 'use-shopping-cart';
-import toast from 'react-hot-toast';
 import Image from 'next/image';
-import Button from '../Button';
-import { RichText } from '../RichText';
-import { resolveMediaResource } from '../../_utilities/getMediaUrl';
-import {
-  buildTicketCartId,
-  DEFAULT_TICKET_VAT_RATE,
-} from '../../../utilities/tax';
+import React, { useState } from 'react';
+import toast from 'react-hot-toast';
+import { useShoppingCart } from 'use-shopping-cart';
+
+import type { Artist, Event, Media } from '../../../payload/payload-types';
+import { normalizeBuyerQuestionDefs } from '../../../utilities/buyerQuestions';
 import {
   canAddCurrencyToCart,
   formatMoneyAmount,
   normalizeCurrency,
 } from '../../../utilities/currency';
-import { normalizeBuyerQuestionDefs } from '../../../utilities/buyerQuestions';
+import {
+  buildTicketCartId,
+  DEFAULT_TICKET_VAT_RATE,
+} from '../../../utilities/tax';
+import { formatDate } from '../../_utilities/formatDateTime';
+import { resolveMediaResource } from '../../_utilities/getMediaUrl';
+import Button from '../Button';
+import { RichText } from '../RichText';
 
 interface EventListingProps {
   event: Event;
@@ -31,15 +32,25 @@ const EventListing: React.FC<EventListingProps> = ({
   today.setHours(0, 0, 0, 0);
   const { addItem, cartDetails } = useShoppingCart();
   const eventCurrency = normalizeCurrency(
-    (event as Event & { currency?: string | null }).currency
+    (event as Event & { currency?: string | null }).currency,
   );
 
   const eventDate = new Date(event.date);
   const isPastEvent = eventDate.setHours(0, 0, 0, 0) < today.getTime();
 
   const multiImages = (
-    Array.isArray((event as unknown as { images?: Array<{ image?: string | Media | null }> }).images)
-      ? (event as unknown as { images?: Array<{ image?: string | Media | null }> }).images
+    Array.isArray(
+      (
+        event as unknown as {
+          images?: Array<{ image?: string | Media | null }>;
+        }
+      ).images,
+    )
+      ? (
+          event as unknown as {
+            images?: Array<{ image?: string | Media | null }>;
+          }
+        ).images
       : []
   )
     .map((row) => row?.image)
@@ -67,7 +78,7 @@ const EventListing: React.FC<EventListingProps> = ({
     const allowed = canAddCurrencyToCart(cartDetails, eventCurrency);
     if (allowed.ok === false) {
       toast.error(
-        `Your cart is in ${allowed.cartCurrency}. Empty it (or remove other-currency items) before adding ${eventCurrency} tickets.`
+        `Your cart is in ${allowed.cartCurrency}. Empty it (or remove other-currency items) before adding ${eventCurrency} tickets.`,
       );
       return;
     }
@@ -75,7 +86,9 @@ const EventListing: React.FC<EventListingProps> = ({
     const vatRate =
       typeof tier.vatRate === 'number' ? tier.vatRate : DEFAULT_TICKET_VAT_RATE;
     const priceMajor =
-      typeof tier.price === 'number' ? tier.price : parseFloat(String(tier.price));
+      typeof tier.price === 'number'
+        ? tier.price
+        : parseFloat(String(tier.price));
     const priceCents = Math.round(priceMajor * 100);
 
     const item = {
@@ -106,7 +119,7 @@ const EventListing: React.FC<EventListingProps> = ({
           stripePriceId: tier.stripePriceId || null,
           buyerQuestionsJson: (() => {
             const normalized = normalizeBuyerQuestionDefs(
-              (tier as { buyerQuestions?: unknown }).buyerQuestions
+              (tier as { buyerQuestions?: unknown }).buyerQuestions,
             );
             return normalized.length > 0 ? JSON.stringify(normalized) : '';
           })(),
@@ -120,12 +133,12 @@ const EventListing: React.FC<EventListingProps> = ({
   return (
     <li
       key={event.id}
-      className='relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-16 group'
+      className="relative lg:grid grid-cols-5 space-y-3 lg:space-y-0 lg:space-x-16 group"
     >
-      <div className='flex-grow-0'>
+      <div className="flex-grow-0">
         {images.length > 0 && (
-          <div className='relative h-full'>
-            <div className='flex flex-wrap gap-2 items-start'>
+          <div className="relative h-full">
+            <div className="flex flex-wrap gap-2 items-start">
               {images.map((img) => (
                 <Image
                   key={img.id}
@@ -133,7 +146,11 @@ const EventListing: React.FC<EventListingProps> = ({
                   alt={img.alt}
                   width={imageHover ? 64 : 200}
                   height={imageHover ? 64 : 200}
-                  className={imageHover ? 'object-cover rounded' : 'object-contain w-full h-auto'}
+                  className={
+                    imageHover
+                      ? 'object-cover rounded'
+                      : 'object-contain w-full h-auto'
+                  }
                 />
               ))}
             </div>
@@ -145,10 +162,10 @@ const EventListing: React.FC<EventListingProps> = ({
         className={`space-y-4 pb-3 col-span-4 lg:pb-0 ${isPastEvent ? 'opacity-30' : ''}`}
       >
         <div>
-          <h3 className='font-semibold'>
+          <h3 className="font-semibold">
             {event.title} @ {event.location}
           </h3>
-          <p className='pt-3 italic font-semibold'>
+          <p className="pt-3 italic font-semibold">
             <span className={` ${isPastEvent ? 'opacity-30' : ''}`}>
               {formatDate(event.date)}
             </span>
@@ -176,7 +193,7 @@ const EventListing: React.FC<EventListingProps> = ({
         {/* Tickets */}
 
         {!isPastEvent && (
-          <div className='space-y-1 relative z-20'>
+          <div className="space-y-1 relative z-20">
             {event.ticketsAvailable &&
               event.ticketTiers?.map((tier) => (
                 <div key={tier.id}>
@@ -197,7 +214,7 @@ const EventListing: React.FC<EventListingProps> = ({
           <div>
             <RichText
               content={event.event_information}
-              className='richTextSmallP'
+              className="richTextSmallP"
             />
           </div>
         )}
@@ -206,7 +223,7 @@ const EventListing: React.FC<EventListingProps> = ({
       {/* Image on Hover */}
       {hoverImage && imageHover && (
         <div
-          className='h-32 lg:h-64 w-full absolute opacity-0 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none z-10'
+          className="h-32 lg:h-64 w-full absolute opacity-0 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none z-10"
           style={{
             top: imagePosition.top,
             left: imagePosition.left,
@@ -217,7 +234,7 @@ const EventListing: React.FC<EventListingProps> = ({
             src={resolveMediaResource(hoverImage)}
             alt={hoverImage.alt}
             fill
-            className='object-contain w-full'
+            className="object-contain w-full"
           />
         </div>
       )}

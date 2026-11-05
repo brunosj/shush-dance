@@ -1,18 +1,20 @@
 'use client';
 
 import React from 'react';
-import {
-  Page,
-  Event,
-  Social,
-  Release,
-  Merch,
-} from '../../../payload/payload-types';
-import { RichText } from '../RichText';
 import { useShoppingCart } from 'use-shopping-cart';
+
+import {
+  Event,
+  Merch,
+  Page,
+  Release,
+  Social,
+} from '../../../payload/payload-types';
+import { resolveCmsLink } from '../../../utilities/resolveRichTextHref';
 import Button from '../Button';
 import EventListing from '../EventListing';
 import ProductCard from '../ProductCard';
+import { RichText } from '../RichText';
 
 interface HomePageProps {
   data: {
@@ -26,7 +28,7 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ data }) => {
   const { page, events, socials } = data;
-  const { cartCount } = useShoppingCart();
+  const { cartCount: _cartCount } = useShoppingCart();
 
   const upcomingEvents = events?.filter((event) => {
     const today = new Date();
@@ -42,7 +44,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
   const latestRelease = data.releases?.length
     ? [...data.releases].sort(
         (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
       )[0]
     : undefined;
 
@@ -50,7 +52,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
   const latestMerch = data.merchItems?.length
     ? [...data.merchItems].sort(
         (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
       )[0]
     : undefined;
 
@@ -59,42 +61,45 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
   }
 
   return (
-    <article className='relative overflow-hidden'>
-      <div className='mx-2 lg:mx-24 my-24 lg:my-32 lg:flex relative lg:gap-32 flex-grow-0'>
-        <aside className=' text-left text-lg  '>
-          <div className='lg:fixed lg:w-1/4 lg:top-1/2 transform lg:-translate-y-1/2'>
+    <article className="relative overflow-hidden">
+      <div className="mx-2 lg:mx-24 my-24 lg:my-32 lg:flex relative lg:gap-32 flex-grow-0">
+        <aside className=" text-left text-lg  ">
+          <div className="lg:fixed lg:w-1/4 lg:top-1/2 transform lg:-translate-y-1/2">
             <RichText content={page.data.content} />
 
             {socials && socials.items.length > 0 && (
-              <nav className='mt-6 lg:mt-12 lowercase'>
-                <ul className='space-y-1'>
-                  {socials.items.map((social) => (
-                    <li key={social.id} className=''>
-                      <Button
-                        href={social.link.url}
-                        target={social.link.newTab ? '_blank' : ''}
-                        label={social.link.label}
-                        textStyles='text-xs'
-                      />
-                    </li>
-                  ))}
+              <nav className="mt-6 lg:mt-12 lowercase">
+                <ul className="space-y-1">
+                  {socials.items.map((social) => {
+                    const resolved = resolveCmsLink(social.link);
+                    return (
+                      <li key={social.id} className="">
+                        <Button
+                          href={resolved.href}
+                          target={resolved.newTab ? '_blank' : ''}
+                          label={resolved.label}
+                          textStyles="text-xs"
+                        />
+                      </li>
+                    );
+                  })}
                 </ul>
               </nav>
             )}
           </div>
         </aside>
 
-        <div className='w-full lg:w-2/3 ml-auto space-y-6 lg:space-y-12 mt-12 lg:mt-0'>
+        <div className="w-full lg:w-2/3 ml-auto space-y-6 lg:space-y-12 mt-12 lg:mt-0">
           {page.data.showEventsFirst ? (
             <>
               {upcomingEvents && upcomingEvents.length > 0 && (
-                <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
+                <div className="space-y-6 border-gray pb-6 lg:pb-12 border-b">
                   <h2>
                     {upcomingEvents.length > 1
                       ? 'Upcoming Events'
                       : 'Upcoming Event'}
                   </h2>
-                  <ul className='lg:space-y-8 space-y-4'>
+                  <ul className="lg:space-y-8 space-y-4">
                     {upcomingEvents.map((event) => (
                       <EventListing
                         key={event.id}
@@ -107,19 +112,19 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
               )}
 
               {latestRelease && (
-                <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
+                <div className="space-y-6 border-gray pb-6 lg:pb-12 border-b">
                   {/* <h2>Announcing!</h2> */}
-                  <ul className='list-none'>
-                    <ProductCard product={latestRelease} type='release' />
+                  <ul className="list-none">
+                    <ProductCard product={latestRelease} type="release" />
                   </ul>
                 </div>
               )}
 
               {latestMerch && (
-                <div className='space-y-6'>
+                <div className="space-y-6">
                   {/* <h2>Latest Merch</h2> */}
-                  <ul className='list-none'>
-                    <ProductCard product={latestMerch} type='merch' />
+                  <ul className="list-none">
+                    <ProductCard product={latestMerch} type="merch" />
                   </ul>
                 </div>
               )}
@@ -127,31 +132,31 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
           ) : (
             <>
               {latestRelease && (
-                <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
+                <div className="space-y-6 border-gray pb-6 lg:pb-12 border-b">
                   <h2>Announcing!</h2>
-                  <ul className='list-none'>
-                    <ProductCard product={latestRelease} type='release' />
+                  <ul className="list-none">
+                    <ProductCard product={latestRelease} type="release" />
                   </ul>
                 </div>
               )}
 
               {latestMerch && (
-                <div className='space-y-6 border-gray pb-6 lg:pb-12 border-b'>
+                <div className="space-y-6 border-gray pb-6 lg:pb-12 border-b">
                   <h2>Latest Merch</h2>
-                  <ul className='list-none'>
-                    <ProductCard product={latestMerch} type='merch' />
+                  <ul className="list-none">
+                    <ProductCard product={latestMerch} type="merch" />
                   </ul>
                 </div>
               )}
 
               {upcomingEvents && upcomingEvents.length > 0 && (
-                <div className='space-y-6'>
+                <div className="space-y-6">
                   <h2>
                     {upcomingEvents.length >= 1
                       ? 'Upcoming Events'
                       : 'Upcoming Event'}
                   </h2>
-                  <ul className='lg:space-y-8 space-y-4'>
+                  <ul className="lg:space-y-8 space-y-4">
                     {upcomingEvents.map((event) => (
                       <EventListing key={event.id} event={event} />
                     ))}

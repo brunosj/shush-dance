@@ -18,8 +18,10 @@
     "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,ttf,woff,woff2,eot,svg,jpg,png,js}\" dist/",
     "generate:types": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload generate:types",
     "generate:graphQLSchema": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload generate:graphQLSchema",
-    "lint": "eslint src",
-    "lint:fix": "eslint --fix src",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,mjs}\" \"scripts/**/*.{ts,js,mjs}\" \"*.{ts,js,mjs,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css,mjs}\" \"scripts/**/*.{ts,js,mjs}\" \"*.{ts,js,mjs,json}\"",
     "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload",
     "export:events": "node scripts/exportEvents.cjs ./events.json",
     "export:products": "node scripts/exportProducts.cjs ./products.json",
@@ -68,6 +70,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@faceless-ui/modal": "2.0.1",
     "@next/eslint-plugin-next": "^14.2.33",
     "@payloadcms/eslint-config": "^1.1.1",
     "@swc/core": "1.7.36",
@@ -93,14 +96,18 @@
     "nodemon": "^3.1.10",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
-    "slate": "0.110.2",
+    "react-i18next": "11.18.6",
+    "slate": "0.91.4",
+    "slate-react": "0.92.0",
     "tailwindcss": "^3.4.18",
     "ts-node": "10.9.2",
     "typescript": "^5.9.3"
   },
   "pnpm": {
     "overrides": {
-      "sharp": "0.33.5"
+      "sharp": "0.33.5",
+      "slate": "0.91.4",
+      "slate-react": "0.92.0"
     }
   },
   "packageManager": "pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184"

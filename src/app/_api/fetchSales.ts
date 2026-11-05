@@ -4,7 +4,7 @@ import type { Sale } from '../../payload/payload-types';
 export const checkAuth = async () => {
   console.log(
     'Checking auth at:',
-    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/users/me`
+    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/users/me`,
   );
 
   const response = await fetch(
@@ -14,7 +14,7 @@ export const checkAuth = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-    }
+    },
   );
 
   console.log('Auth response status:', response.status);
@@ -49,7 +49,7 @@ export const fetchSales = async (): Promise<{
         `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/sales?depth=1&limit=1000`,
         {
           credentials: 'include',
-        }
+        },
       ),
       fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/globals/settings`, {
         credentials: 'include',

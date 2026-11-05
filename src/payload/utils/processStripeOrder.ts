@@ -1,26 +1,30 @@
 import type { Payload } from 'payload';
+
 import {
-  fetchEventFooterHtml,
-  renderEventFooterSection,
-} from './ticketEmailFooter';
-import type { ValidatedCartItem, ValidatedOrderData } from './validateOrderData';
+  type BuyerAnswerSet,
+  formatBuyerAnswerSetsForDisplay,
+} from '../../utilities/buyerQuestions';
+import { normalizeCurrency } from '../../utilities/currency';
 import {
   getMerchVatRate,
   splitGrossIntoNetAndVatCents,
 } from '../../utilities/tax';
 import { allocateStripeFeeEuros } from './stripeFees';
-import { normalizeCurrency } from '../../utilities/currency';
 import {
-  formatBuyerAnswerSetsForDisplay,
-  type BuyerAnswerSet,
-} from '../../utilities/buyerQuestions';
+  fetchEventFooterHtml,
+  renderEventFooterSection,
+} from './ticketEmailFooter';
+import type {
+  ValidatedCartItem,
+  ValidatedOrderData,
+} from './validateOrderData';
 
 function splitItems(orderData: ValidatedOrderData) {
   const ticketItems = orderData.cartItems.filter(
-    (item) => item.type === 'ticket' || item.metadata?.type === 'ticket'
+    (item) => item.type === 'ticket' || item.metadata?.type === 'ticket',
   );
   const physicalItems = orderData.cartItems.filter(
-    (item) => item.type !== 'ticket' && item.metadata?.type !== 'ticket'
+    (item) => item.type !== 'ticket' && item.metadata?.type !== 'ticket',
   );
   return { ticketItems, physicalItems };
 }
@@ -40,7 +44,7 @@ function shouldSendConfirmationEmail(args: {
 async function claimConfirmationEmailSent(
   payload: Payload,
   collection: 'ticket-sales' | 'online-orders',
-  id: string
+  id: string,
 ) {
   await payload.update({
     collection,
@@ -52,7 +56,7 @@ async function claimConfirmationEmailSent(
 async function releaseConfirmationEmailSent(
   payload: Payload,
   collection: 'ticket-sales' | 'online-orders',
-  id: string
+  id: string,
 ) {
   try {
     await payload.update({
@@ -63,18 +67,18 @@ async function releaseConfirmationEmailSent(
   } catch (error) {
     console.error(
       `Failed to release confirmationEmailSent on ${collection}/${id}:`,
-      error
+      error,
     );
   }
 }
 
 function buildPhysicalOrderTotals(
   orderData: ValidatedOrderData,
-  physicalItems: ValidatedCartItem[]
+  physicalItems: ValidatedCartItem[],
 ) {
   const physicalSubtotalCents = physicalItems.reduce(
     (sum, item) => sum + item.lineTotal,
-    0
+    0,
   );
   const merchVatCents = Math.round(orderData.totals.merchVat * 100);
   const shippingVatCents = Math.round(orderData.totals.shippingVat * 100);
@@ -85,7 +89,10 @@ function buildPhysicalOrderTotals(
     shipping: orderData.totals.shipping,
     vat: (merchVatCents + shippingVatCents) / 100,
     total:
-      (physicalSubtotalCents + shippingCents + merchVatCents + shippingVatCents) /
+      (physicalSubtotalCents +
+        shippingCents +
+        merchVatCents +
+        shippingVatCents) /
       100,
   };
 }
@@ -94,7 +101,7 @@ function buildTicketLineRecords(ticketItems: ValidatedCartItem[]) {
   return ticketItems.map((item) => {
     const { netCents, vatCents } = splitGrossIntoNetAndVatCents(
       item.lineTotal,
-      item.vatRate ?? 0
+      item.vatRate ?? 0,
     );
     return {
       cartItemId: item.id,
@@ -115,25 +122,26 @@ function buildTicketLineRecords(ticketItems: ValidatedCartItem[]) {
 }
 
 function toPayloadAnswerSets(
-  sets: BuyerAnswerSet[] | undefined
+  sets: BuyerAnswerSet[] | undefined,
 ): { answers: BuyerAnswerSet }[] | undefined {
   if (!sets?.length) return undefined;
   return sets.map((answers) => ({ answers }));
 }
 
 function buildTicketTotals(ticketItems: ValidatedCartItem[]) {
-  const gross = ticketItems.reduce((sum, item) => sum + item.lineTotal, 0) / 100;
+  const gross =
+    ticketItems.reduce((sum, item) => sum + item.lineTotal, 0) / 100;
   const { netCents, vatCents } = ticketItems.reduce(
     (totals, item) => {
       const split = splitGrossIntoNetAndVatCents(
         item.lineTotal,
-        item.vatRate ?? 0
+        item.vatRate ?? 0,
       );
       totals.netCents += split.netCents;
       totals.vatCents += split.vatCents;
       return totals;
     },
-    { netCents: 0, vatCents: 0 }
+    { netCents: 0, vatCents: 0 },
   );
 
   return {
@@ -147,7 +155,7 @@ async function findRecord(
   payload: Payload,
   collection: 'online-orders' | 'ticket-sales',
   paymentIntentId: string,
-  eventId?: string
+  eventId?: string,
 ): Promise<any | null> {
   const where = eventId
     ? {
@@ -163,7 +171,7 @@ async function findRecord(
 
 async function saleExists(
   payload: Payload,
-  saleTransactionId: string
+  saleTransactionId: string,
 ): Promise<boolean> {
   const result = await payload.find({
     collection: 'sales',
@@ -176,7 +184,7 @@ async function saleExists(
 
 async function decrementStock(
   payload: Payload,
-  item: ValidatedCartItem
+  item: ValidatedCartItem,
 ): Promise<void> {
   if (!item.productId || (item.type !== 'merch' && item.type !== 'release')) {
     return;
@@ -212,7 +220,7 @@ export async function processStripeOrderSuccess(
     isFallback?: boolean;
     /** Actual Stripe fee for the whole PaymentIntent, in the charge currency. */
     stripeFeeEuros?: number | null;
-  }
+  },
 ) {
   const { ticketItems, physicalItems } = splitItems(orderData);
   const isFallback = Boolean(options?.isFallback);
@@ -283,7 +291,7 @@ export async function processStripeOrderSuccess(
       await claimConfirmationEmailSent(
         payload,
         'online-orders',
-        onlineOrder.id
+        onlineOrder.id,
       );
       await sendOrderEmails(
         physicalItems,
@@ -291,14 +299,14 @@ export async function processStripeOrderSuccess(
         orderNumber,
         detectedPaymentMethod,
         paymentIntentId,
-        payload
+        payload,
       );
     } catch (error) {
       console.error('Failed to send physical order emails:', error);
       await releaseConfirmationEmailSent(
         payload,
         'online-orders',
-        onlineOrder.id
+        onlineOrder.id,
       );
     }
   }
@@ -315,7 +323,7 @@ export async function processStripeOrderSuccess(
       payload,
       'ticket-sales',
       paymentIntentId,
-      eventId
+      eventId,
     );
     const ticketNumber = `TICKET-${paymentIntentId}-${eventId}`;
     const firstTicket = eventTickets[0];
@@ -328,7 +336,7 @@ export async function processStripeOrderSuccess(
         : allocateStripeFeeEuros(
             paymentStripeFeeEuros,
             ticketTotals.total,
-            paymentTotalEuros
+            paymentTotalEuros,
           );
 
     let createdTicketSale = false;
@@ -387,7 +395,7 @@ export async function processStripeOrderSuccess(
         await claimConfirmationEmailSent(
           payload,
           'ticket-sales',
-          ticketSale.id
+          ticketSale.id,
         );
         await sendTicketEmails(
           eventTickets,
@@ -395,17 +403,17 @@ export async function processStripeOrderSuccess(
           ticketNumber,
           detectedPaymentMethod,
           paymentIntentId,
-          payload
+          payload,
         );
       } catch (error) {
         console.error(
           `Failed to send ticket emails for event ${eventId}:`,
-          error
+          error,
         );
         await releaseConfirmationEmailSent(
           payload,
           'ticket-sales',
-          ticketSale.id
+          ticketSale.id,
         );
       }
     }
@@ -414,7 +422,7 @@ export async function processStripeOrderSuccess(
   if (physicalItems.length > 0) {
     const totalItemsValue = physicalItems.reduce(
       (sum, item) => sum + item.lineTotal,
-      0
+      0,
     );
     const merchTaxRate = getMerchVatRate(orderData.shippingRegion);
 
@@ -455,7 +463,7 @@ export async function processStripeOrderSuccess(
       } catch (saleError) {
         console.error(
           `Failed to create sale record for ${item.name}:`,
-          saleError
+          saleError,
         );
       }
     }
@@ -469,12 +477,12 @@ async function sendOrderEmails(
   orderNumber: string,
   paymentMethod: string,
   transactionId: string,
-  payload: Payload
+  payload: Payload,
 ) {
   const itemsList = physicalItems
     .map(
       (item) =>
-        `• ${item.name}${item.variant ? ` (${item.variant})` : ''} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`
+        `• ${item.name}${item.variant ? ` (${item.variant})` : ''} - Quantity: ${item.quantity} - €${(item.lineTotal / 100).toFixed(2)}`,
     )
     .join('\n');
 
@@ -544,7 +552,7 @@ async function sendTicketEmails(
   ticketNumber: string,
   paymentMethod: string,
   transactionId: string,
-  payload: Payload
+  payload: Payload,
 ) {
   const ticketsList = ticketItems
     .map((item) => {
@@ -574,7 +582,7 @@ Transaction ID: ${transactionId}
 
   const eventFooterHtml = await fetchEventFooterHtml(
     { payload },
-    ticketItems[0]?.metadata?.eventId as string | undefined
+    ticketItems[0]?.metadata?.eventId as string | undefined,
   );
 
   await payload.sendEmail({

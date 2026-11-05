@@ -10,7 +10,7 @@ export function createMediaField(
     label?: string;
     required?: boolean;
     description?: string;
-  } = {}
+  } = {},
 ): Field {
   return {
     name: name,

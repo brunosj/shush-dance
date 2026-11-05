@@ -2,17 +2,18 @@
 
 import { ReactNode } from 'react';
 import { CartProvider as USCProvider } from 'use-shopping-cart';
+
 import { CART_SCHEMA_VERSION } from '../../../utilities/tax';
 
 export default function CartProvider({ children }: { children: ReactNode }) {
   return (
     <USCProvider
-      mode='payment'
-      cartMode='client-only'
+      mode="payment"
+      cartMode="client-only"
       stripe={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string}
       successUrl={`${process.env.NEXT_PUBLIC_SERVER_URL}/success`}
       cancelUrl={`${process.env.NEXT_PUBLIC_SERVER_URL}/error`}
-      currency='EUR'
+      currency="EUR"
       billingAddressCollection={true}
       shouldPersist={true}
       persistKey={`shush-cart-v${CART_SCHEMA_VERSION}`}

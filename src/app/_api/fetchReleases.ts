@@ -10,7 +10,7 @@ export const fetchReleases = async (): Promise<Release[]> => {
         Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
       },
       next: { revalidate: 1 },
-    }
+    },
   );
 
   const releasesRes = await response.json();

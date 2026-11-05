@@ -35,19 +35,17 @@ function defaultSyncWindow(): { since: string; until: string } {
     730,
     Math.max(
       1,
-      parseInt(process.env.STRIPE_TICKET_SYNC_LOOKBACK_DAYS || '365', 10) || 365
-    )
+      parseInt(process.env.STRIPE_TICKET_SYNC_LOOKBACK_DAYS || '365', 10) ||
+        365,
+    ),
   );
   const until = new Date().toISOString();
-  const since = new Date(
-    Date.now() - days * 24 * 60 * 60 * 1000
-  ).toISOString();
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   return { since, until };
 }
 
 async function requireAdminApiAccess(): Promise<
-  | { ok: true; payloadUrl: string; key: string }
-  | { ok: false; error: string }
+  { ok: true; payloadUrl: string; key: string } | { ok: false; error: string }
 > {
   const payloadUrl = getPayloadBaseUrl();
   if (!payloadUrl) {
@@ -91,7 +89,7 @@ async function requireAdminApiAccess(): Promise<
 /** Syncs Checkout Sessions into ticket-sales, then backfills real Stripe fees. */
 export async function syncStripeTicketSalesAction(
   since?: string,
-  until?: string
+  until?: string,
 ): Promise<SyncStripeTicketSalesResult> {
   const access = await requireAdminApiAccess();
   if (access.ok === false) {
@@ -222,7 +220,7 @@ export type BackfillStripeFeesActionResult =
 
 /** Backfill real Stripe fees onto ticket-sales missing stripeFee. */
 export async function backfillStripeFeesAction(
-  options: { dryRun?: boolean; force?: boolean } = {}
+  options: { dryRun?: boolean; force?: boolean } = {},
 ): Promise<BackfillStripeFeesActionResult> {
   const access = await requireAdminApiAccess();
   if (access.ok === false) {

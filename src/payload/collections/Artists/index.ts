@@ -1,8 +1,8 @@
 import type { CollectionConfig } from 'payload/types';
-import { slugField } from '../../fields/slug';
-import { createRichTextField } from '../../fields/createRichTextField';
+
 import { admins } from '../../access/admins';
-import { adminsOrPublished } from '../../access/adminsOrPublished';
+import { createRichTextField } from '../../fields/createRichTextField';
+import { slugField } from '../../fields/slug';
 
 export const Artists: CollectionConfig = {
   slug: 'artists',

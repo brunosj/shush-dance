@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
+
 import { Page, Release } from '../../../payload/payload-types';
-import ProductListing from '../ProductListing';
 import type { ExtendedRelease } from '../../_types/extended-payload-types';
+import ProductListing from '../ProductListing';
 
 interface ReleasesPageProps {
   data: {
@@ -20,14 +21,14 @@ const ReleasesPage: React.FC<ReleasesPageProps> = ({ data }) => {
   }
 
   return (
-    <article className='container layout relative overflow-hidden  '>
+    <article className="container layout relative overflow-hidden  ">
       {releases && releases.length > 0 && (
         <section>
           {releases.map((release, index) => (
-            <li key={index} className='list-none'>
+            <li key={index} className="list-none">
               <ProductListing
                 product={release as ExtendedRelease}
-                type='release'
+                type="release"
               />
             </li>
           ))}

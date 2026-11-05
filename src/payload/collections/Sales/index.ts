@@ -1,7 +1,7 @@
 import { CollectionConfig } from 'payload/types';
-import { SyncBandcampButton } from '../../components/SyncBandcampButton';
+
 import { admins } from '../../access/admins';
-import { anyone } from '../../access/anyone';
+import { SyncBandcampButton } from '../../components/SyncBandcampButton';
 
 export const Sales: CollectionConfig = {
   slug: 'sales',

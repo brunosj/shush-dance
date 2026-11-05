@@ -82,7 +82,6 @@ interface SalesResponse {
 }
 
 let authToken: string | null = null;
-let refreshToken: string | null = null;
 
 const authenticate = async (): Promise<void> => {
   try {
@@ -106,7 +105,7 @@ const authenticate = async (): Promise<void> => {
 
     const data: TokenResponse = await response.json();
     authToken = data.access_token;
-    refreshToken = data.refresh_token;
+    void data.refresh_token;
   } catch (error) {
     console.error('Bandcamp authentication failed:', error);
     throw error;
@@ -142,7 +141,7 @@ export const fetchBands = async (): Promise<Band[]> => {
 export const fetchSalesForBand = async (
   bandId: number,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<SalesResponse> => {
   if (!authToken) {
     await authenticate();
@@ -164,7 +163,7 @@ export const fetchSalesForBand = async (
 
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch sales for band ${bandId}: ${response.statusText}`
+        `Failed to fetch sales for band ${bandId}: ${response.statusText}`,
       );
     }
 

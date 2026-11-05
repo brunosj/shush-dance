@@ -80,7 +80,7 @@ const link: LinkType = ({
       name: 'reference',
       label: 'Document to link to',
       type: 'relationship',
-      relationTo: ['pages'],
+      relationTo: ['pages', 'documents'],
       required: true,
       maxDepth: 1,
       admin: {
@@ -135,7 +135,7 @@ const link: LinkType = ({
 
     if (appearances) {
       appearanceOptionsToUse = appearances.map(
-        (appearance) => appearanceOptions[appearance]
+        (appearance) => appearanceOptions[appearance],
       );
     }
 

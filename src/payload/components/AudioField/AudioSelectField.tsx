@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useField } from 'payload/components/forms';
-import { Label } from 'payload/components/forms';
 import { Props } from 'payload/components/fields/Relationship';
-import CustomAudioPlayer from '../CustomAudioPlayer';
+import { Label, useField } from 'payload/components/forms';
+import React, { useEffect, useState } from 'react';
+
 import type { Audio } from '../../payload-types';
+import CustomAudioPlayer from '../CustomAudioPlayer';
 
 const baseClass = 'custom-audio-select';
 
@@ -58,7 +58,7 @@ const AudioSelectField: React.FC<Props> = (props) => {
       } catch (err) {
         console.error('Error fetching audio file:', err);
         setError(
-          'Error fetching the selected audio file. Please try again later.'
+          'Error fetching the selected audio file. Please try again later.',
         );
       } finally {
         setLoading(false);

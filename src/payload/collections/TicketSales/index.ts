@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload/types';
+
 import { admins } from '../../access/admins';
 
 export const TicketSales: CollectionConfig = {
@@ -46,7 +47,7 @@ export const TicketSales: CollectionConfig = {
                 (total: number, ticket: any) => {
                   return total + (ticket.quantity || 0);
                 },
-                0
+                0,
               );
             }
             return 0;

@@ -1,13 +1,13 @@
 // payload/getPayload.ts
 import dotenv from 'dotenv';
-import path from 'path';
 import type { Payload } from 'payload';
 import payload from 'payload';
 import type { InitOptions } from 'payload/config';
 
-// Load environment variables from .env file
+import { getEnvFilePath } from './paths';
+
 dotenv.config({
-  path: path.resolve(__dirname, '../.env'), // Ensure the path to your .env file is correct
+  path: getEnvFilePath(),
 });
 
 // Global cache to prevent re-initialization of Payload

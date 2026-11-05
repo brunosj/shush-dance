@@ -1,4 +1,5 @@
 import assert from 'assert';
+
 import { validateAndNormalizeOrderData } from '../src/payload/utils/validateOrderData';
 
 const docs: Record<string, Record<string, any>> = {
@@ -198,7 +199,7 @@ async function testMixedCurrencyRejection() {
       ],
       totals: { total: 22 },
     }),
-    /mixes ticket currencies/
+    /mixes ticket currencies/,
   );
 }
 
@@ -229,7 +230,7 @@ async function testGbpTicketWithMerchRejection() {
       ],
       totals: { total: 42 },
     }),
-    /cannot include merch/
+    /cannot include merch/,
   );
 }
 
@@ -355,7 +356,7 @@ async function testBuyerQuestionsValid() {
   assert.strictEqual(
     result.cartItems[0].buyerAnswerSets?.[1].find((a) => a.key === 'meal')
       ?.value,
-    'Meat'
+    'Meat',
   );
 }
 
@@ -380,7 +381,7 @@ async function testBuyerQuestionsMissingRequired() {
       ],
       totals: { total: 15 },
     }),
-    /Meal preference.*required/i
+    /Meal preference.*required/i,
   );
 }
 
@@ -398,7 +399,7 @@ async function testRejections() {
       ],
       totals: { total: 10 },
     }),
-    /sold out/
+    /sold out/,
   );
 
   await assert.rejects(
@@ -414,7 +415,7 @@ async function testRejections() {
       ],
       totals: { total: 10 },
     }),
-    /shipping region/
+    /shipping region/,
   );
 
   await assert.rejects(
@@ -430,7 +431,7 @@ async function testRejections() {
       ],
       totals: { total: 15 },
     }),
-    /whole number/
+    /whole number/,
   );
 
   await assert.rejects(
@@ -450,7 +451,7 @@ async function testRejections() {
       ],
       totals: { total: 30.35 },
     }),
-    /valid size/
+    /valid size/,
   );
 }
 

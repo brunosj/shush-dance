@@ -1,8 +1,9 @@
 import type { CollectionConfig } from 'payload/types';
-import { createRichTextField } from '../../fields/createRichTextField';
-import { slugField } from '../../fields/slug';
+
 import { admins } from '../../access/admins';
 import { adminsOrPublished } from '../../access/adminsOrPublished';
+import { createRichTextField } from '../../fields/createRichTextField';
+import { slugField } from '../../fields/slug';
 
 export const Merch: CollectionConfig = {
   slug: 'merch',

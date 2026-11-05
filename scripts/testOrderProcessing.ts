@@ -1,4 +1,5 @@
 import assert from 'assert';
+
 import { processStripeOrderSuccess } from '../src/payload/utils/processStripeOrder';
 import type { ValidatedOrderData } from '../src/payload/utils/validateOrderData';
 
@@ -25,7 +26,10 @@ const payload = {
     docs: (records[collection] || []).filter((doc) => matchesWhere(doc, where)),
   }),
   create: async ({ collection, data }: any) => {
-    const doc = { id: `${collection}-${records[collection].length + 1}`, ...data };
+    const doc = {
+      id: `${collection}-${records[collection].length + 1}`,
+      ...data,
+    };
     records[collection].push(doc);
     return doc;
   },
@@ -132,14 +136,14 @@ async function run() {
     'pi_test',
     orderData,
     'stripe',
-    'ignored'
+    'ignored',
   );
   const second = await processStripeOrderSuccess(
     payload,
     'pi_test',
     orderData,
     'stripe',
-    'ignored'
+    'ignored',
   );
 
   assert.strictEqual(first.created, true);
@@ -150,7 +154,7 @@ async function run() {
   assert.strictEqual(products.merch1.stockQuantity, 4);
   assert.strictEqual(
     records['online-orders'][0].items[0].cartItemDescription,
-    'clothing (Variant: XL)'
+    'clothing (Variant: XL)',
   );
   assert.strictEqual(records['ticket-sales'][0].ticketTotals.vat, 0.65);
   assert.strictEqual(records['ticket-sales'][0].currency, 'EUR');
@@ -164,7 +168,7 @@ async function run() {
     orderData,
     'stripe',
     'ignored',
-    { isFallback: true }
+    { isFallback: true },
   );
   assert.strictEqual(fallback.created, false);
   assert.strictEqual(emailCount, emailsAfterPrimary);
@@ -187,7 +191,7 @@ async function run() {
     },
     'stripe',
     'ignored',
-    { isFallback: true }
+    { isFallback: true },
   );
   assert.strictEqual(fallbackOnly.created, true);
   // 2 ticket events × (customer + admin) = 4

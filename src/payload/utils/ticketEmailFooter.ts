@@ -1,6 +1,8 @@
 import escapeHTML from 'escape-html';
 import { Text } from 'slate';
 
+import { resolveRichTextHref } from '../../utilities/resolveRichTextHref';
+
 type SlateNode = {
   type?: string;
   text?: string;
@@ -97,8 +99,28 @@ function serializeNodes(children: SlateNode[] | null | undefined): string {
           return wrapEmailBlock('ol', blockStyles.ol, inner);
         case 'li':
           return wrapEmailBlock('li', blockStyles.li, inner);
-        case 'link':
-          return `<a href="${escapeHTML(node.url || '')}" style="color: #000; text-decoration: underline;" target="_blank" rel="noopener noreferrer">${inner}</a>`;
+        case 'link': {
+          const { href, newTab } = resolveRichTextHref(node);
+          if (!href) return inner;
+          const target = newTab
+            ? ' target="_blank" rel="noopener noreferrer"'
+            : '';
+          return `<a href="${escapeHTML(href)}" style="color: #000; text-decoration: underline;"${target}>${inner}</a>`;
+        }
+        case 'button': {
+          const { href, newTab } = resolveRichTextHref(node);
+          const label =
+            typeof node.label === 'string' && node.label.trim()
+              ? escapeHTML(node.label.trim())
+              : 'Button';
+          if (!href) {
+            return `<p style="margin: 0 0 14px;">${label}</p>`;
+          }
+          const target = newTab
+            ? ' target="_blank" rel="noopener noreferrer"'
+            : '';
+          return `<p style="margin: 0 0 14px;"><a href="${escapeHTML(href)}" style="display: inline-block; padding: 10px 16px; border: 1px solid #000; color: #000; text-decoration: none;"${target}>${label}</a></p>`;
+        }
         default:
           return wrapEmailBlock('p', blockStyles.p, inner);
       }
@@ -107,7 +129,7 @@ function serializeNodes(children: SlateNode[] | null | undefined): string {
 }
 
 export function serializeRichTextToHtml(
-  content: SlateNode[] | null | undefined
+  content: SlateNode[] | null | undefined,
 ): string {
   if (!content || content.length === 0) {
     return '';
@@ -130,7 +152,7 @@ export function renderEventFooterSection(eventFooterHtml: string): string {
 
 export async function fetchEventFooterHtml(
   req: { payload: { findByID: (args: unknown) => Promise<unknown> } },
-  eventId: string | null | undefined
+  eventId: string | null | undefined,
 ): Promise<string> {
   if (!eventId) {
     return '';

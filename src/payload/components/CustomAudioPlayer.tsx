@@ -1,6 +1,7 @@
+import 'react-h5-audio-player/lib/styles.css';
+
 import React from 'react';
 import AudioPlayer from 'react-h5-audio-player';
-import 'react-h5-audio-player/lib/styles.css';
 
 interface CustomAudioPlayerProps {
   src: string;
@@ -17,7 +18,7 @@ const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({ src }) => {
       autoPlay={false}
       showJumpControls={false}
       customAdditionalControls={[]}
-      layout='horizontal'
+      layout="horizontal"
       style={{
         borderRadius: '0px',
         border: '1px solid #ddd',

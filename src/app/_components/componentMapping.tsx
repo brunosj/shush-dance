@@ -1,10 +1,10 @@
 // componentMapping.tsx
-import HomePage from './HomePage';
 import CartPage from './CartPage';
 import EventsPage from './EventsPage';
-import ReleasesPage from './ReleasesPage';
+import HomePage from './HomePage';
 import ImprintPage from './ImprintPage';
 import MerchPage from './MerchPage';
+import ReleasesPage from './ReleasesPage';
 
 const componentMapping: { [key: string]: React.FC<{ data: any }> } = {
   home: HomePage,

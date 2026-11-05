@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+
 import { fromStripeCurrency } from '../../utilities/currency';
 import {
   allocateStripeFeeEuros,
@@ -32,8 +33,7 @@ function normalizeTierLabel(label: string): string {
 
 function infoFromEventDoc(ev: any, tierName?: string): PriceEventInfo {
   const tiers = ev.ticketTiers;
-  const firstTier =
-    Array.isArray(tiers) && tiers.length > 0 ? tiers[0] : null;
+  const firstTier = Array.isArray(tiers) && tiers.length > 0 ? tiers[0] : null;
   return {
     eventId: String(ev.id),
     tierName:
@@ -49,7 +49,7 @@ function infoFromEventDoc(ev: any, tierName?: string): PriceEventInfo {
 function registerStripeCatalogId(
   raw: string | null | undefined,
   info: PriceEventInfo,
-  lookups: Pick<StripeEventLookups, 'priceIdToInfo' | 'productIdToInfo'>
+  lookups: Pick<StripeEventLookups, 'priceIdToInfo' | 'productIdToInfo'>,
 ): void {
   const id = typeof raw === 'string' ? raw.trim() : '';
   if (!id) return;
@@ -62,7 +62,7 @@ function registerStripeCatalogId(
 }
 
 export async function buildStripeEventLookups(
-  payload: any
+  payload: any,
 ): Promise<StripeEventLookups> {
   const priceIdToInfo = new Map<string, PriceEventInfo>();
   const productIdToInfo = new Map<string, PriceEventInfo>();
@@ -101,7 +101,8 @@ export async function buildStripeEventLookups(
     const tierLabelMap = tiersByEventAndLabel.get(idStr)!;
 
     for (const tier of tiers) {
-      const tname = typeof tier?.tierName === 'string' ? tier.tierName.trim() : '';
+      const tname =
+        typeof tier?.tierName === 'string' ? tier.tierName.trim() : '';
       if (tname) {
         const nk = normalizeTierLabel(tname);
         if (!tierLabelMap.has(nk)) {
@@ -111,7 +112,7 @@ export async function buildStripeEventLookups(
       registerStripeCatalogId(
         tier?.stripePriceId,
         infoFromEventDoc(ev, tier.tierName || undefined),
-        idLookups
+        idLookups,
       );
     }
   }
@@ -126,7 +127,7 @@ export async function buildStripeEventLookups(
 }
 
 function isLiveStripeProduct(
-  p: Stripe.Product | Stripe.DeletedProduct | null
+  p: Stripe.Product | Stripe.DeletedProduct | null,
 ): p is Stripe.Product {
   return (
     !!p &&
@@ -138,12 +139,11 @@ function isLiveStripeProduct(
 function resolveEventForLine(
   price: Stripe.Price,
   product: Stripe.Product | Stripe.DeletedProduct | null,
-  lookups: StripeEventLookups
+  lookups: StripeEventLookups,
 ): PriceEventInfo | undefined {
   const fromPriceMeta =
     price.metadata?.payload_event_id || price.metadata?.event_id;
-  const pidTrim =
-    typeof fromPriceMeta === 'string' ? fromPriceMeta.trim() : '';
+  const pidTrim = typeof fromPriceMeta === 'string' ? fromPriceMeta.trim() : '';
   if (pidTrim && lookups.eventIdToInfo.has(pidTrim)) {
     return lookups.eventIdToInfo.get(pidTrim);
   }
@@ -175,8 +175,7 @@ function resolveEventForLine(
     price.metadata?.cms_event_key ||
     price.metadata?.cms_catalog_key ||
     (isLiveStripeProduct(product) &&
-      (product.metadata?.cms_event_key ||
-        product.metadata?.cms_catalog_key));
+      (product.metadata?.cms_event_key || product.metadata?.cms_catalog_key));
   const ck = typeof ckRaw === 'string' ? ckRaw.trim().toLowerCase() : '';
   if (ck && lookups.catalogKeyToInfo.has(ck)) {
     return lookups.catalogKeyToInfo.get(ck);
@@ -187,7 +186,7 @@ function resolveEventForLine(
 
 function readStripeTierMetadataLabel(
   price: Stripe.Price,
-  product: Stripe.Product | Stripe.DeletedProduct | null
+  product: Stripe.Product | Stripe.DeletedProduct | null,
 ): string | undefined {
   const p =
     price.metadata?.cms_tier_name ||
@@ -207,7 +206,7 @@ function readStripeTierMetadataLabel(
 function resolveEventForLineRefined(
   price: Stripe.Price,
   product: Stripe.Product | Stripe.DeletedProduct | null,
-  lookups: StripeEventLookups
+  lookups: StripeEventLookups,
 ): PriceEventInfo | undefined {
   const base = resolveEventForLine(price, product, lookups);
   const label = readStripeTierMetadataLabel(price, product);
@@ -219,7 +218,7 @@ function resolveEventForLineRefined(
 
 async function listAllLineItems(
   stripe: Stripe,
-  sessionId: string
+  sessionId: string,
 ): Promise<Stripe.LineItem[]> {
   const items: Stripe.LineItem[] = [];
   let starting_after: string | undefined;
@@ -238,7 +237,7 @@ async function listAllLineItems(
 
 async function resolvePriceForLineItem(
   stripe: Stripe,
-  li: Stripe.LineItem
+  li: Stripe.LineItem,
 ): Promise<Stripe.Price | null> {
   const p = li.price as unknown;
   if (typeof p === 'string' && p.startsWith('price_')) {
@@ -276,7 +275,7 @@ function sessionCustomerEmail(session: Stripe.Checkout.Session): string {
 }
 
 export function paymentIntentIdFromSession(
-  session: Stripe.Checkout.Session
+  session: Stripe.Checkout.Session,
 ): string | null {
   const ref = session.payment_intent;
   if (typeof ref === 'string') return ref;
@@ -285,7 +284,7 @@ export function paymentIntentIdFromSession(
 
 async function checkoutSessionBuyerEmail(
   stripe: Stripe,
-  session: Stripe.Checkout.Session
+  session: Stripe.Checkout.Session,
 ): Promise<string> {
   let e = sessionCustomerEmail(session);
   if (e) return e;
@@ -332,7 +331,7 @@ export async function importPaidCheckoutSession(
   payload: any,
   stripe: Stripe,
   session: Stripe.Checkout.Session,
-  eventLookups?: StripeEventLookups
+  eventLookups?: StripeEventLookups,
 ): Promise<ImportCheckoutSessionResult> {
   const sessionId = session.id;
 
@@ -384,7 +383,7 @@ export async function importPaidCheckoutSession(
   }
 
   const { firstName, lastName } = splitCustomerName(
-    session.customer_details?.name
+    session.customer_details?.name,
   );
 
   const tickets: {
@@ -590,13 +589,13 @@ export async function importPaidCheckoutSession(
       const lookup = await retrieveStripeFeeLookupForTransactionId(
         stripe,
         transactionId,
-        { retries: 2, delayMs: 500 }
+        { retries: 2, delayMs: 500 },
       );
       if (lookup && created?.id) {
         const allocated = allocateStripeFeeEuros(
           lookup.feeCents / 100,
           subtotal,
-          lookup.amountCents / 100
+          lookup.amountCents / 100,
         );
         await payload.update({
           collection: 'ticket-sales',

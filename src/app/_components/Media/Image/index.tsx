@@ -1,12 +1,11 @@
 'use client';
 
-import React from 'react';
 import NextImage, { StaticImageData } from 'next/image';
+import React from 'react';
 
+import { mediaUrlFromFilename } from '../../../_utilities/getMediaUrl';
 import cssVariables from '../../../cssVariables';
 import { Props as MediaProps } from '../types';
-import { mediaUrlFromFilename } from '../../../_utilities/getMediaUrl';
-
 import classes from './index.module.css';
 
 const { breakpoints } = cssVariables;

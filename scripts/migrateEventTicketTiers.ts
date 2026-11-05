@@ -1,6 +1,6 @@
-/* eslint-disable no-console */
-import config from '../src/payload/payload.config';
 import { getPayload } from 'payload';
+
+import config from '../src/payload/payload.config';
 
 async function run() {
   const dryRun = process.argv.includes('--dry-run');
@@ -12,8 +12,9 @@ async function run() {
   let page = 1;
   let changed = 0;
   let failed = 0;
+  let hasNextPage = true;
 
-  do {
+  while (hasNextPage) {
     const result = await payload.find({
       collection: 'events',
       page,
@@ -42,14 +43,14 @@ async function run() {
       });
 
       if (invalidTiers.length > 0) {
-        failed++;
+        failed += 1;
         console.error(
-          `Skipping ${event.id}; invalid ticket prices: ${invalidTiers.join(', ')}`
+          `Skipping ${event.id}; invalid ticket prices: ${invalidTiers.join(', ')}`,
         );
         continue;
       }
       if (!eventChanged) continue;
-      changed++;
+      changed += 1;
       console.log(`${dryRun ? 'Would update' : 'Updating'} ${event.id}`);
       if (!dryRun) {
         try {
@@ -59,15 +60,15 @@ async function run() {
             data: { ticketTiers },
           });
         } catch (error) {
-          failed++;
+          failed += 1;
           console.error(`Failed to update ${event.id}:`, error);
         }
       }
     }
 
-    if (!result.hasNextPage) break;
-    page++;
-  } while (true);
+    hasNextPage = Boolean(result.hasNextPage);
+    page += 1;
+  }
 
   console.log(`${dryRun ? 'Would update' : 'Updated'} ${changed} events`);
   if (failed > 0) {

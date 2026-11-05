@@ -15,7 +15,7 @@ type CartDetails = Record<
 
 export function buildOrderCartItemsFromCart(
   cartDetails: CartDetails | null | undefined,
-  ticketBuyerAnswers: Record<string, BuyerAnswerSet[]> = {}
+  ticketBuyerAnswers: Record<string, BuyerAnswerSet[]> = {},
 ) {
   return Object.entries(cartDetails || {}).map(([key, item]) => {
     const metadata = { ...(item?.product_data?.metadata || {}) };

@@ -1,10 +1,15 @@
-import React, { Fragment } from 'react';
 import escapeHTML from 'escape-html';
+import Link from 'next/link';
+import React, { Fragment } from 'react';
 import { Text } from 'slate';
 
+import {
+  resolveRichTextHref,
+  shouldUseNativeAnchor,
+} from '../../../utilities/resolveRichTextHref';
+import Button from '../Button';
 import styles from './index.module.css';
 
-// eslint-disable-next-line no-use-before-define
 type Children = Leaf[];
 
 type Leaf = {
@@ -15,8 +20,46 @@ type Leaf = {
   };
   children: Children;
   url?: string;
+  linkType?: 'custom' | 'internal';
+  doc?: { relationTo?: string; value?: unknown };
+  newTab?: boolean;
+  label?: string;
   [key: string]: unknown;
 };
+
+function renderLink(
+  key: number,
+  node: Leaf,
+  inner: React.ReactNode,
+): React.ReactNode {
+  const { href, newTab } = resolveRichTextHref(node);
+  if (!href) {
+    return <Fragment key={key}>{inner}</Fragment>;
+  }
+
+  const target = newTab ? '_blank' : undefined;
+  const rel = newTab ? 'noopener noreferrer' : undefined;
+
+  if (shouldUseNativeAnchor(href, Boolean(newTab))) {
+    return (
+      <a
+        href={escapeHTML(href)}
+        key={key}
+        className={styles.link}
+        target={target}
+        rel={rel}
+      >
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} key={key} className={styles.link}>
+      {inner}
+    </Link>
+  );
+}
 
 const serialize = (children: Children): React.ReactNode[] =>
   children.map((node, i) => {
@@ -82,17 +125,30 @@ const serialize = (children: Children): React.ReactNode[] =>
       case 'li':
         return <li key={i}>{serialize(node.children)}</li>;
       case 'link':
+        return renderLink(i, node, serialize(node.children));
+      case 'button': {
+        const { href, newTab } = resolveRichTextHref(node);
+        const label =
+          typeof node.label === 'string' && node.label.trim()
+            ? node.label.trim()
+            : 'Button';
+        if (!href) {
+          return (
+            <div key={i} className="my-4">
+              <Button label={label} disabled />
+            </div>
+          );
+        }
         return (
-          <a
-            href={escapeHTML(node.url)}
-            key={i}
-            className={styles.link}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {serialize(node.children)}
-          </a>
+          <div key={i} className="my-4">
+            <Button
+              href={href}
+              label={label}
+              target={newTab ? '_blank' : undefined}
+            />
+          </div>
         );
+      }
 
       default:
         return <p key={i}>{serialize(node.children)}</p>;

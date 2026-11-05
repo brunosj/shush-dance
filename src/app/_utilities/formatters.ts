@@ -1,6 +1,6 @@
 export const formatCurrency = (
   amount: number | null | undefined,
-  currency = 'EUR'
+  currency = 'EUR',
 ): string => {
   if (amount === null || amount === undefined || isNaN(amount)) {
     return '€0.00';
@@ -16,7 +16,7 @@ export const formatCurrency = (
 
 export const formatNumber = (
   number: number | null | undefined,
-  decimals = 2
+  decimals = 2,
 ): string => {
   if (number === null || number === undefined || isNaN(number)) {
     return '0';

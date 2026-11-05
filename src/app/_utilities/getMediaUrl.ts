@@ -28,7 +28,7 @@ export function mediaUrlFromFilename(filename: string): string {
  */
 export function resolveMediaUrl(
   urlOrPath: string | null | undefined,
-  filename?: string | null
+  filename?: string | null,
 ): string {
   if (!urlOrPath) {
     return filename ? mediaUrlFromFilename(filename) : '';
@@ -75,7 +75,7 @@ export function resolveMediaResource(
     | { url?: string | null; filename?: string | null }
     | string
     | null
-    | undefined
+    | undefined,
 ): string {
   if (!resource) return '';
 

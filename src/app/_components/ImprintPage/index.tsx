@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Page, Event, Release } from '../../../payload/payload-types';
+
+import { Page } from '../../../payload/payload-types';
 import { RichText } from '../RichText';
 
 interface ImprintPageProps {
@@ -18,8 +19,8 @@ const ImprintPage: React.FC<ImprintPageProps> = ({ data }) => {
   }
 
   return (
-    <article className='container layout relative overflow-hidden  '>
-      <RichText content={page.data.content} className='richText' />
+    <article className="container layout relative overflow-hidden  ">
+      <RichText content={page.data.content} className="richText" />
     </article>
   );
 };

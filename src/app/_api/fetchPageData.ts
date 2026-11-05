@@ -1,9 +1,9 @@
 // fetchPageData.ts
-import { fetchPage } from './fetchPage';
 import { fetchEvents } from './fetchEvents';
+import { fetchMerch } from './fetchMerch';
+import { fetchPage } from './fetchPage';
 import { fetchReleases } from './fetchReleases';
 import { fetchSocials } from './fetchSocials';
-import { fetchMerch } from './fetchMerch';
 
 export const fetchPageData = async (slug: string) => {
   // Base page data fetched for all pages

@@ -1,7 +1,8 @@
+import { slateEditor } from '@payloadcms/richtext-slate';
 import type { RichTextField } from 'payload/dist/fields/config/types';
 
-import { slateEditor } from '@payloadcms/richtext-slate';
-import link from './link';
+import { richTextButtonElement } from './richTextButton';
+import { restrictRichTextLinkDrawerFields } from './richTextLinkFields';
 
 type RichTextFieldOptions = {
   label: string;
@@ -25,22 +26,16 @@ export const createRichTextField = ({
         'h5',
         'h6',
         'link',
+
+        richTextButtonElement as any,
         'blockquote',
         'ol',
         'ul',
       ],
       leaves: ['bold', 'italic'],
       link: {
-        fields: [
-          link({
-            appearances: false,
-            overrides: {
-              admin: {
-                condition: (_, { addLink }) => Boolean(addLink),
-              },
-            },
-          }),
-        ],
+        fields: ({ defaultFields }) =>
+          restrictRichTextLinkDrawerFields(defaultFields),
       },
     },
   }),

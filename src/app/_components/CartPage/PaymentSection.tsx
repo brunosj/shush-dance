@@ -1,8 +1,9 @@
 import React from 'react';
-import StripeCheckoutButton from '../StripeCheckoutButton';
+
+import type { OrderTotalsBreakdown } from '../../../utilities/tax';
 import { CustomerData } from '../../_providers/CheckoutProvider';
 import { type ShippingRegion } from '../../_types/shipping';
-import type { OrderTotalsBreakdown } from '../../../utilities/tax';
+import StripeCheckoutButton from '../StripeCheckoutButton';
 
 interface PaymentSectionProps {
   customerData: CustomerData | null;
@@ -16,9 +17,9 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
   shippingRegion,
 }) => {
   return (
-    <div className='bg-gray-50 p-6 rounded-lg'>
-      <h4 className=' font-semibold mb-4'>Payment Information</h4>
-      <p className='text-sm text-gray-600 mb-6'>
+    <div className="bg-gray-50 p-6 rounded-lg">
+      <h4 className=" font-semibold mb-4">Payment Information</h4>
+      <p className="text-sm text-gray-600 mb-6">
         Complete your payment securely with Stripe. PayPal users can select
         PayPal as a payment method within Stripe.
       </p>

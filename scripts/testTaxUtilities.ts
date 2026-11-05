@@ -1,9 +1,16 @@
 import assert from 'assert';
+
 import {
-  splitGrossIntoNetAndVatCents,
-  calculateOrderTotalsFromCartItems,
+  canAddCurrencyToCart,
+  getCartCurrency,
+  normalizeCurrency,
+  toStripeCurrency,
+} from '../src/utilities/currency';
+import {
   buildTicketCartId,
+  calculateOrderTotalsFromCartItems,
   parseTicketCartId,
+  splitGrossIntoNetAndVatCents,
 } from '../src/utilities/tax';
 
 function testSplitGross() {
@@ -16,7 +23,7 @@ function testTicketOnlyTotals() {
   const totals = calculateOrderTotalsFromCartItems(
     [{ type: 'ticket', grossCents: 1000, quantity: 1, vatRate: 7 }],
     0,
-    'germany'
+    'germany',
   );
   assert.strictEqual(totals.total, 10);
   assert.strictEqual(totals.ticketVat, 0.65);
@@ -30,7 +37,7 @@ function testMixedCartTotals() {
       { type: 'merch', grossCents: 2000, quantity: 1 },
     ],
     5.5,
-    'germany'
+    'germany',
   );
   assert.strictEqual(totals.total, 40.35);
   assert.strictEqual(totals.merchVat, 3.8);
@@ -42,7 +49,7 @@ function testQuantitiesAreAppliedOnce() {
   const totals = calculateOrderTotalsFromCartItems(
     [{ type: 'ticket', grossCents: 1000, quantity: 2, vatRate: 7 }],
     0,
-    'germany'
+    'germany',
   );
   assert.strictEqual(totals.total, 20);
   assert.strictEqual(totals.ticketNet, 18.69);
@@ -53,21 +60,24 @@ function testVatOverrides() {
   const noVat = calculateOrderTotalsFromCartItems(
     [{ type: 'ticket', grossCents: 1000, quantity: 1, vatRate: 0 }],
     0,
-    'germany'
+    'germany',
   );
   assert.strictEqual(noVat.ticketVat, 0);
 
   const customVat = calculateOrderTotalsFromCartItems(
     [{ type: 'ticket', grossCents: 1190, quantity: 1, vatRate: 19 }],
     0,
-    'germany'
+    'germany',
   );
   assert.strictEqual(customVat.ticketNet, 10);
   assert.strictEqual(customVat.ticketVat, 1.9);
 }
 
 function testCartIdRoundTrip() {
-  const id = buildTicketCartId('683ab3eb2e7687de6d64adac', '683ab3eb25cbd9e956d25913');
+  const id = buildTicketCartId(
+    '683ab3eb2e7687de6d64adac',
+    '683ab3eb25cbd9e956d25913',
+  );
   const parsed = parseTicketCartId(id);
   assert.deepStrictEqual(parsed, {
     eventId: '683ab3eb2e7687de6d64adac',
@@ -83,24 +93,18 @@ testVatOverrides();
 testCartIdRoundTrip();
 
 function testCurrencyHelpers() {
-  const {
-    canAddCurrencyToCart,
-    getCartCurrency,
-    normalizeCurrency,
-    toStripeCurrency,
-  } = require('../src/utilities/currency');
   assert.strictEqual(normalizeCurrency(undefined), 'EUR');
   assert.strictEqual(normalizeCurrency('gbp'), 'GBP');
   assert.strictEqual(toStripeCurrency('GBP'), 'gbp');
   assert.strictEqual(getCartCurrency({ a: { currency: 'GBP' } }), 'GBP');
   assert.strictEqual(
     getCartCurrency({ a: { currency: 'EUR' }, b: { currency: 'GBP' } }),
-    null
+    null,
   );
   assert.deepStrictEqual(canAddCurrencyToCart({}, 'GBP'), { ok: true });
   assert.deepStrictEqual(
     canAddCurrencyToCart({ a: { currency: 'EUR' } }, 'GBP'),
-    { ok: false, cartCurrency: 'EUR' }
+    { ok: false, cartCurrency: 'EUR' },
   );
 }
 

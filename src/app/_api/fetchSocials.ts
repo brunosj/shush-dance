@@ -9,8 +9,8 @@ export const fetchSocials = async (): Promise<Social> => {
         Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
       },
       next: { revalidate: 1 },
-    }
-  ).then((res) => res.json()); // eslint-disable-line function-paren-newline
+    },
+  ).then((res) => res.json());
 
   return socialsRes ?? { id: '' };
 };

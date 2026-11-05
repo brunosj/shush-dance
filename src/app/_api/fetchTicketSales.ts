@@ -4,7 +4,7 @@ import type { TicketSale } from '../../payload/payload-types';
 export const checkAuth = async () => {
   console.log(
     'Checking auth at:',
-    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/users/me`
+    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/users/me`,
   );
 
   const response = await fetch(
@@ -14,7 +14,7 @@ export const checkAuth = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-    }
+    },
   );
 
   console.log('Auth response status:', response.status);
@@ -47,11 +47,14 @@ export const fetchTicketSales = async (): Promise<{
       `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/ticket-sales?depth=2&limit=1000`,
       {
         credentials: 'include',
-      }
+      },
     );
 
     if (!ticketSalesResponse.ok) {
-      console.error('Failed to fetch ticket sales:', ticketSalesResponse.statusText);
+      console.error(
+        'Failed to fetch ticket sales:',
+        ticketSalesResponse.statusText,
+      );
       return { ticketSales: [] };
     }
 
@@ -83,4 +86,3 @@ export const fetchTicketSales = async (): Promise<{
     return { ticketSales: [] };
   }
 };
-

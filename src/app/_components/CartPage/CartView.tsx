@@ -1,14 +1,14 @@
 import React from 'react';
+
+import type { CheckoutStep } from '../../../utilities/checkoutSteps';
+import {
+  type CheckoutCurrency,
+  DEFAULT_CURRENCY,
+} from '../../../utilities/currency';
+import ShippingLocationSelector from '../ShippingLocationSelector';
 import StepIndicator from '../StepIndicator';
 import CartItemsList from './CartItemsList';
 import OrderSummary from './OrderSummary';
-import ShippingLocationSelector from '../ShippingLocationSelector';
-import {
-  DEFAULT_CURRENCY,
-  type CheckoutCurrency,
-} from '../../../utilities/currency';
-
-import type { CheckoutStep } from '../../../utilities/checkoutSteps';
 
 interface CartViewProps {
   currentStep: CheckoutStep;
@@ -56,7 +56,7 @@ const CartView: React.FC<CartViewProps> = ({
   includeTicketDetailsStep = false,
 }) => {
   return (
-    <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
+    <div className="max-w-3xl mx-2 md:mx-auto mt-24 mb-12">
       <StepIndicator
         currentStep={currentStep}
         onStepClick={onStepNavigation}
@@ -74,7 +74,7 @@ const CartView: React.FC<CartViewProps> = ({
 
       {/* Shipping Location Selector - only show for physical items */}
       {!isTicketOnlyCart && (
-        <div className='mt-6 mb-6'>
+        <div className="mt-6 mb-6">
           <ShippingLocationSelector />
         </div>
       )}

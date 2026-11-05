@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+
 import {
-  normalizeBuyerQuestionDefs,
   type BuyerQuestionDef,
+  normalizeBuyerQuestionDefs,
 } from '../../../../utilities/buyerQuestions';
 
 type LineRequest = { lineId: string; eventId: string; tierId: string };
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     if (!base || !apiKey) {
       return NextResponse.json(
         { error: 'Ticket questions are not configured on the server.' },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -39,19 +40,17 @@ export async function POST(req: Request) {
               Authorization: `users API-Key ${apiKey}`,
             },
             cache: 'no-store',
-          }
+          },
         );
         if (!res.ok) continue;
         event = (await res.json()) as Record<string, unknown>;
         eventCache.set(line.eventId, event);
       }
 
-      const tiers = Array.isArray(event.ticketTiers)
-        ? event.ticketTiers
-        : [];
-      const tier = tiers.find(
-        (t: { id?: string }) => t?.id === line.tierId
-      ) as { buyerQuestions?: unknown } | undefined;
+      const tiers = Array.isArray(event.ticketTiers) ? event.ticketTiers : [];
+      const tier = tiers.find((t: { id?: string }) => t?.id === line.tierId) as
+        | { buyerQuestions?: unknown }
+        | undefined;
       if (!tier) continue;
 
       const questions = normalizeBuyerQuestionDefs(tier.buyerQuestions);
@@ -64,7 +63,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json(
       { error: 'Failed to load ticket questions.' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,8 +1,8 @@
 import type { Field } from 'payload/types';
 
 import { descriptionField } from './description';
-import { titleField } from './title';
 import { keywordsField } from './keywords';
+import { titleField } from './title';
 
 export const meta: Field = {
   name: 'meta',

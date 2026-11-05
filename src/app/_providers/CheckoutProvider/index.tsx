@@ -2,11 +2,12 @@
 
 import React, {
   createContext,
-  useContext,
-  useState,
-  useEffect,
   useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from 'react';
+
 import type {
   BuyerAnswerSet,
   BuyerQuestionDefsByLine,
@@ -39,17 +40,31 @@ interface CheckoutContextType {
   ticketBuyerAnswers: TicketBuyerAnswersState;
   setTicketBuyerAnswers: (answers: TicketBuyerAnswersState) => void;
   syncTicketBuyerAnswersForCart: (
-    cartDetails: Record<string, { quantity?: number; product_data?: { metadata?: Record<string, unknown> } } | undefined> | null
+    cartDetails: Record<
+      string,
+      | {
+          quantity?: number;
+          product_data?: { metadata?: Record<string, unknown> };
+        }
+      | undefined
+    > | null,
   ) => void;
   updateTicketBuyerAnswer: (
     lineId: string,
     unitIndex: number,
     key: string,
     label: string,
-    value: string
+    value: string,
   ) => void;
   areTicketBuyerAnswersCompleteForCart: (
-    cartDetails: Record<string, { quantity?: number; product_data?: { metadata?: Record<string, unknown> } } | undefined> | null
+    cartDetails: Record<
+      string,
+      | {
+          quantity?: number;
+          product_data?: { metadata?: Record<string, unknown> };
+        }
+      | undefined
+    > | null,
   ) => boolean;
   buyerQuestionDefsByLine: BuyerQuestionDefsByLine;
   hydrateBuyerQuestionsForCart: (
@@ -60,14 +75,14 @@ interface CheckoutContextType {
           product_data?: { metadata?: Record<string, unknown> };
         }
       | undefined
-    > | null
+    > | null,
   ) => Promise<void>;
   isHydratingBuyerQuestions: boolean;
   clearTicketBuyerAnswers: () => void;
 }
 
 const CheckoutContext = createContext<CheckoutContextType | undefined>(
-  undefined
+  undefined,
 );
 
 const defaultCustomerData: CustomerData = {
@@ -84,7 +99,7 @@ const defaultCustomerData: CustomerData = {
 
 export function CheckoutProvider({ children }: { children: React.ReactNode }) {
   const [customerData, setCustomerDataState] = useState<CustomerData | null>(
-    null
+    null,
   );
   const [ticketBuyerAnswers, setTicketBuyerAnswersState] =
     useState<TicketBuyerAnswersState>({});
@@ -128,7 +143,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     if (customerData) {
       localStorage.setItem(
         'checkoutCustomerData',
-        JSON.stringify(customerData)
+        JSON.stringify(customerData),
       );
     } else {
       localStorage.removeItem('checkoutCustomerData');
@@ -139,7 +154,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     if (Object.keys(ticketBuyerAnswers).length > 0) {
       sessionStorage.setItem(
         'ticketBuyerAnswers',
-        JSON.stringify(ticketBuyerAnswers)
+        JSON.stringify(ticketBuyerAnswers),
       );
     } else {
       sessionStorage.removeItem('ticketBuyerAnswers');
@@ -176,17 +191,17 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
             product_data?: { metadata?: Record<string, unknown> };
           }
         | undefined
-      > | null
+      > | null,
     ) => {
       setTicketBuyerAnswersState((prev) =>
         syncTicketBuyerAnswersWithCart(
           cartDetails,
           prev,
-          buyerQuestionDefsByLine
-        )
+          buyerQuestionDefsByLine,
+        ),
       );
     },
-    [buyerQuestionDefsByLine]
+    [buyerQuestionDefsByLine],
   );
 
   const updateTicketBuyerAnswer = (
@@ -194,7 +209,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     unitIndex: number,
     key: string,
     label: string,
-    value: string
+    value: string,
   ) => {
     setTicketBuyerAnswersState((prev) => {
       const lineSets = [...(prev[lineId] || [])];
@@ -220,14 +235,14 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
             product_data?: { metadata?: Record<string, unknown> };
           }
         | undefined
-      > | null
+      > | null,
     ) =>
       areTicketBuyerAnswersComplete(
         cartDetails,
         ticketBuyerAnswers,
-        buyerQuestionDefsByLine
+        buyerQuestionDefsByLine,
       ),
-    [ticketBuyerAnswers, buyerQuestionDefsByLine]
+    [ticketBuyerAnswers, buyerQuestionDefsByLine],
   );
 
   const hydrateBuyerQuestionsForCart = useCallback(
@@ -239,11 +254,11 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
             product_data?: { metadata?: Record<string, unknown> };
           }
         | undefined
-      > | null
+      > | null,
     ) => {
       const lines = cartLinesMissingBuyerQuestionMetadata(
         cartDetails,
-        buyerQuestionDefsByLine
+        buyerQuestionDefsByLine,
       );
       if (lines.length === 0) return;
 
@@ -268,7 +283,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
         setIsHydratingBuyerQuestions(false);
       }
     },
-    [buyerQuestionDefsByLine]
+    [buyerQuestionDefsByLine],
   );
 
   const clearTicketBuyerAnswers = () => {

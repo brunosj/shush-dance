@@ -5,7 +5,7 @@ export class PayloadFetchError extends Error {
 
   constructor(
     message: string,
-    options: { status: number; slug?: string; context?: string }
+    options: { status: number; slug?: string; context?: string },
   ) {
     super(message);
     this.name = 'PayloadFetchError';
@@ -16,7 +16,7 @@ export class PayloadFetchError extends Error {
 }
 
 export function isPayloadFetchError(
-  error: unknown
+  error: unknown,
 ): error is PayloadFetchError {
   return error instanceof PayloadFetchError;
 }

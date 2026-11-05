@@ -12,7 +12,7 @@ function sleep(ms: number) {
 }
 
 function feeCentsFromPaymentIntent(
-  paymentIntent: Stripe.PaymentIntent
+  paymentIntent: Stripe.PaymentIntent,
 ): number | null {
   const latestCharge = paymentIntent.latest_charge;
   if (!latestCharge || typeof latestCharge === 'string') return null;
@@ -27,7 +27,7 @@ function feeCentsFromPaymentIntent(
 }
 
 function lookupFromPaymentIntent(
-  paymentIntent: Stripe.PaymentIntent
+  paymentIntent: Stripe.PaymentIntent,
 ): StripeFeeLookup | null {
   const feeCents = feeCentsFromPaymentIntent(paymentIntent);
   if (feeCents === null) return null;
@@ -57,12 +57,12 @@ function lookupFromPaymentIntent(
 export async function retrieveStripeProcessingFeeCents(
   stripe: Stripe,
   paymentIntentId: string,
-  options?: { retries?: number; delayMs?: number }
+  options?: { retries?: number; delayMs?: number },
 ): Promise<number | null> {
   const lookup = await retrieveStripeFeeLookup(
     stripe,
     paymentIntentId,
-    options
+    options,
   );
   return lookup?.feeCents ?? null;
 }
@@ -70,15 +70,18 @@ export async function retrieveStripeProcessingFeeCents(
 export async function retrieveStripeFeeLookup(
   stripe: Stripe,
   paymentIntentId: string,
-  options?: { retries?: number; delayMs?: number }
+  options?: { retries?: number; delayMs?: number },
 ): Promise<StripeFeeLookup | null> {
   const retries = options?.retries ?? 4;
   const delayMs = options?.delayMs ?? 750;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-      expand: ['latest_charge.balance_transaction'],
-    });
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      paymentIntentId,
+      {
+        expand: ['latest_charge.balance_transaction'],
+      },
+    );
 
     const lookup = lookupFromPaymentIntent(paymentIntent);
     if (lookup) return lookup;
@@ -98,7 +101,7 @@ export async function retrieveStripeFeeLookup(
 export async function retrieveStripeFeeLookupForTransactionId(
   stripe: Stripe,
   transactionId: string,
-  options?: { retries?: number; delayMs?: number }
+  options?: { retries?: number; delayMs?: number },
 ): Promise<StripeFeeLookup | null> {
   if (transactionId.startsWith('pi_')) {
     return retrieveStripeFeeLookup(stripe, transactionId, options);
@@ -129,10 +132,12 @@ export async function retrieveStripeFeeLookupForTransactionId(
 export function allocateStripeFeeEuros(
   totalFeeEuros: number,
   partAmountEuros: number,
-  totalAmountEuros: number
+  totalAmountEuros: number,
 ): number {
   if (totalFeeEuros <= 0 || totalAmountEuros <= 0 || partAmountEuros <= 0) {
     return 0;
   }
-  return Math.round((totalFeeEuros * partAmountEuros * 100) / totalAmountEuros) / 100;
+  return (
+    Math.round((totalFeeEuros * partAmountEuros * 100) / totalAmountEuros) / 100
+  );
 }

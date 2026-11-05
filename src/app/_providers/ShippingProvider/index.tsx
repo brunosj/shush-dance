@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ShippingRegion, SHIPPING_LOCATIONS } from '../../_types/shipping';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
+import { SHIPPING_LOCATIONS, ShippingRegion } from '../../_types/shipping';
 
 interface ShippingContextType {
   selectedRegion: ShippingRegion;
@@ -11,7 +12,7 @@ interface ShippingContextType {
 }
 
 const ShippingContext = createContext<ShippingContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export function ShippingProvider({ children }: { children: React.ReactNode }) {
@@ -32,14 +33,14 @@ export function ShippingProvider({ children }: { children: React.ReactNode }) {
 
   const getVATRate = () => {
     const location = SHIPPING_LOCATIONS.find(
-      (loc) => loc.region === selectedRegion
+      (loc) => loc.region === selectedRegion,
     );
     return location?.vatRate || 0;
   };
 
   const getRegionLabel = () => {
     const location = SHIPPING_LOCATIONS.find(
-      (loc) => loc.region === selectedRegion
+      (loc) => loc.region === selectedRegion,
     );
     return location?.label || 'Unknown';
   };

@@ -1,9 +1,10 @@
 import type { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+
 import {
+  type CheckoutCurrency,
   fromStripeCurrency,
   normalizeCurrency,
-  type CheckoutCurrency,
 } from '../../utilities/currency';
 import { splitGrossIntoNetAndVatCents } from '../../utilities/tax';
 import {
@@ -66,7 +67,7 @@ type StripeEventLookups = {
 function registerStripeCatalogId(
   raw: string | null | undefined,
   info: PriceEventInfo,
-  lookups: Pick<StripeEventLookups, 'priceIdToInfo' | 'productIdToInfo'>
+  lookups: Pick<StripeEventLookups, 'priceIdToInfo' | 'productIdToInfo'>,
 ): void {
   const id = typeof raw === 'string' ? raw.trim() : '';
   if (!id) return;
@@ -84,8 +85,7 @@ function normalizeTierLabel(label: string): string {
 
 function infoFromEventDoc(ev: any, tierName?: string): PriceEventInfo {
   const tiers = ev.ticketTiers;
-  const firstTier =
-    Array.isArray(tiers) && tiers.length > 0 ? tiers[0] : null;
+  const firstTier = Array.isArray(tiers) && tiers.length > 0 ? tiers[0] : null;
   return {
     eventId: String(ev.id),
     tierName:
@@ -99,7 +99,7 @@ function infoFromEventDoc(ev: any, tierName?: string): PriceEventInfo {
 }
 
 async function buildStripeEventLookups(
-  payload: any
+  payload: any,
 ): Promise<StripeEventLookups> {
   const priceIdToInfo = new Map<string, PriceEventInfo>();
   const productIdToInfo = new Map<string, PriceEventInfo>();
@@ -138,7 +138,8 @@ async function buildStripeEventLookups(
     const tierLabelMap = tiersByEventAndLabel.get(idStr)!;
 
     for (const tier of tiers) {
-      const tname = typeof tier?.tierName === 'string' ? tier.tierName.trim() : '';
+      const tname =
+        typeof tier?.tierName === 'string' ? tier.tierName.trim() : '';
       if (tname) {
         const nk = normalizeTierLabel(tname);
         if (!tierLabelMap.has(nk)) {
@@ -149,7 +150,7 @@ async function buildStripeEventLookups(
       registerStripeCatalogId(
         tier?.stripePriceId,
         infoFromEventDoc(ev, tier.tierName || undefined),
-        idLookups
+        idLookups,
       );
     }
   }
@@ -164,7 +165,7 @@ async function buildStripeEventLookups(
 }
 
 function isLiveStripeProduct(
-  p: Stripe.Product | Stripe.DeletedProduct | null
+  p: Stripe.Product | Stripe.DeletedProduct | null,
 ): p is Stripe.Product {
   return (
     !!p &&
@@ -177,12 +178,11 @@ function isLiveStripeProduct(
 function resolveEventForLine(
   price: Stripe.Price,
   product: Stripe.Product | Stripe.DeletedProduct | null,
-  lookups: StripeEventLookups
+  lookups: StripeEventLookups,
 ): PriceEventInfo | undefined {
   const fromPriceMeta =
     price.metadata?.payload_event_id || price.metadata?.event_id;
-  const pidTrim =
-    typeof fromPriceMeta === 'string' ? fromPriceMeta.trim() : '';
+  const pidTrim = typeof fromPriceMeta === 'string' ? fromPriceMeta.trim() : '';
   if (pidTrim && lookups.eventIdToInfo.has(pidTrim)) {
     return lookups.eventIdToInfo.get(pidTrim);
   }
@@ -200,12 +200,11 @@ function resolveEventForLine(
   const byPriceId = lookups.priceIdToInfo.get(price.id);
   if (byPriceId) return byPriceId;
 
-  const productId =
-    isLiveStripeProduct(product)
-      ? product.id
-      : typeof price.product === 'string'
-        ? price.product
-        : null;
+  const productId = isLiveStripeProduct(product)
+    ? product.id
+    : typeof price.product === 'string'
+      ? price.product
+      : null;
   if (productId) {
     const byProductId = lookups.productIdToInfo.get(productId);
     if (byProductId) return byProductId;
@@ -215,8 +214,7 @@ function resolveEventForLine(
     price.metadata?.cms_event_key ||
     price.metadata?.cms_catalog_key ||
     (isLiveStripeProduct(product) &&
-      (product.metadata?.cms_event_key ||
-        product.metadata?.cms_catalog_key));
+      (product.metadata?.cms_event_key || product.metadata?.cms_catalog_key));
   const ck = typeof ckRaw === 'string' ? ckRaw.trim().toLowerCase() : '';
   if (ck && lookups.catalogKeyToInfo.has(ck)) {
     return lookups.catalogKeyToInfo.get(ck);
@@ -227,7 +225,7 @@ function resolveEventForLine(
 
 function readStripeTierMetadataLabel(
   price: Stripe.Price,
-  product: Stripe.Product | Stripe.DeletedProduct | null
+  product: Stripe.Product | Stripe.DeletedProduct | null,
 ): string | undefined {
   const p =
     price.metadata?.cms_tier_name ||
@@ -248,7 +246,7 @@ function readStripeTierMetadataLabel(
 function refineLineEventInfo(
   base: PriceEventInfo | undefined,
   stripeTierLabel: string | undefined,
-  lookups: StripeEventLookups
+  lookups: StripeEventLookups,
 ): PriceEventInfo | undefined {
   if (!base?.eventId || !stripeTierLabel?.trim()) return base;
   const inner = lookups.tiersByEventAndLabel.get(base.eventId);
@@ -257,19 +255,19 @@ function refineLineEventInfo(
   return hit || base;
 }
 
-function resolveEventForLineRefined(
+function _resolveEventForLineRefined(
   price: Stripe.Price,
   product: Stripe.Product | Stripe.DeletedProduct | null,
-  lookups: StripeEventLookups
+  lookups: StripeEventLookups,
 ): PriceEventInfo | undefined {
   const base = resolveEventForLine(price, product, lookups);
   const label = readStripeTierMetadataLabel(price, product);
   return refineLineEventInfo(base, label, lookups);
 }
 
-async function listAllLineItems(
+async function _listAllLineItems(
   stripe: Stripe,
-  sessionId: string
+  sessionId: string,
 ): Promise<Stripe.LineItem[]> {
   const items: Stripe.LineItem[] = [];
   let starting_after: string | undefined;
@@ -287,9 +285,9 @@ async function listAllLineItems(
 }
 
 /** Stripe often returns `price` as a string id even when expand is requested — resolve to full Price. */
-async function resolvePriceForLineItem(
+async function _resolvePriceForLineItem(
   stripe: Stripe,
-  li: Stripe.LineItem
+  li: Stripe.LineItem,
 ): Promise<Stripe.Price | null> {
   const p = li.price as unknown;
   if (typeof p === 'string' && p.startsWith('price_')) {
@@ -317,7 +315,7 @@ function sessionCustomerEmail(session: Stripe.Checkout.Session): string {
 }
 
 function paymentIntentIdFromSession(
-  session: Stripe.Checkout.Session
+  session: Stripe.Checkout.Session,
 ): string | null {
   const ref = session.payment_intent;
   if (typeof ref === 'string') return ref;
@@ -325,9 +323,9 @@ function paymentIntentIdFromSession(
 }
 
 /** Klarna and some wallets omit session email — resolve via Customer or PaymentIntent. */
-async function checkoutSessionBuyerEmail(
+async function _checkoutSessionBuyerEmail(
   stripe: Stripe,
-  session: Stripe.Checkout.Session
+  session: Stripe.Checkout.Session,
 ): Promise<string> {
   let e = sessionCustomerEmail(session);
   if (e) return e;
@@ -351,9 +349,7 @@ async function checkoutSessionBuyerEmail(
       });
       if (pi.receipt_email?.trim()) return pi.receipt_email.trim();
       const meta =
-        pi.metadata?.customer_email?.trim() ||
-        pi.metadata?.email?.trim() ||
-        '';
+        pi.metadata?.customer_email?.trim() || pi.metadata?.email?.trim() || '';
       if (meta) return meta;
       const lc = pi.latest_charge;
       if (typeof lc === 'object' && lc && 'billing_details' in lc) {
@@ -369,7 +365,7 @@ async function checkoutSessionBuyerEmail(
 }
 
 function getOrderDataRawString(
-  metadata: Stripe.Metadata | null | undefined
+  metadata: Stripe.Metadata | null | undefined,
 ): string | null {
   if (!metadata) return null;
   let s = '';
@@ -399,15 +395,13 @@ function parseOrderDataTicketItems(raw: string): {
     (item: any) =>
       item.type === 'ticket' ||
       (item.metadata && item.metadata.type === 'ticket') ||
-      (item.metadata && item.metadata.itemType === 'ticket')
+      (item.metadata && item.metadata.itemType === 'ticket'),
   );
   if (ticketItems.length === 0) return null;
   return { orderData, ticketItems };
 }
 
-function paymentMethodTypeFromPi(
-  pi: Stripe.PaymentIntent
-): string | null {
+function paymentMethodTypeFromPi(pi: Stripe.PaymentIntent): string | null {
   const pm = pi.payment_method;
   if (typeof pm === 'string') return null;
   if (!pm || typeof pm !== 'object') return null;
@@ -420,7 +414,7 @@ async function createTicketSaleFromOrderDataPi(
   payload: any,
   pi: Stripe.PaymentIntent,
   parsed: { orderData: Record<string, any>; ticketItems: any[] },
-  stripe: Stripe
+  stripe: Stripe,
 ): Promise<void> {
   const { orderData, ticketItems } = parsed;
   let pmType = 'unknown';
@@ -445,7 +439,7 @@ async function createTicketSaleFromOrderDataPi(
   const groups = new Map<string, any[]>();
   for (const item of ticketItems) {
     const eventId = String(
-      item.eventId || item.metadata?.eventId || orderData.eventId || ''
+      item.eventId || item.metadata?.eventId || orderData.eventId || '',
     ).trim();
     if (!eventId) continue;
     groups.set(eventId, [...(groups.get(eventId) || []), item]);
@@ -470,7 +464,7 @@ async function createTicketSaleFromOrderDataPi(
     const ticketGross =
       eventTickets.reduce(
         (sum: number, item: any) => sum + (item.lineTotal || 0),
-        0
+        0,
       ) / 100;
     const ticketTax = eventTickets.reduce(
       (totals: { netCents: number; vatCents: number }, item: any) => {
@@ -482,13 +476,13 @@ async function createTicketSaleFromOrderDataPi(
               : 0;
         const split = splitGrossIntoNetAndVatCents(
           Number(item.lineTotal) || 0,
-          vatRate
+          vatRate,
         );
         totals.netCents += split.netCents;
         totals.vatCents += split.vatCents;
         return totals;
       },
-      { netCents: 0, vatCents: 0 }
+      { netCents: 0, vatCents: 0 },
     );
 
     const saleCurrency: CheckoutCurrency = orderData.currency
@@ -513,20 +507,20 @@ async function createTicketSaleFromOrderDataPi(
         firstName: cd.firstName,
         lastName: cd.lastName,
         tickets: eventTickets.map((item: any) => {
-        const priceIdFromCart =
-          typeof item.id === 'string' && item.id.startsWith('price_')
-            ? item.id
-            : '';
-        const vatRate =
-          typeof item.vatRate === 'number'
-            ? item.vatRate
-            : typeof item.metadata?.vatRate === 'number'
-              ? item.metadata.vatRate
-              : 0;
-        const split = splitGrossIntoNetAndVatCents(
-          Number(item.lineTotal) || 0,
-          vatRate
-        );
+          const priceIdFromCart =
+            typeof item.id === 'string' && item.id.startsWith('price_')
+              ? item.id
+              : '';
+          const vatRate =
+            typeof item.vatRate === 'number'
+              ? item.vatRate
+              : typeof item.metadata?.vatRate === 'number'
+                ? item.metadata.vatRate
+                : 0;
+          const split = splitGrossIntoNetAndVatCents(
+            Number(item.lineTotal) || 0,
+            vatRate,
+          );
           return {
             cartItemId: item.cartItemId || item.id,
             ticketName: item.name,
@@ -549,8 +543,7 @@ async function createTicketSaleFromOrderDataPi(
         },
         eventDate: eventMetadata.eventDate || null,
         eventLocation: eventMetadata.eventLocation || null,
-        eventTitle:
-          eventMetadata.eventTitle || firstTicket?.parentItem || null,
+        eventTitle: eventMetadata.eventTitle || firstTicket?.parentItem || null,
         customerNotes: cd.customerNotes || '',
         internalNotes: `Backfilled from PaymentIntent orderData metadata: ${pi.id}.`,
       },
@@ -561,7 +554,7 @@ async function createTicketSaleFromOrderDataPi(
 async function createGenericKlarnaTicketSale(
   payload: any,
   pi: Stripe.PaymentIntent,
-  eventLookups: StripeEventLookups
+  eventLookups: StripeEventLookups,
 ): Promise<void> {
   let email =
     pi.receipt_email?.trim() ||
@@ -578,16 +571,13 @@ async function createGenericKlarnaTicketSale(
 
   let primaryInfo: PriceEventInfo | undefined;
   let primaryEventId: string | null = null;
-  const mid =
-    pi.metadata?.payload_event_id || pi.metadata?.event_id;
+  const mid = pi.metadata?.payload_event_id || pi.metadata?.event_id;
   if (mid && typeof mid === 'string') {
     primaryInfo = eventLookups.eventIdToInfo.get(mid.trim());
     if (primaryInfo) primaryEventId = primaryInfo.eventId;
   }
-  const ckRaw =
-    pi.metadata?.cms_event_key || pi.metadata?.cms_catalog_key;
-  const ck =
-    typeof ckRaw === 'string' ? ckRaw.trim().toLowerCase() : '';
+  const ckRaw = pi.metadata?.cms_event_key || pi.metadata?.cms_catalog_key;
+  const ck = typeof ckRaw === 'string' ? ckRaw.trim().toLowerCase() : '';
   if (!primaryEventId && ck) {
     primaryInfo = eventLookups.catalogKeyToInfo.get(ck);
     if (primaryInfo) primaryEventId = primaryInfo.eventId;
@@ -597,12 +587,9 @@ async function createGenericKlarnaTicketSale(
   const total = cents / 100;
   let nameSource = '';
   if (typeof ch === 'object' && ch && 'billing_details' in ch) {
-    nameSource =
-      (ch as Stripe.Charge).billing_details?.name?.trim() || '';
+    nameSource = (ch as Stripe.Charge).billing_details?.name?.trim() || '';
   }
-  const { firstName, lastName } = splitCustomerName(
-    nameSource || undefined
-  );
+  const { firstName, lastName } = splitCustomerName(nameSource || undefined);
 
   const ticketNumber = `TICKET-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
@@ -612,8 +599,7 @@ async function createGenericKlarnaTicketSale(
       ticketNumber,
       status: 'active',
       event: primaryEventId,
-      ticketTier:
-        primaryInfo?.tierName || 'Klarna (imported)',
+      ticketTier: primaryInfo?.tierName || 'Klarna (imported)',
       paymentMethod: 'stripe',
       paymentStatus: 'paid',
       transactionId: pi.id,
@@ -742,7 +728,7 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
           req.payload,
           stripe,
           session,
-          checkoutLookups
+          checkoutLookups,
         );
         if (result.status === 'created') {
           created.push(result.sessionId);
@@ -784,9 +770,7 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
           try {
             parsed = parseOrderDataTicketItems(rawOrder);
           } catch (e: any) {
-            errors.push(
-              `${row.id}: orderData JSON parse — ${e?.message || e}`
-            );
+            errors.push(`${row.id}: orderData JSON parse — ${e?.message || e}`);
             continue;
           }
           if (parsed && parsed.ticketItems.length > 0) {
@@ -795,7 +779,7 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
                 req.payload,
                 fullPi,
                 parsed,
-                stripe
+                stripe,
               );
               created.push(`pi:${row.id}`);
             } catch (e: any) {
@@ -804,7 +788,7 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
             continue;
           }
           errors.push(
-            `${row.id}: orderData present but no ticket lines in cartItems`
+            `${row.id}: orderData present but no ticket lines in cartItems`,
           );
           continue;
         }
@@ -824,7 +808,7 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
           await createGenericKlarnaTicketSale(
             req.payload,
             fullPi,
-            eventLookups
+            eventLookups,
           );
           created.push(`klarna:${row.id}`);
         } catch (e: any) {

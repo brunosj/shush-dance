@@ -1,7 +1,7 @@
 'use client';
 
-import { formatCurrency } from '../../_utilities/formatters';
 import type { Sale } from '../../../payload/payload-types';
+import { formatCurrency } from '../../_utilities/formatters';
 
 interface SalesSummaryProps {
   sales: Sale[];
@@ -67,15 +67,15 @@ export function SalesSummary({ sales }: SalesSummaryProps) {
   console.log('Summary calculations:', summaryByType);
 
   return (
-    <div className='bg-white rounded-lg border border-gray-200 p-6'>
-      <h2 className='text-lg font-semibold mb-4'>Sales Summary</h2>
-      <div className='space-y-6'>
+    <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <h2 className="text-lg font-semibold mb-4">Sales Summary</h2>
+      <div className="space-y-6">
         {Object.values(summaryByType).map((summary: any) => (
           <div
             key={`${summary.type}_${summary.currency}`}
-            className='border-b border-gray-100 pb-4 last:border-0'
+            className="border-b border-gray-100 pb-4 last:border-0"
           >
-            <div className='flex justify-between items-center mb-2'>
+            <div className="flex justify-between items-center mb-2">
               <span
                 className={`px-2 py-1 rounded-full text-xs ${
                   summary.type === 'record'
@@ -87,20 +87,20 @@ export function SalesSummary({ sales }: SalesSummaryProps) {
               >
                 {summary.type}
               </span>
-              <span className='text-sm text-gray-500'>
+              <span className="text-sm text-gray-500">
                 {summary.itemsCount} items ({summary.salesCount} sales)
               </span>
             </div>
-            <div className='grid grid-cols-2 gap-4'>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className='text-sm text-gray-500'>Gross Revenue</p>
-                <p className='text-lg font-medium'>
+                <p className="text-sm text-gray-500">Gross Revenue</p>
+                <p className="text-lg font-medium">
                   {formatCurrency(summary.totalGross, summary.currency)}
                 </p>
               </div>
               <div>
-                <p className='text-sm text-gray-500'>Net Revenue</p>
-                <p className='text-lg font-medium'>
+                <p className="text-sm text-gray-500">Net Revenue</p>
+                <p className="text-lg font-medium">
                   {formatCurrency(summary.totalNet, summary.currency)}
                 </p>
               </div>
@@ -108,7 +108,7 @@ export function SalesSummary({ sales }: SalesSummaryProps) {
           </div>
         ))}
       </div>
-      <p className='text-xs text-amber-600 mt-2 italic'>
+      <p className="text-xs text-amber-600 mt-2 italic">
         Note: Gross amounts include shipping costs where applicable
       </p>
     </div>

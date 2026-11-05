@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { Button } from 'payload/components/elements';
+import React, { useEffect, useState } from 'react';
 
 const LoadingDots = () => {
   const [dots, setDots] = useState('');
@@ -62,7 +62,7 @@ export const SyncBandcampButton: React.FC = () => {
 
       if (data.success) {
         setStatus(
-          `Sync complete! Found ${data.totalSales} sales, created ${data.newSales} new entries. Please refresh to consult entries`
+          `Sync complete! Found ${data.totalSales} sales, created ${data.newSales} new entries. Please refresh to consult entries`,
         );
         await fetchLastSyncTime();
       } else {

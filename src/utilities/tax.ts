@@ -31,7 +31,7 @@ export type OrderTotalsBreakdown = {
 /** Derive net/VAT from a VAT-inclusive gross amount in integer cents. */
 export function splitGrossIntoNetAndVatCents(
   grossCents: number,
-  vatRatePercent: number
+  vatRatePercent: number,
 ): { netCents: number; vatCents: number } {
   if (grossCents <= 0) return { netCents: 0, vatCents: 0 };
   const rate = Math.max(0, vatRatePercent) / 100;
@@ -50,7 +50,7 @@ export function buildTicketCartId(eventId: string, tierId: string): string {
 }
 
 export function parseTicketCartId(
-  cartId: string
+  cartId: string,
 ): { eventId: string; tierId: string } | null {
   if (!cartId.startsWith('ticket-')) return null;
   const rest = cartId.slice('ticket-'.length);
@@ -69,7 +69,7 @@ export function isLegacyStripeTicketCartId(cartId: string): boolean {
 export function calculateOrderTotalsFromCartItems(
   items: CartItemTaxInput[],
   shippingCostEuros: number,
-  region: ShippingRegion
+  region: ShippingRegion,
 ): OrderTotalsBreakdown {
   const merchVatRate = getMerchVatRate(region);
   const shippingCost = Math.round(shippingCostEuros * 100);
@@ -83,7 +83,10 @@ export function calculateOrderTotalsFromCartItems(
     const lineGross = item.grossCents * item.quantity;
     if (item.type === 'ticket') {
       const rate = item.vatRate ?? DEFAULT_TICKET_VAT_RATE;
-      const { netCents, vatCents } = splitGrossIntoNetAndVatCents(lineGross, rate);
+      const { netCents, vatCents } = splitGrossIntoNetAndVatCents(
+        lineGross,
+        rate,
+      );
       ticketNetCents += netCents;
       ticketVatCents += vatCents;
       ticketGrossCents += lineGross;
@@ -93,15 +96,16 @@ export function calculateOrderTotalsFromCartItems(
   }
 
   const merchVatCents = Math.round(
-    calculateVAT(merchNetCents / 100, merchVatRate) * 100
+    calculateVAT(merchNetCents / 100, merchVatRate) * 100,
   );
   const shippingVatCents = Math.round(
-    calculateVAT(shippingCost / 100, merchVatRate) * 100
+    calculateVAT(shippingCost / 100, merchVatRate) * 100,
   );
 
   const subtotalCents = merchNetCents + ticketGrossCents;
   const totalVatCents = merchVatCents + shippingVatCents + ticketVatCents;
-  const finalTotalCents = subtotalCents + shippingCost + merchVatCents + shippingVatCents;
+  const finalTotalCents =
+    subtotalCents + shippingCost + merchVatCents + shippingVatCents;
 
   return {
     subtotal: subtotalCents / 100,

@@ -24,6 +24,10 @@
   "exclude": ["node_modules"],
   "ts-node": {
     "transpileOnly": true,
-    "swc": true
+    "swc": true,
+    "compilerOptions": {
+      "module": "CommonJS",
+      "moduleResolution": "node"
+    }
   }
 }

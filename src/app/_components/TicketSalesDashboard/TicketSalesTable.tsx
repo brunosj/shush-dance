@@ -1,8 +1,11 @@
 'use client';
 
+import type { Event, TicketSale } from '../../../payload/payload-types';
+import {
+  DEFAULT_CURRENCY,
+  normalizeCurrency,
+} from '../../../utilities/currency';
 import { formatCurrency } from '../../_utilities/formatters';
-import type { TicketSale, Event } from '../../../payload/payload-types';
-import { normalizeCurrency, DEFAULT_CURRENCY } from '../../../utilities/currency';
 
 interface TicketSalesTableProps {
   ticketSales: TicketSale[];
@@ -35,7 +38,10 @@ export function TicketSalesTable({
   };
 
   const getTotalQuantity = (ticketSale: TicketSale) => {
-    return ticketSale.tickets.reduce((total, ticket) => total + (ticket.quantity || 0), 0);
+    return ticketSale.tickets.reduce(
+      (total, ticket) => total + (ticket.quantity || 0),
+      0,
+    );
   };
 
   const columns = [
@@ -82,54 +88,54 @@ export function TicketSalesTable({
 
   if (ticketSales.length === 0) {
     return (
-      <div className='bg-white rounded-lg border border-gray-200 p-8 text-center'>
-        <p className='text-gray-500'>No ticket sales found</p>
+      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+        <p className="text-gray-500">No ticket sales found</p>
       </div>
     );
   }
 
   return (
-    <div className='overflow-x-auto rounded-lg border border-gray-200 shadow-sm'>
-      <table className='min-w-full divide-y divide-gray-200'>
-        <thead className='bg-gray-50'>
+    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
-                className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100'
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => onSort(column.key)}
               >
-                <div className='flex items-center space-x-1'>
+                <div className="flex items-center space-x-1">
                   <span>{column.label}</span>
                   {sortBy === column.key &&
                     (sortDirection === 'asc' ? (
                       <svg
-                        className='w-4 h-4'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                        xmlns='http://www.w3.org/2000/svg'
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                           strokeWidth={2}
-                          d='M5 15l7-7 7 7'
+                          d="M5 15l7-7 7 7"
                         />
                       </svg>
                     ) : (
                       <svg
-                        className='w-4 h-4'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                        xmlns='http://www.w3.org/2000/svg'
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                           strokeWidth={2}
-                          d='M19 9l-7 7-7-7'
+                          d="M19 9l-7 7-7-7"
                         />
                       </svg>
                     ))}
@@ -138,49 +144,53 @@ export function TicketSalesTable({
             ))}
           </tr>
         </thead>
-        <tbody className='bg-white divide-y divide-gray-200'>
+        <tbody className="bg-white divide-y divide-gray-200">
           {ticketSales.map((ticketSale) => (
-            <tr key={ticketSale.id} className='hover:bg-gray-50'>
-              <td className='px-6 py-4 whitespace-nowrap text-sm'>
+            <tr key={ticketSale.id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap text-sm">
                 {formatDate(ticketSale.createdAt)}
               </td>
-              <td className='px-6 py-4 whitespace-nowrap text-sm font-mono'>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
                 {ticketSale.ticketNumber}
               </td>
-              <td className='px-6 py-4 text-sm'>
+              <td className="px-6 py-4 text-sm">
                 <div>
-                  <p className='font-medium'>{ticketSale.firstName} {ticketSale.lastName}</p>
-                  <p className='text-xs text-gray-500'>{ticketSale.customerEmail}</p>
+                  <p className="font-medium">
+                    {ticketSale.firstName} {ticketSale.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {ticketSale.customerEmail}
+                  </p>
                 </div>
               </td>
-              <td className='px-6 py-4 text-sm max-w-xs truncate'>
+              <td className="px-6 py-4 text-sm max-w-xs truncate">
                 {getEventTitle(ticketSale.event)}
               </td>
-              <td className='px-6 py-4 text-sm'>
+              <td className="px-6 py-4 text-sm">
                 {ticketSale.ticketTier || 'N/A'}
               </td>
-              <td className='px-6 py-4 whitespace-nowrap text-sm font-semibold'>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
                 {getTotalQuantity(ticketSale)}
               </td>
-              <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 {formatCurrency(
                   ticketSale.ticketTotals.total,
-                  normalizeCurrency(ticketSale.currency) || DEFAULT_CURRENCY
+                  normalizeCurrency(ticketSale.currency) || DEFAULT_CURRENCY,
                 )}
               </td>
-              <td className='px-6 py-4 whitespace-nowrap text-sm'>
+              <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                    ticketSale.status
+                    ticketSale.status,
                   )}`}
                 >
                   {ticketSale.status}
                 </span>
               </td>
-              <td className='px-6 py-4 whitespace-nowrap text-sm'>
+              <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                    ticketSale.paymentStatus
+                    ticketSale.paymentStatus,
                   )}`}
                 >
                   {ticketSale.paymentStatus}
@@ -193,4 +203,3 @@ export function TicketSalesTable({
     </div>
   );
 }
-

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useFieldType } from 'payload/components/forms';
-import CustomAudioPlayer from './CustomAudioPlayer';
-import type { Audio } from '../payload-types';
 import { Props } from 'payload/components/fields/Relationship';
+import { useFieldType } from 'payload/components/forms';
+import React, { useEffect, useState } from 'react';
+
+import type { Audio } from '../payload-types';
+import CustomAudioPlayer from './CustomAudioPlayer';
 
 // Define the shape of the relationship object
 interface CustomAudioFieldProps extends Props {
@@ -13,7 +14,7 @@ const CustomAudioField: React.FC<CustomAudioFieldProps> = (props) => {
   const { path } = props;
 
   // Use `useFieldType` to manage the field state and validation
-  const { value = null, setValue } = useFieldType<Audio>({
+  const { value = null, setValue: _setValue } = useFieldType<Audio>({
     path,
     validate: (val: Audio | null) =>
       val && val.url ? true : 'Audio file is required',
@@ -34,7 +35,7 @@ const CustomAudioField: React.FC<CustomAudioFieldProps> = (props) => {
   }
 
   return (
-    <div className='custom-audio-field'>
+    <div className="custom-audio-field">
       <CustomAudioPlayer src={audioSrc} />
     </div>
   );

@@ -2,6 +2,7 @@
 'use client';
 
 import { useLivePreview } from '@payloadcms/live-preview-react';
+
 import componentMapping from '../../_components/componentMapping';
 
 interface PageTemplateProps {
@@ -25,7 +26,7 @@ export const PageTemplate: React.FC<PageTemplateProps> = ({ slug, data }) => {
   );
 };
 
-const DefaultComponent: React.FC<{ data: any }> = ({ data }) => (
+const DefaultComponent: React.FC<{ data: any }> = ({ data: _data }) => (
   <div>
     <p>Page not found or under construction</p>
   </div>

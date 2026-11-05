@@ -4,7 +4,7 @@ export function downloadXlsx(
   filename: string,
   sheetName: string,
   rows: Record<string, string | number>[],
-  colWidths?: { wch: number }[]
+  colWidths?: { wch: number }[],
 ): void {
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows);

@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Page, Merch } from '../../../payload/payload-types';
-import ProductListing from '../ProductListing';
+
+import { Merch, Page } from '../../../payload/payload-types';
 import type { ExtendedMerch } from '../../_types/extended-payload-types';
+import ProductListing from '../ProductListing';
 
 interface MerchPageProps {
   data: {
@@ -20,17 +21,17 @@ const MerchPage: React.FC<MerchPageProps> = ({ data }) => {
   }
 
   return (
-    <article className='container layout relative overflow-hidden  '>
+    <article className="container layout relative overflow-hidden  ">
       {merchItems && merchItems.length > 0 && (
         <section>
           {merchItems.map((merchItem, index) => (
             <li
               key={index}
-              className='list-none mb-12 border-b border-gray-300 last:border-b-0'
+              className="list-none mb-12 border-b border-gray-300 last:border-b-0"
             >
               <ProductListing
                 product={merchItem as ExtendedMerch}
-                type='merch'
+                type="merch"
               />
             </li>
           ))}

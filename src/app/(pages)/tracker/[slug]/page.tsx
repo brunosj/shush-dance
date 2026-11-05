@@ -17,7 +17,7 @@ export default function EventTicketTrackerPage({
   searchParams,
 }: PageProps) {
   return (
-    <main className='min-h-screen bg-neutral-50 text-neutral-900'>
+    <main className="min-h-screen bg-neutral-50 text-neutral-900">
       <EventTicketTracker
         slug={params.slug}
         trackerKey={searchParams?.key || null}

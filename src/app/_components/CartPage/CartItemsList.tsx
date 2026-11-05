@@ -1,10 +1,11 @@
 import React from 'react';
 import { BsTrash3 } from 'react-icons/bs';
 import { formatCurrencyString } from 'use-shopping-cart';
+
 import {
+  type CheckoutCurrency,
   DEFAULT_CURRENCY,
   normalizeCurrency,
-  type CheckoutCurrency,
 } from '../../../utilities/currency';
 
 interface CartItemsListProps {
@@ -23,7 +24,7 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
   currency = DEFAULT_CURRENCY,
 }) => {
   return (
-    <ul className='space-y-4 pt-6'>
+    <ul className="space-y-4 pt-6">
       {Object.entries(cartDetails || {}).map(([key, item]: [string, any]) => {
         const productData = item?.product_data as any;
         const metadata = productData?.metadata || {};
@@ -36,12 +37,12 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
         return (
           <li
             key={key}
-            className='flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray last:border-b-0 '
+            className="flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray last:border-b-0 "
           >
-            <div className='flex flex-col'>
-              <h4 className='font-bold '>{item?.name || 'Product'}</h4>
-              <p className='text-darkGray'>
-                <span className='capitalize'>
+            <div className="flex flex-col">
+              <h4 className="font-bold ">{item?.name || 'Product'}</h4>
+              <p className="text-darkGray">
+                <span className="capitalize">
                   {item?.description || 'Unknown'}
                 </span>
                 {variant &&
@@ -54,34 +55,34 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
                 per item
               </p>
             </div>
-            <div className='ml-auto flex items-center gap-2 space-x-3'>
+            <div className="ml-auto flex items-center gap-2 space-x-3">
               <button
                 onClick={() => decrementItem(key)}
-                className='bg-gray-50 text-black px-2 py-1'
+                className="bg-gray-50 text-black px-2 py-1"
                 disabled={item?.quantity <= 1}
               >
                 -
               </button>
-              <span className='text-sm lg:text-base'>{item?.quantity}</span>
+              <span className="text-sm lg:text-base">{item?.quantity}</span>
               <button
                 onClick={() => incrementItem(key)}
-                className='bg-gray-50 text-black px-2 py-1'
+                className="bg-gray-50 text-black px-2 py-1"
               >
                 +
               </button>
-              <div className='h-6 border-l border-gray'></div>
+              <div className="h-6 border-l border-gray"></div>
               <p>
                 {formatCurrencyString({
                   value: Math.round(totalPrice * 100),
                   currency: itemCurrency,
                 })}
               </p>
-              <div className='h-6 border-l border-gray'></div>
+              <div className="h-6 border-l border-gray"></div>
               <button
-                className='text-black px-2 py-1 rounded'
+                className="text-black px-2 py-1 rounded"
                 onClick={() => removeItem(key)}
               >
-                <BsTrash3 className='w-4 h-4' />
+                <BsTrash3 className="w-4 h-4" />
               </button>
             </div>
           </li>

@@ -6,7 +6,7 @@ export const createSaleEndpoint: Endpoint = {
   handler: async (req, res) => {
     try {
       const {
-        itemId,
+        itemId: _itemId,
         itemType,
         itemName,
         quantity,

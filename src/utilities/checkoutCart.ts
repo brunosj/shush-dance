@@ -1,8 +1,8 @@
 import {
-  cartLineNeedsBuyerQuestions,
-  getCartLineBuyerQuestions,
   type BuyerAnswerSet,
   type BuyerQuestionDefsByLine,
+  cartLineNeedsBuyerQuestions,
+  getCartLineBuyerQuestions,
 } from './buyerQuestions';
 
 type CartLine = {
@@ -13,27 +13,29 @@ type CartLine = {
 
 export function cartNeedsTicketDetails(
   cartDetails: Record<string, CartLine | undefined> | null | undefined,
-  defsByLine?: BuyerQuestionDefsByLine
+  defsByLine?: BuyerQuestionDefsByLine,
 ): boolean {
   if (!cartDetails) return false;
   return Object.entries(cartDetails).some(([lineId, item]) =>
-    cartLineNeedsBuyerQuestions(item?.product_data?.metadata, lineId, defsByLine)
+    cartLineNeedsBuyerQuestions(
+      item?.product_data?.metadata,
+      lineId,
+      defsByLine,
+    ),
   );
 }
 
 /** Cart lines that still need CMS question defs (stale localStorage cart). */
 export function cartLinesMissingBuyerQuestionMetadata(
   cartDetails: Record<string, CartLine | undefined> | null | undefined,
-  defsByLine?: BuyerQuestionDefsByLine
+  defsByLine?: BuyerQuestionDefsByLine,
 ): { lineId: string; eventId: string; tierId: string }[] {
   if (!cartDetails) return [];
   const lines: { lineId: string; eventId: string; tierId: string }[] = [];
   for (const [lineId, item] of Object.entries(cartDetails)) {
     const metadata = item?.product_data?.metadata;
     if (!metadata || metadata.type !== 'ticket') continue;
-    if (
-      cartLineNeedsBuyerQuestions(metadata, lineId, defsByLine)
-    ) {
+    if (cartLineNeedsBuyerQuestions(metadata, lineId, defsByLine)) {
       continue;
     }
     const eventId =
@@ -50,7 +52,7 @@ export function cartLinesMissingBuyerQuestionMetadata(
 export function syncTicketBuyerAnswersWithCart(
   cartDetails: Record<string, CartLine | undefined> | null | undefined,
   answers: Record<string, BuyerAnswerSet[]>,
-  defsByLine?: BuyerQuestionDefsByLine
+  defsByLine?: BuyerQuestionDefsByLine,
 ): Record<string, BuyerAnswerSet[]> {
   if (!cartDetails) return {};
   const next: Record<string, BuyerAnswerSet[]> = {};
@@ -60,7 +62,7 @@ export function syncTicketBuyerAnswersWithCart(
     const questions = getCartLineBuyerQuestions(
       item?.product_data?.metadata,
       lineId,
-      defsByLine
+      defsByLine,
     );
     if (questions.length === 0) continue;
 
@@ -78,7 +80,7 @@ export function syncTicketBuyerAnswersWithCart(
 export function areTicketBuyerAnswersComplete(
   cartDetails: Record<string, CartLine | undefined> | null | undefined,
   answers: Record<string, BuyerAnswerSet[]>,
-  defsByLine?: BuyerQuestionDefsByLine
+  defsByLine?: BuyerQuestionDefsByLine,
 ): boolean {
   if (!cartDetails) return true;
 
@@ -86,7 +88,7 @@ export function areTicketBuyerAnswersComplete(
     const questions = getCartLineBuyerQuestions(
       item?.product_data?.metadata,
       lineId,
-      defsByLine
+      defsByLine,
     );
     if (questions.length === 0) continue;
 

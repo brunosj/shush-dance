@@ -1,4 +1,5 @@
 import type { Endpoint } from 'payload/config';
+
 import { backfillStripeFees } from '../utils/backfillStripeFees';
 
 export const backfillStripeFeesEndpoint: Endpoint = {

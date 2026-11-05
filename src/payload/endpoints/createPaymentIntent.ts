@@ -1,5 +1,6 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+
 import { validateAndNormalizeOrderData } from '../utils/validateOrderData';
 
 // Cache Stripe instance with proper cleanup and health checks
@@ -107,14 +108,14 @@ const createPaymentIntentWithRetry = async (
   paymentIntentData: Stripe.PaymentIntentCreateParams,
   maxRetries = 3,
   requestId = 'unknown',
-  idempotencyKey?: string
+  idempotencyKey?: string,
 ): Promise<Stripe.PaymentIntent> => {
   let stripe = getStripeInstance();
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(
-        `[${requestId}] 🔄 Stripe API call attempt ${attempt}/${maxRetries} (instance age: ${Math.floor((Date.now() - instanceCreatedAt) / 1000)}s, requests: ${instanceRequestCount})`
+        `[${requestId}] 🔄 Stripe API call attempt ${attempt}/${maxRetries} (instance age: ${Math.floor((Date.now() - instanceCreatedAt) / 1000)}s, requests: ${instanceRequestCount})`,
       );
       return await stripe.paymentIntents.create(paymentIntentData, {
         idempotencyKey,
@@ -129,7 +130,7 @@ const createPaymentIntentWithRetry = async (
           attempt,
           instanceAge: Math.floor((Date.now() - instanceCreatedAt) / 1000),
           instanceRequests: instanceRequestCount,
-        }
+        },
       );
 
       // Check if this might be a stale instance issue
@@ -142,7 +143,7 @@ const createPaymentIntentWithRetry = async (
 
       if (isConnectionError && attempt < maxRetries) {
         console.log(
-          `[${requestId}] 🔄 Connection error detected, forcing fresh Stripe instance...`
+          `[${requestId}] 🔄 Connection error detected, forcing fresh Stripe instance...`,
         );
         cleanupStripeInstance();
         stripe = getStripeInstance(); // Get fresh instance
@@ -195,7 +196,7 @@ export const createPaymentIntentEndpoint: Endpoint = {
       // Validate environment first
       if (!process.env.STRIPE_SECRET_KEY) {
         console.error(
-          `[${requestId}] ❌ STRIPE_SECRET_KEY not found in environment`
+          `[${requestId}] ❌ STRIPE_SECRET_KEY not found in environment`,
         );
         return res.status(500).json({
           error: 'Stripe configuration missing',
@@ -229,10 +230,13 @@ export const createPaymentIntentEndpoint: Endpoint = {
       try {
         validatedOrderData = await validateAndNormalizeOrderData(
           req.payload,
-          orderData
+          orderData,
         );
       } catch (validationError: any) {
-        console.error(`[${requestId}] ❌ Order validation failed:`, validationError);
+        console.error(
+          `[${requestId}] ❌ Order validation failed:`,
+          validationError,
+        );
         return res.status(400).json({
           error: validationError.message || 'Invalid order data',
           code: 'cart_validation_failed',
@@ -291,7 +295,7 @@ export const createPaymentIntentEndpoint: Endpoint = {
       const isTestMode = process.env.STRIPE_SECRET_KEY.startsWith('sk_test_');
 
       console.log(
-        `[${requestId}] 💳 Creating payment intent for ${validatedOrderData.currency} ${validatedAmount} (${amountInCents} cents) - ${isTestMode ? 'TEST' : 'LIVE'} mode`
+        `[${requestId}] 💳 Creating payment intent for ${validatedOrderData.currency} ${validatedAmount} (${amountInCents} cents) - ${isTestMode ? 'TEST' : 'LIVE'} mode`,
       );
 
       // Prepare metadata with order data split into chunks (500 char limit per key)
@@ -310,13 +314,13 @@ export const createPaymentIntentEndpoint: Endpoint = {
         const chunkSize = 450; // Leave some buffer under 500 char limit
 
         console.log(
-          `[${requestId}] 📦 Order data length: ${orderDataString.length} characters`
+          `[${requestId}] 📦 Order data length: ${orderDataString.length} characters`,
         );
 
         if (orderDataString.length <= chunkSize) {
           metadata.orderData = orderDataString;
           console.log(
-            `[${requestId}] ✅ Order data stored in single metadata key`
+            `[${requestId}] ✅ Order data stored in single metadata key`,
           );
         } else {
           // Split into multiple chunks
@@ -340,7 +344,7 @@ export const createPaymentIntentEndpoint: Endpoint = {
 
           console.log(
             `[${requestId}] 📦 Order data split into ${chunks.length} chunks:`,
-            chunks.map((chunk, i) => `chunk_${i}: ${chunk.length} chars`)
+            chunks.map((chunk, i) => `chunk_${i}: ${chunk.length} chars`),
           );
         }
       }
@@ -364,11 +368,11 @@ export const createPaymentIntentEndpoint: Endpoint = {
         requestId,
         typeof req.headers['idempotency-key'] === 'string'
           ? req.headers['idempotency-key'].slice(0, 255)
-          : undefined
+          : undefined,
       );
 
       console.log(
-        `[${requestId}] ✅ Payment intent created successfully: ${paymentIntent.id}`
+        `[${requestId}] ✅ Payment intent created successfully: ${paymentIntent.id}`,
       );
 
       return res.status(200).json({

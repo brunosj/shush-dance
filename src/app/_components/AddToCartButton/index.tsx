@@ -1,19 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useShoppingCart } from 'use-shopping-cart';
-import { useShipping } from '../../_providers/ShippingProvider';
-import Button from '../Button';
-import type { Merch, Release } from '../../../payload/payload-types';
 import toast from 'react-hot-toast';
-import {
-  resolveMediaResource,
-  resolveMediaUrl,
-} from '../../_utilities/getMediaUrl';
+import { useShoppingCart } from 'use-shopping-cart';
+
+import type { Merch, Release } from '../../../payload/payload-types';
 import {
   canAddCurrencyToCart,
   DEFAULT_CURRENCY,
 } from '../../../utilities/currency';
+import { useShipping } from '../../_providers/ShippingProvider';
+import {
+  resolveMediaResource,
+  resolveMediaUrl,
+} from '../../_utilities/getMediaUrl';
+import Button from '../Button';
 
 interface AddToCartButtonProps {
   item: Merch | Release;
@@ -24,13 +25,13 @@ interface AddToCartButtonProps {
 
 // Type guards
 const hasPrice = (
-  item: Merch | Release
+  item: Merch | Release,
 ): item is (Merch | Release) & { price: number } => {
   return 'price' in item && typeof item.price === 'number' && item.price > 0;
 };
 
 const hasStockQuantity = (
-  item: Merch | Release
+  item: Merch | Release,
 ): item is (Merch | Release) & { stockQuantity: number } => {
   return 'stockQuantity' in item && typeof item.stockQuantity === 'number';
 };
@@ -51,7 +52,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     const allowed = canAddCurrencyToCart(cartDetails, DEFAULT_CURRENCY);
     if (allowed.ok === false) {
       toast.error(
-        `Your cart is in ${allowed.cartCurrency}. Empty it (or remove other-currency items) before adding EUR shop items.`
+        `Your cart is in ${allowed.cartCurrency}. Empty it (or remove other-currency items) before adding EUR shop items.`,
       );
       return;
     }
@@ -99,7 +100,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             currency: DEFAULT_CURRENCY,
             itemType: type === 'merch' ? (item as Merch).itemType : 'vinyl',
             shippingPrices: JSON.stringify(
-              'shippingPrices' in item ? item.shippingPrices : {}
+              'shippingPrices' in item ? item.shippingPrices : {},
             ),
           },
         },
@@ -118,11 +119,11 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const isOutOfStock = hasStockQuantity(item) && item.stockQuantity <= 0;
 
   if (!itemHasPrice) {
-    return <Button label='Not Available' disabled />;
+    return <Button label="Not Available" disabled />;
   }
 
   if (isOutOfStock) {
-    return <Button label='Out of Stock' disabled />;
+    return <Button label="Out of Stock" disabled />;
   }
 
   return (

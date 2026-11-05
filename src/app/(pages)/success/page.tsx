@@ -1,7 +1,8 @@
 'use client';
-import React, { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useShoppingCart } from 'use-shopping-cart';
+
 import Button from '../../_components/Button';
 
 type PageState = 'verifying' | 'processing' | 'succeeded' | 'failed';
@@ -26,11 +27,11 @@ const STATUS_MESSAGES: Record<PageState, string> = {
 };
 
 async function fetchPaymentStatus(
-  paymentIntentId: string
+  paymentIntentId: string,
 ): Promise<{ status: string; succeeded: boolean } | null> {
   try {
     const response = await fetch(
-      `/api/payment-status?payment_intent=${encodeURIComponent(paymentIntentId)}`
+      `/api/payment-status?payment_intent=${encodeURIComponent(paymentIntentId)}`,
     );
     if (!response.ok) return null;
     return response.json();
@@ -42,7 +43,7 @@ async function fetchPaymentStatus(
 async function waitForPaymentSuccess(
   paymentIntentId: string,
   maxAttempts = 15,
-  intervalMs = 2000
+  intervalMs = 2000,
 ): Promise<{ status: string; succeeded: boolean } | null> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const result = await fetchPaymentStatus(paymentIntentId);
@@ -70,9 +71,7 @@ const SuccessPageContent: React.FC = () => {
   const redirectStatus = searchParams.get('redirect_status');
 
   const [pageState, setPageState] = useState<PageState>('verifying');
-  const [processingDetail, setProcessingDetail] = useState<string | null>(
-    null
-  );
+  const [processingDetail, setProcessingDetail] = useState<string | null>(null);
   const [fallbackTriggered, setFallbackTriggered] = useState(false);
 
   useEffect(() => {
@@ -93,7 +92,7 @@ const SuccessPageContent: React.FC = () => {
       if (!active) return;
       setPageState('processing');
       setProcessingDetail(
-        'Please wait while we finalize your order and send your confirmation email.'
+        'Please wait while we finalize your order and send your confirmation email.',
       );
 
       // Brief pause to give the webhook a head start before fallback runs.
@@ -177,7 +176,7 @@ const SuccessPageContent: React.FC = () => {
       if (IN_PROGRESS_STATUSES.has(initialStatus.status)) {
         if (active) {
           setProcessingDetail(
-            'Your bank is still confirming the payment. This usually takes a few seconds.'
+            'Your bank is still confirming the payment. This usually takes a few seconds.',
           );
         }
         const finalStatus = await waitForPaymentSuccess(paymentIntentId);
@@ -204,11 +203,11 @@ const SuccessPageContent: React.FC = () => {
 
   if (pageState === 'verifying' || pageState === 'processing') {
     return (
-      <article className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
-        <h1 className='font-bold text-xl'>{STATUS_MESSAGES[pageState]}</h1>
+      <article className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <h1 className="font-bold text-xl">{STATUS_MESSAGES[pageState]}</h1>
         {processingDetail && (
-          <p className='text-gray-600'>{processingDetail}</p>
+          <p className="text-gray-600">{processingDetail}</p>
         )}
       </article>
     );
@@ -216,34 +215,34 @@ const SuccessPageContent: React.FC = () => {
 
   if (pageState === 'failed') {
     return (
-      <article className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
-        <h1 className='font-bold text-2xl'>{STATUS_MESSAGES.failed}</h1>
-        <p className='pb-3 text-lg'>
+      <article className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6">
+        <h1 className="font-bold text-2xl">{STATUS_MESSAGES.failed}</h1>
+        <p className="pb-3 text-lg">
           Your payment was not completed. No charge was made and no order was
           created.
         </p>
-        <div className='pt-4'>
-          <Button href='/cart' label='Return to Cart' />
+        <div className="pt-4">
+          <Button href="/cart" label="Return to Cart" />
         </div>
       </article>
     );
   }
 
   return (
-    <article className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
-      <h1 className='font-bold text-2xl'>Payment Successful!</h1>
-      <p className='pb-3 text-lg'>
+    <article className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6">
+      <h1 className="font-bold text-2xl">Payment Successful!</h1>
+      <p className="pb-3 text-lg">
         Your payment was processed successfully. Your order confirmation{' '}
         {fallbackTriggered ? 'has been' : 'will be'} sent to your email
         {fallbackTriggered ? '' : ' shortly'}.
       </p>
-      <p className='text-sm text-gray-600'>
+      <p className="text-sm text-gray-600">
         If you don't receive a confirmation email, please check your spam folder
         or contact us at hello@shush.dance. If you bought tickets, please note
         that your name will be added to a list at the door.
       </p>
-      <div className='pt-4'>
-        <Button href='/' label='Return to Home' />
+      <div className="pt-4">
+        <Button href="/" label="Return to Home" />
       </div>
     </article>
   );
@@ -253,9 +252,9 @@ const SuccessPage: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <article className='mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
-          <h1 className='font-bold text-xl'>Loading...</h1>
+        <article className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-screen text-center space-y-6">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <h1 className="font-bold text-xl">Loading...</h1>
         </article>
       }
     >

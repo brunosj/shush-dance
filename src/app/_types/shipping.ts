@@ -24,7 +24,7 @@ export const SHIPPING_LOCATIONS: ShippingLocation[] = [
 export const getShippingPrice = (
   shippingPrices: ShippingPrices,
   region: ShippingRegion,
-  quantity: number = 1
+  quantity: number = 1,
 ): number => {
   if (quantity <= 0) return 0;
 
@@ -47,11 +47,11 @@ export const calculateCartShipping = (
     type: string; // 'release', 'merch', or 'ticket'
     itemType?: string; // For merch: 'clothing', 'prints', 'other'; For tickets: 'ticket'
   }>,
-  region: ShippingRegion
+  region: ShippingRegion,
 ): number => {
   // Filter out digital items (including tickets) as they don't require shipping
   const physicalItems = cartItems.filter(
-    (item) => !item.isDigital && item.type !== 'ticket'
+    (item) => !item.isDigital && item.type !== 'ticket',
   );
 
   if (physicalItems.length === 0) return 0;
@@ -82,7 +82,7 @@ export const calculateCartShipping = (
 
   // Helper function to calculate shipping for a group using higher shipping price logic
   const calculateGroupShippingWithHigherPrice = (
-    items: typeof physicalItems
+    items: typeof physicalItems,
   ): number => {
     if (items.length === 0) return 0;
 
@@ -118,7 +118,7 @@ export const calculateCartShipping = (
 
   // Helper function to calculate shipping for a group by adding each item's shipping
   const calculateGroupShippingAdditive = (
-    items: typeof physicalItems
+    items: typeof physicalItems,
   ): number => {
     return items.reduce((total, item) => {
       const firstPrice = item.shippingPrices[region] || 0;
@@ -180,7 +180,7 @@ export const calculateVAT = (price: number, vatRate: number): number => {
 
 export const calculateTotalWithVAT = (
   price: number,
-  vatRate: number
+  vatRate: number,
 ): number => {
   return price + calculateVAT(price, vatRate);
 };

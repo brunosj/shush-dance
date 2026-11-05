@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import Button from '../Button';
+
 import { isPayloadFetchError } from '../../_utilities/payloadFetchError';
+import Button from '../Button';
 
 interface SiteErrorPageProps {
   error: Error & { digest?: string };
@@ -27,23 +28,21 @@ const SiteErrorPage = ({ error, reset }: SiteErrorPageProps) => {
   }, [error, status]);
 
   return (
-    <article className='container layout flex min-h-[60vh] flex-col items-center justify-center text-center'>
-      <p className='text-xs uppercase tracking-[0.35em] text-darkGray'>
+    <article className="container layout flex min-h-[60vh] flex-col items-center justify-center text-center">
+      <p className="text-xs uppercase tracking-[0.35em] text-darkGray">
         Error {status ?? 500}
       </p>
-      <h1 className='mt-6 text-3xl font-bold lg:text-5xl'>
+      <h1 className="mt-6 text-3xl font-bold lg:text-5xl">
         {isTemporary ? 'Temporarily unavailable' : 'Something went wrong'}
       </h1>
-      <p className='mt-6 max-w-md text-darkGray'>
+      <p className="mt-6 max-w-md text-darkGray">
         {isTemporary
           ? 'We had trouble loading this page. Please wait a moment and try again.'
           : 'An unexpected error occurred while loading this page.'}
       </p>
-      <div className='mt-10 flex flex-wrap items-center justify-center gap-4'>
-        {reset && (
-          <Button label='Try again' onClick={() => reset()} />
-        )}
-        <Button href='/' label='Return to Home' />
+      <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        {reset && <Button label="Try again" onClick={() => reset()} />}
+        <Button href="/" label="Return to Home" />
       </div>
     </article>
   );

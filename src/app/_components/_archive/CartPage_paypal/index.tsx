@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useShoppingCart } from 'use-shopping-cart';
-import { BsTrash3, BsPaypal, BsCreditCard } from 'react-icons/bs';
-import { formatCurrencyString } from 'use-shopping-cart';
-import { useRouter } from 'next/navigation';
 import {
   PayPalButtons,
   PayPalButtonsComponentProps,
 } from '@paypal/react-paypal-js';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { BsCreditCard, BsPaypal, BsTrash3 } from 'react-icons/bs';
+import { formatCurrencyString, useShoppingCart } from 'use-shopping-cart';
+
 import { useShipping } from '../../../_providers/ShippingProvider';
 import {
   calculateCartShipping,
@@ -16,10 +16,10 @@ import {
   SHIPPING_LOCATIONS,
   type ShippingRegion,
 } from '../../../_types/shipping';
-import ShippingLocationSelector from '../../ShippingLocationSelector';
 import CustomerDataForm, { CustomerData } from '../../CustomerDataForm';
-import StepIndicator from '../../StepIndicator';
 import PaymentMethodRadio from '../../PaymentMethod';
+import ShippingLocationSelector from '../../ShippingLocationSelector';
+import StepIndicator from '../../StepIndicator';
 import StripeCheckoutButton from '../../StripeCheckoutButton';
 
 type CheckoutStep = 'cart' | 'customer-info' | 'payment';
@@ -40,7 +40,7 @@ const CartPageV2 = () => {
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>(
-    'stripe'
+    'stripe',
   );
   const [currency] = useState('EUR');
 
@@ -81,9 +81,9 @@ const CartPageV2 = () => {
 
   if (!cartDetails || cartCount === 0) {
     return (
-      <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12 text-center'>
-        <h2 className='text-2xl font-bold mb-4'>Your cart is empty</h2>
-        <p className='text-gray-600'>
+      <div className="max-w-3xl mx-2 md:mx-auto mt-24 mb-12 text-center">
+        <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
+        <p className="text-gray-600">
           Add some items to your cart to see them here.
         </p>
       </div>
@@ -122,7 +122,7 @@ const CartPageV2 = () => {
   // Get VAT rate for selected region
   const getVATRate = () => {
     const location = SHIPPING_LOCATIONS.find(
-      (loc) => loc.region === selectedRegion
+      (loc) => loc.region === selectedRegion,
     );
     return location?.vatRate || 0;
   };
@@ -131,16 +131,16 @@ const CartPageV2 = () => {
   const subtotalExclVAT = totalPrice || 0;
   const shippingCostEuros = calculateCartShipping(
     getCartShippingData(),
-    selectedRegion
+    selectedRegion,
   );
   const shippingCost = Math.round(shippingCostEuros * 100);
   const vatRate = getVATRate();
 
   const subtotalVAT = Math.round(
-    calculateVAT(subtotalExclVAT / 100, vatRate) * 100
+    calculateVAT(subtotalExclVAT / 100, vatRate) * 100,
   );
   const shippingVAT = Math.round(
-    calculateVAT(shippingCost / 100, vatRate) * 100
+    calculateVAT(shippingCost / 100, vatRate) * 100,
   );
   const totalVAT = subtotalVAT + shippingVAT;
 
@@ -255,7 +255,7 @@ const CartPageV2 = () => {
   // Function to create order record
   const createOrderRecord = async (
     paymentMethod: string,
-    transactionId: string
+    transactionId: string,
   ) => {
     if (!customerData) return;
 
@@ -303,7 +303,7 @@ const CartPageV2 = () => {
   // Function to create sales records
   const createSalesRecords = async (
     paymentMethod: string,
-    transactionId: string
+    transactionId: string,
   ) => {
     if (!cartDetails) return;
 
@@ -333,7 +333,7 @@ const CartPageV2 = () => {
                 itemType: metadata.itemType || 'other',
               },
             ],
-            selectedRegion
+            selectedRegion,
           );
 
       const subtotal = basePrice * quantity;
@@ -386,15 +386,15 @@ const CartPageV2 = () => {
   // Render based on checkout step
   if (checkoutStep === 'customer-info') {
     return (
-      <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
+      <div className="max-w-3xl mx-2 md:mx-auto mt-24 mb-12">
         <StepIndicator
           currentStep={checkoutStep}
           onStepClick={handleStepNavigation}
           completedSteps={getCompletedSteps()}
         />
-        <div className='mb-6'>
-          <h2 className='text-2xl font-bold mb-2'>Customer Information</h2>
-          <p className='text-gray-600'>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-2">Customer Information</h2>
+          <p className="text-gray-600">
             Please provide your shipping details to continue.
           </p>
         </div>
@@ -409,23 +409,23 @@ const CartPageV2 = () => {
 
   if (checkoutStep === 'payment') {
     return (
-      <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
+      <div className="max-w-3xl mx-2 md:mx-auto mt-24 mb-12">
         <StepIndicator
           currentStep={checkoutStep}
           onStepClick={handleStepNavigation}
           completedSteps={getCompletedSteps()}
         />
-        <div className='mb-6'>
-          <h2 className='text-2xl font-bold mb-2'>Review & Pay</h2>
-          <p className='text-gray-600'>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-2">Review & Pay</h2>
+          <p className="text-gray-600">
             Review your order details and complete payment.
           </p>
         </div>
 
-        <div className='bg-gray-50 p-6 rounded-lg mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>Order Summary</h3>
-          <div className='space-y-2'>
-            <div className='flex justify-between'>
+        <div className="bg-gray-50 p-6 rounded-lg mb-6">
+          <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between">
               <span>Subtotal (excl. VAT):</span>
               <span>
                 {formatCurrencyString({
@@ -434,20 +434,20 @@ const CartPageV2 = () => {
                 })}
               </span>
             </div>
-            <div className='flex justify-between'>
+            <div className="flex justify-between">
               <span>Shipping ({getRegionLabel()}):</span>
               <span>
                 {formatCurrencyString({ value: shippingCost, currency: 'EUR' })}
               </span>
             </div>
-            <div className='flex justify-between'>
+            <div className="flex justify-between">
               <span>VAT ({selectedRegion === 'germany' ? '19%' : '0%'}):</span>
               <span>
                 {formatCurrencyString({ value: totalVAT, currency: 'EUR' })}
               </span>
             </div>
-            <hr className='my-2' />
-            <div className='flex justify-between font-semibold text-lg'>
+            <hr className="my-2" />
+            <div className="flex justify-between font-semibold text-lg">
               <span>Total:</span>
               <span>
                 {formatCurrencyString({ value: finalTotal, currency: 'EUR' })}
@@ -456,8 +456,8 @@ const CartPageV2 = () => {
           </div>
         </div>
 
-        <div className='bg-gray-50 p-6 rounded-lg mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>Shipping Address</h3>
+        <div className="bg-gray-50 p-6 rounded-lg mb-6">
+          <h3 className="text-lg font-semibold mb-4">Shipping Address</h3>
           <p>
             {customerData?.firstName} {customerData?.lastName}
             <br />
@@ -470,20 +470,20 @@ const CartPageV2 = () => {
         </div>
 
         {/* Payment Method Selection */}
-        <div className='bg-gray-50 p-6 rounded-lg mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>Payment Method</h3>
-          <div className='space-y-4'>
+        <div className="bg-gray-50 p-6 rounded-lg mb-6">
+          <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
+          <div className="space-y-4">
             <PaymentMethodRadio
-              label='Pay with Credit Card (Stripe)'
+              label="Pay with Credit Card (Stripe)"
               icon={<BsCreditCard />}
-              value='stripe'
+              value="stripe"
               selectedPaymentMethod={paymentMethod}
               onChange={setPaymentMethod}
             />
             <PaymentMethodRadio
-              label='Pay with PayPal'
+              label="Pay with PayPal"
               icon={<BsPaypal />}
-              value='paypal'
+              value="paypal"
               selectedPaymentMethod={paymentMethod}
               onChange={setPaymentMethod}
             />
@@ -491,7 +491,7 @@ const CartPageV2 = () => {
         </div>
 
         {/* Payment Buttons */}
-        <div className='space-y-4 w-1/2 mx-auto'>
+        <div className="space-y-4 w-1/2 mx-auto">
           {paymentMethod === 'paypal' && (
             <PayPalButtons
               style={styles as PayPalButtonsComponentProps['style']}
@@ -523,51 +523,51 @@ const CartPageV2 = () => {
 
   // Default cart view
   return (
-    <div className='max-w-3xl mx-2 md:mx-auto mt-24 mb-12'>
+    <div className="max-w-3xl mx-2 md:mx-auto mt-24 mb-12">
       <StepIndicator
         currentStep={checkoutStep}
         onStepClick={handleStepNavigation}
         completedSteps={getCompletedSteps()}
       />
 
-      <ul className='space-y-4 pt-6'>
+      <ul className="space-y-4 pt-6">
         {Object.entries(cartDetails || {}).map(([key, item]) => (
           <li
             key={key}
-            className='flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray'
+            className="flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray"
           >
-            <div className='flex flex-col'>
-              <h4 className='font-bold '>{item?.name || 'Product'}</h4>
-              <p className='text-darkGray'>
+            <div className="flex flex-col">
+              <h4 className="font-bold ">{item?.name || 'Product'}</h4>
+              <p className="text-darkGray">
                 {item?.description || 'Unknown'} |{' '}
                 {item?.priceObject
                   ? formatCurrencyString(item.priceObject)
                   : '€0.00'}
               </p>
             </div>
-            <div className='ml-auto flex items-center gap-2 space-x-3'>
+            <div className="ml-auto flex items-center gap-2 space-x-3">
               <button
                 onClick={() => decrementItem(key)}
-                className='bg-white border border-gray-300 text-black px-2 py-1'
+                className="bg-white border border-gray-300 text-black px-2 py-1"
                 disabled={item?.quantity <= 1}
               >
                 -
               </button>
-              <span className='text-sm lg:text-base'>{item?.quantity}</span>
+              <span className="text-sm lg:text-base">{item?.quantity}</span>
               <button
                 onClick={() => incrementItem(key)}
-                className='bg-white border border-gray-300 text-black px-2 py-1'
+                className="bg-white border border-gray-300 text-black px-2 py-1"
               >
                 +
               </button>
-              <div className='h-6 border-l border-gray'></div>
+              <div className="h-6 border-l border-gray"></div>
               <p>{item?.formattedValue}</p>
-              <div className='h-6 border-l border-gray'></div>
+              <div className="h-6 border-l border-gray"></div>
               <button
-                className='text-black px-2 py-1 rounded'
+                className="text-black px-2 py-1 rounded"
                 onClick={() => removeItem(key)}
               >
-                <BsTrash3 className='w-4 h-4' />
+                <BsTrash3 className="w-4 h-4" />
               </button>
             </div>
           </li>
@@ -575,15 +575,15 @@ const CartPageV2 = () => {
       </ul>
 
       {/* Shipping Location Selector - moved below cart items */}
-      <div className='mt-6 mb-6'>
+      <div className="mt-6 mb-6">
         <ShippingLocationSelector />
       </div>
 
       {/* Cart Summary */}
-      <div className='bg-gray-50 p-6 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4'>Order Summary</h3>
-        <div className='space-y-2'>
-          <div className='flex justify-between'>
+      <div className="bg-gray-50 p-6 rounded-lg">
+        <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between">
             <span>Subtotal (excl. VAT):</span>
             <span>
               {formatCurrencyString({
@@ -592,20 +592,20 @@ const CartPageV2 = () => {
               })}
             </span>
           </div>
-          <div className='flex justify-between'>
+          <div className="flex justify-between">
             <span>Shipping ({getRegionLabel()}):</span>
             <span>
               {formatCurrencyString({ value: shippingCost, currency: 'EUR' })}
             </span>
           </div>
-          <div className='flex justify-between'>
+          <div className="flex justify-between">
             <span>VAT ({selectedRegion === 'germany' ? '19%' : '0%'}):</span>
             <span>
               {formatCurrencyString({ value: totalVAT, currency: 'EUR' })}
             </span>
           </div>
-          <hr className='my-2' />
-          <div className='flex justify-between font-semibold text-lg'>
+          <hr className="my-2" />
+          <div className="flex justify-between font-semibold text-lg">
             <span>Total:</span>
             <span>
               {formatCurrencyString({ value: finalTotal, currency: 'EUR' })}
@@ -615,7 +615,7 @@ const CartPageV2 = () => {
 
         <button
           onClick={() => setCheckoutStep('customer-info')}
-          className='w-full mt-6 bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors'
+          className="w-full mt-6 bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
         >
           Proceed to Checkout
         </button>

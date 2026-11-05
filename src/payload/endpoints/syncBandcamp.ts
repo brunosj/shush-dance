@@ -1,9 +1,10 @@
 import { Endpoint } from 'payload/config';
+
 import { fetchBands, fetchSalesForBand } from '../services/bandcamp';
 
 async function findRelatedRelease(
   payload: any,
-  sale: any
+  sale: any,
 ): Promise<string | null> {
   if (!sale.catalog_number) return null;
 
@@ -41,7 +42,7 @@ async function findRelatedRelease(
 
 async function findRelatedMerchItem(
   payload: any,
-  sale: any
+  sale: any,
 ): Promise<string | null> {
   if (!sale.item_type || !sale.item_name) return null;
 
@@ -133,7 +134,7 @@ async function findRelatedMerchItem(
 async function logUnmatchedItem(
   payload: any,
   sale: any,
-  type: 'release' | 'merch'
+  type: 'release' | 'merch',
 ): Promise<void> {
   console.warn(`Unmatched ${type} item:`, {
     itemName: sale.item_name,
@@ -166,11 +167,11 @@ export const syncBandcampEndpoint: Endpoint = {
         const salesData = await fetchSalesForBand(
           band.band_id,
           startDate,
-          endDate
+          endDate,
         );
 
         console.log(
-          `Processing ${salesData?.report?.length || 0} sales for ${band.name}`
+          `Processing ${salesData?.report?.length || 0} sales for ${band.name}`,
         );
 
         if (salesData?.report && Array.isArray(salesData.report)) {
@@ -203,7 +204,7 @@ export const syncBandcampEndpoint: Endpoint = {
                 // Find related items
                 const itemType = determineItemType(
                   sale.item_type,
-                  sale.package || ''
+                  sale.package || '',
                 );
 
                 let cmsItem = null;
@@ -327,7 +328,7 @@ export const syncBandcampEndpoint: Endpoint = {
 
 const determineItemType = (
   itemType: string,
-  packageType: string
+  packageType: string,
 ): 'record' | 'merch' | 'digital' => {
   // Handle digital sales
   if (

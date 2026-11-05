@@ -21,7 +21,7 @@ export async function POST(req: Request) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${process.env.PAYLOAD_API_TOKEN}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     console.error('Error:', error);
     return NextResponse.json(
       { error: 'Error uploading audio file' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

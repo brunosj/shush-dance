@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { Event } from '../../../payload/payload-types';
 import EventListing from '../EventListing';
 
@@ -15,7 +16,7 @@ const EventList: React.FC<EventListProps> = ({ events }) => {
   });
 
   return (
-    <ul className='relative space-y-6'>
+    <ul className="relative space-y-6">
       {eventsSortedByDate.map((event) => (
         <EventListing key={event.id} event={event} />
       ))}

@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
-import { AuthProvider } from '../_providers/Auth';
-import { ThemeProvider } from './Theme';
+import React from 'react';
+
 import CartProvider from './CartProvider';
-import { ShippingProvider } from './ShippingProvider';
 import { CheckoutProvider } from './CheckoutProvider';
+import { ShippingProvider } from './ShippingProvider';
+import { ThemeProvider } from './Theme';
 
 export const Providers: React.FC<{
   children: React.ReactNode;

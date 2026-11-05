@@ -1,5 +1,6 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+
 import { processStripeOrderSuccess } from '../utils/processStripeOrder';
 import { retrieveStripeProcessingFeeCents } from '../utils/stripeFees';
 import { readValidatedOrderDataFromMetadata } from '../utils/validateOrderData';
@@ -30,12 +31,13 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
       }
 
       console.log(
-        `🔍 Fallback: Checking if order exists for payment intent: ${paymentIntentId}`
+        `🔍 Fallback: Checking if order exists for payment intent: ${paymentIntentId}`,
       );
 
       const stripe = getStripeInstance();
       let paymentMethodType = 'unknown';
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const paymentIntent =
+        await stripe.paymentIntents.retrieve(paymentIntentId);
 
       if (paymentIntent.status !== 'succeeded') {
         return res.json({
@@ -47,7 +49,7 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
       }
 
       const validatedOrderData = readValidatedOrderDataFromMetadata(
-        paymentIntent.metadata
+        paymentIntent.metadata,
       );
       const expectedAmount = Math.round(validatedOrderData.totals.total * 100);
       if (
@@ -61,7 +63,7 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
 
       if (paymentIntent.payment_method) {
         const paymentMethod = await stripe.paymentMethods.retrieve(
-          paymentIntent.payment_method as string
+          paymentIntent.payment_method as string,
         );
         paymentMethodType = paymentMethod.type;
       }
@@ -73,7 +75,7 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
       try {
         const feeCents = await retrieveStripeProcessingFeeCents(
           stripe,
-          paymentIntentId
+          paymentIntentId,
         );
         if (feeCents !== null) {
           stripeFeeEuros = feeCents / 100;
@@ -88,7 +90,7 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
         validatedOrderData,
         detectedPaymentMethod,
         orderNumber,
-        { isFallback: true, stripeFeeEuros }
+        { isFallback: true, stripeFeeEuros },
       );
 
       console.log('🎉 Fallback order creation completed successfully');

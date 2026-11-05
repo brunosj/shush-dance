@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+
 import { formatCurrency } from '../../../_utilities/formatters';
 
 const POLL_MS = 15_000;
@@ -81,14 +82,14 @@ export function EventTicketTracker({
     try {
       const res = await fetch(
         `${base}/api/public-event-ticket-stats?${params.toString()}`,
-        { cache: 'no-store' }
+        { cache: 'no-store' },
       );
       const json = (await res.json()) as TrackerPayload | TrackerError;
       if (!res.ok || json.ok === false) {
         setError(
           json && 'error' in json && json.error
             ? json.error
-            : `Failed (${res.status})`
+            : `Failed (${res.status})`,
         );
         setData(null);
         return;
@@ -111,7 +112,7 @@ export function EventTicketTracker({
 
   if (loading && !data) {
     return (
-      <div className='mx-auto max-w-3xl px-4 py-16 text-center text-neutral-500'>
+      <div className="mx-auto max-w-3xl px-4 py-16 text-center text-neutral-500">
         Loading ticket stats…
       </div>
     );
@@ -119,9 +120,11 @@ export function EventTicketTracker({
 
   if (error && !data) {
     return (
-      <div className='mx-auto max-w-3xl px-4 py-16 text-center'>
-        <p className='text-lg font-medium text-neutral-800'>Tracker unavailable</p>
-        <p className='mt-2 text-sm text-neutral-500'>{error}</p>
+      <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <p className="text-lg font-medium text-neutral-800">
+          Tracker unavailable
+        </p>
+        <p className="mt-2 text-sm text-neutral-500">{error}</p>
       </div>
     );
   }
@@ -132,69 +135,69 @@ export function EventTicketTracker({
   const currency = event.currency || 'EUR';
 
   return (
-    <div className='mx-auto max-w-3xl px-4 py-10 sm:py-14'>
-      <header className='mb-8 border-b border-neutral-200 pb-6'>
-        <p className='text-xs font-medium uppercase tracking-[0.14em] text-neutral-500'>
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
+      <header className="mb-8 border-b border-neutral-200 pb-6">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
           Live ticket tracker
         </p>
-        <h1 className='mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl'>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
           {event.title}
         </h1>
-        <p className='mt-3 text-sm text-neutral-600'>
+        <p className="mt-3 text-sm text-neutral-600">
           {formatEventDate(event.date)}
           {event.location ? ` · ${event.location}` : ''}
         </p>
-        <p className='mt-2 text-xs text-neutral-400'>
+        <p className="mt-2 text-xs text-neutral-400">
           Updates every {POLL_MS / 1000}s
           {lastFetchAt ? ` · last refresh ${formatUpdatedAt(lastFetchAt)}` : ''}
           {error ? ` · refresh error: ${error}` : ''}
         </p>
       </header>
 
-      <section className='mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3'>
-        <StatCard label='Tickets sold' value={String(totals.tickets)} />
-        <StatCard label='Orders' value={String(totals.orders)} />
+      <section className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard label="Tickets sold" value={String(totals.tickets)} />
+        <StatCard label="Orders" value={String(totals.orders)} />
         <StatCard
-          label='Collected'
+          label="Collected"
           value={formatCurrency(totals.revenue, currency)}
         />
       </section>
 
       <section>
-        <h2 className='mb-3 text-sm font-medium uppercase tracking-[0.12em] text-neutral-500'>
+        <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.12em] text-neutral-500">
           By tier
         </h2>
         {tiers.length === 0 ? (
-          <p className='rounded-lg border border-dashed border-neutral-300 bg-white px-4 py-8 text-center text-sm text-neutral-500'>
+          <p className="rounded-lg border border-dashed border-neutral-300 bg-white px-4 py-8 text-center text-sm text-neutral-500">
             No paid ticket sales imported yet.
           </p>
         ) : (
-          <div className='overflow-hidden rounded-lg border border-neutral-200 bg-white'>
-            <table className='w-full text-left text-sm'>
-              <thead className='border-b border-neutral-200 bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500'>
+          <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
-                  <th className='px-4 py-3 font-medium'>Tier</th>
-                  <th className='px-4 py-3 font-medium text-right'>Tickets</th>
-                  <th className='px-4 py-3 font-medium text-right'>Orders</th>
-                  <th className='px-4 py-3 font-medium text-right'>Revenue</th>
+                  <th className="px-4 py-3 font-medium">Tier</th>
+                  <th className="px-4 py-3 font-medium text-right">Tickets</th>
+                  <th className="px-4 py-3 font-medium text-right">Orders</th>
+                  <th className="px-4 py-3 font-medium text-right">Revenue</th>
                 </tr>
               </thead>
               <tbody>
                 {tiers.map((tier) => (
                   <tr
                     key={tier.name}
-                    className='border-b border-neutral-100 last:border-0'
+                    className="border-b border-neutral-100 last:border-0"
                   >
-                    <td className='px-4 py-3 font-medium text-neutral-900'>
+                    <td className="px-4 py-3 font-medium text-neutral-900">
                       {tier.name}
                     </td>
-                    <td className='px-4 py-3 text-right tabular-nums'>
+                    <td className="px-4 py-3 text-right tabular-nums">
                       {tier.quantity}
                     </td>
-                    <td className='px-4 py-3 text-right tabular-nums text-neutral-600'>
+                    <td className="px-4 py-3 text-right tabular-nums text-neutral-600">
                       {tier.orders}
                     </td>
-                    <td className='px-4 py-3 text-right tabular-nums'>
+                    <td className="px-4 py-3 text-right tabular-nums">
                       {formatCurrency(tier.revenue, currency)}
                     </td>
                   </tr>
@@ -205,7 +208,7 @@ export function EventTicketTracker({
         )}
       </section>
 
-      <p className='mt-8 text-center text-xs text-neutral-400'>
+      <p className="mt-8 text-center text-xs text-neutral-400">
         Aggregates only · no customer details
       </p>
     </div>
@@ -214,11 +217,11 @@ export function EventTicketTracker({
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className='rounded-lg border border-neutral-200 bg-white px-4 py-5'>
-      <p className='text-xs font-medium uppercase tracking-[0.12em] text-neutral-500'>
+    <div className="rounded-lg border border-neutral-200 bg-white px-4 py-5">
+      <p className="text-xs font-medium uppercase tracking-[0.12em] text-neutral-500">
         {label}
       </p>
-      <p className='mt-2 text-3xl font-semibold tabular-nums tracking-tight text-neutral-900'>
+      <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-neutral-900">
         {value}
       </p>
     </div>

@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useShoppingCart } from 'use-shopping-cart';
-import { formatCurrencyString } from 'use-shopping-cart';
 import Image from 'next/image';
-import { resolveMediaUrl } from '../../_utilities/getMediaUrl';
+import { useState } from 'react';
+import { formatCurrencyString, useShoppingCart } from 'use-shopping-cart';
+
 import { normalizeCurrency } from '../../../utilities/currency';
+import { resolveMediaUrl } from '../../_utilities/getMediaUrl';
 
 type Props = {
   item: {
@@ -29,9 +29,7 @@ const CartItem = ({ item }: Props) => {
   const { id, quantity, name, description, price, image, product_data } = item;
   const metadata = product_data?.metadata || {};
   const variant = metadata.variant;
-  const displayCurrency = normalizeCurrency(
-    item.currency || metadata.currency
-  );
+  const displayCurrency = normalizeCurrency(item.currency || metadata.currency);
 
   const { incrementItem, decrementItem, removeItem } = useShoppingCart();
   const [itemQuantity, setItemQuantity] = useState(quantity);
@@ -61,40 +59,40 @@ const CartItem = ({ item }: Props) => {
   const totalPrice = unitPrice * itemQuantity;
 
   return (
-    <div className='flex flex-col lg:flex-row items-center mb-3 p-2 justify-between rounded-md'>
-      <div className='flex items-center gap-4 w-full lg:w-auto'>
-        <div className='relative h-20 aspect-square'>
+    <div className="flex flex-col lg:flex-row items-center mb-3 p-2 justify-between rounded-md">
+      <div className="flex items-center gap-4 w-full lg:w-auto">
+        <div className="relative h-20 aspect-square">
           <Image
             src={resolveMediaUrl(image) || '/path/to/default/image.jpg'}
             alt={name || 'Product'}
-            className='object-contain'
+            className="object-contain"
             fill
             priority
           />
         </div>
         <div>
-          <div className='font-semibold'>{name || 'Product'}</div>
-          <div className='text-sm text-gray-600'>
+          <div className="font-semibold">{name || 'Product'}</div>
+          <div className="text-sm text-gray-600">
             {description}
             {variant &&
               ` | ${metadata.type === 'merch' ? 'Size' : 'Format'}: ${variant}`}
           </div>
-          <span className='text-xs'>({itemQuantity})</span>
+          <span className="text-xs">({itemQuantity})</span>
         </div>
       </div>
-      <div className='flex items-center justify-around w-full lg:w-auto gap-6'>
+      <div className="flex items-center justify-around w-full lg:w-auto gap-6">
         <div>
           {formatCurrencyString({
             value: Math.round(totalPrice * 100),
             currency: displayCurrency,
           })}
         </div>
-        <div className='flex items-center gap-2'>
-          <button onClick={handleDecrement} className='p-1'>
+        <div className="flex items-center gap-2">
+          <button onClick={handleDecrement} className="p-1">
             -
           </button>
           <span>{itemQuantity}</span>
-          <button onClick={handleIncrement} className='p-1'>
+          <button onClick={handleIncrement} className="p-1">
             +
           </button>
         </div>
@@ -104,7 +102,7 @@ const CartItem = ({ item }: Props) => {
             event.stopPropagation();
             removeItemFromCart();
           }}
-          className='p-1'
+          className="p-1"
         >
           🗑️
         </button>

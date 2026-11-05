@@ -10,7 +10,7 @@ export const fetchMerch = async (): Promise<Merch[]> => {
         Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
       },
       next: { revalidate: 1 },
-    }
+    },
   );
 
   const merchRes = await response.json();

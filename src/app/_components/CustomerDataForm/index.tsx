@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+
 import { useShipping } from '../../_providers/ShippingProvider';
 
 export interface CustomerData {
@@ -26,7 +27,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
   isSubmitting = false,
   initialData = null,
 }) => {
-  const { selectedRegion, getRegionLabel } = useShipping();
+  const { selectedRegion: _selectedRegion, getRegionLabel } = useShipping();
 
   const [formData, setFormData] = useState<CustomerData>({
     firstName: initialData?.firstName || '',
@@ -65,7 +66,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -84,26 +85,26 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
   };
 
   return (
-    <div className='bg-gray-50 p-6 rounded-lg'>
-      <h3 className='font-semibold mb-4'>Customer Information</h3>
-      <p className='text-sm text-gray-600 mb-4'>
+    <div className="bg-gray-50 p-6 rounded-lg">
+      <h3 className="font-semibold mb-4">Customer Information</h3>
+      <p className="text-sm text-gray-600 mb-4">
         Shipping to: <strong>{getRegionLabel()}</strong>
       </p>
 
-      <form onSubmit={handleSubmit} className='space-y-4 text-sm lg:text-base'>
+      <form onSubmit={handleSubmit} className="space-y-4 text-sm lg:text-base">
         {/* Name Fields */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label
-              htmlFor='firstName'
-              className='block text-sm font-medium text-gray-700 mb-1'
+              htmlFor="firstName"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               First Name *
             </label>
             <input
-              type='text'
-              id='firstName'
-              name='firstName'
+              type="text"
+              id="firstName"
+              name="firstName"
               value={formData.firstName}
               onChange={handleInputChange}
               className={`bg-pri w-full p-3 border rounded-md ${
@@ -112,21 +113,21 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               disabled={isSubmitting}
             />
             {errors.firstName && (
-              <p className='text-red-500 text-xs mt-1'>{errors.firstName}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
             )}
           </div>
 
           <div>
             <label
-              htmlFor='lastName'
-              className='block text-sm font-medium text-gray-700 mb-1'
+              htmlFor="lastName"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Last Name *
             </label>
             <input
-              type='text'
-              id='lastName'
-              name='lastName'
+              type="text"
+              id="lastName"
+              name="lastName"
               value={formData.lastName}
               onChange={handleInputChange}
               className={`bg-pri w-full p-3 border rounded-md ${
@@ -135,24 +136,24 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               disabled={isSubmitting}
             />
             {errors.lastName && (
-              <p className='text-red-500 text-xs mt-1'>{errors.lastName}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
             )}
           </div>
         </div>
 
         {/* Contact Fields */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label
-              htmlFor='email'
-              className='block text-sm font-medium text-gray-700 mb-1'
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Email Address *
             </label>
             <input
-              type='email'
-              id='email'
-              name='email'
+              type="email"
+              id="email"
+              name="email"
               value={formData.email}
               onChange={handleInputChange}
               className={`bg-pri w-full p-3 border rounded-md ${
@@ -161,24 +162,24 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               disabled={isSubmitting}
             />
             {errors.email && (
-              <p className='text-red-500 text-xs mt-1'>{errors.email}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
             )}
           </div>
 
           <div>
             <label
-              htmlFor='phone'
-              className='block text-sm font-medium text-gray-700 mb-1'
+              htmlFor="phone"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Phone Number
             </label>
             <input
-              type='tel'
-              id='phone'
-              name='phone'
+              type="tel"
+              id="phone"
+              name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              className='bg-pri w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+              className="bg-pri w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={isSubmitting}
             />
           </div>
@@ -187,15 +188,15 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
         {/* Address Fields */}
         <div>
           <label
-            htmlFor='street'
-            className='block text-sm font-medium text-gray-700 mb-1'
+            htmlFor="street"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
             Street Address *
           </label>
           <input
-            type='text'
-            id='street'
-            name='street'
+            type="text"
+            id="street"
+            name="street"
             value={formData.street}
             onChange={handleInputChange}
             className={`bg-pri w-full p-3 border rounded-md ${
@@ -204,22 +205,22 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
             disabled={isSubmitting}
           />
           {errors.street && (
-            <p className='text-red-500 text-xs mt-1'>{errors.street}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.street}</p>
           )}
         </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label
-              htmlFor='city'
-              className='block text-sm font-medium text-gray-700 mb-1'
+              htmlFor="city"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               City *
             </label>
             <input
-              type='text'
-              id='city'
-              name='city'
+              type="text"
+              id="city"
+              name="city"
               value={formData.city}
               onChange={handleInputChange}
               className={`bg-pri w-full p-3 border rounded-md ${
@@ -228,21 +229,21 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               disabled={isSubmitting}
             />
             {errors.city && (
-              <p className='text-red-500 text-xs mt-1'>{errors.city}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.city}</p>
             )}
           </div>
 
           <div>
             <label
-              htmlFor='postalCode'
-              className='block text-sm font-medium text-gray-700 mb-1'
+              htmlFor="postalCode"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Postal Code *
             </label>
             <input
-              type='text'
-              id='postalCode'
-              name='postalCode'
+              type="text"
+              id="postalCode"
+              name="postalCode"
               value={formData.postalCode}
               onChange={handleInputChange}
               className={`bg-pri w-full p-3 border rounded-md ${
@@ -251,21 +252,21 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               disabled={isSubmitting}
             />
             {errors.postalCode && (
-              <p className='text-red-500 text-xs mt-1'>{errors.postalCode}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>
             )}
           </div>
 
           <div>
             <label
-              htmlFor='country'
-              className='block text-sm font-medium text-gray-700 mb-1'
+              htmlFor="country"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Country *
             </label>
             <input
-              type='text'
-              id='country'
-              name='country'
+              type="text"
+              id="country"
+              name="country"
               value={formData.country}
               onChange={handleInputChange}
               className={`bg-pri w-full p-3 border rounded-md ${
@@ -274,7 +275,7 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
               disabled={isSubmitting}
             />
             {errors.country && (
-              <p className='text-red-500 text-xs mt-1'>{errors.country}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.country}</p>
             )}
           </div>
         </div>
@@ -282,28 +283,28 @@ const CustomerDataForm: React.FC<CustomerDataFormProps> = ({
         {/* Notes */}
         <div>
           <label
-            htmlFor='customerNotes'
-            className='block text-sm font-medium text-gray-700 mb-1'
+            htmlFor="customerNotes"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
             Order Notes (Optional)
           </label>
           <textarea
-            id='customerNotes'
-            name='customerNotes'
+            id="customerNotes"
+            name="customerNotes"
             value={formData.customerNotes}
             onChange={handleInputChange}
             rows={3}
-            className='text-sm bg-pri   w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-            placeholder='Any special instructions or notes for your order...'
+            className="text-sm bg-pri   w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Any special instructions or notes for your order..."
             disabled={isSubmitting}
           />
         </div>
 
-        <div className='pt-4'>
+        <div className="pt-4">
           <button
-            type='submit'
+            type="submit"
             disabled={isSubmitting}
-            className='w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm'
+            className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
           >
             {isSubmitting ? 'Processing...' : 'Continue to Payment'}
           </button>

@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   PaymentElement,
-  useStripe,
   useElements,
+  useStripe,
 } from '@stripe/react-stripe-js';
-import { useShoppingCart } from 'use-shopping-cart';
+import { loadStripe } from '@stripe/stripe-js';
 import { useRouter } from 'next/navigation';
-import type { OrderTotalsBreakdown } from '../../../utilities/tax';
-import { getCartCurrency } from '../../../utilities/currency';
+import React, { useEffect, useRef, useState } from 'react';
+import { useShoppingCart } from 'use-shopping-cart';
+
 import { buildOrderCartItemsFromCart } from '../../../utilities/buildOrderCartItems';
 import { cartNeedsTicketDetails } from '../../../utilities/checkoutCart';
+import { getCartCurrency } from '../../../utilities/currency';
+import type { OrderTotalsBreakdown } from '../../../utilities/tax';
 import { useCheckout } from '../../_providers/CheckoutProvider';
 
 // Create a fresh Stripe promise for each component instance to avoid caching issues
@@ -42,19 +43,14 @@ const CheckoutForm: React.FC<{
   orderTotals,
   shippingRegion,
   clientSecret,
-  onSuccess,
+  onSuccess: _onSuccess,
   onError,
 }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
-  const { clearCart, cartDetails } = useShoppingCart();
-  const {
-    ticketBuyerAnswers,
-    buyerQuestionDefsByLine,
-    areTicketBuyerAnswersCompleteForCart,
-    isHydratingBuyerQuestions,
-  } = useCheckout();
+  const { cartDetails } = useShoppingCart();
+  const { ticketBuyerAnswers } = useCheckout();
 
   const buildOrderData = () => {
     const orderNumber = `SHUSH-ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -63,7 +59,7 @@ const CheckoutForm: React.FC<{
       customerData,
       cartItems: buildOrderCartItemsFromCart(
         cartDetails as any,
-        ticketBuyerAnswers
+        ticketBuyerAnswers,
       ),
       totals: orderTotals,
       shippingRegion,
@@ -96,7 +92,7 @@ const CheckoutForm: React.FC<{
       const paymentIntentId = clientSecret.split('_secret_')[0];
       sessionStorage.setItem(
         'fallbackOrderData',
-        JSON.stringify({ paymentIntentId, orderData: buildOrderData() })
+        JSON.stringify({ paymentIntentId, orderData: buildOrderData() }),
       );
 
       const { error, paymentIntent } = await stripe.confirmPayment({
@@ -119,7 +115,7 @@ const CheckoutForm: React.FC<{
         // Payment succeeded (non-redirect method) - webhook will handle order
         // creation, with the sessionStorage fallback as backup.
         console.log(
-          '🎉 Payment completed, webhook will process order creation'
+          '🎉 Payment completed, webhook will process order creation',
         );
 
         // Don't clear cart here - let success page handle it after processing timeout
@@ -138,7 +134,7 @@ const CheckoutForm: React.FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-6'>
+    <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement
         options={{
           paymentMethodOrder: ['card', 'paypal'],
@@ -146,11 +142,11 @@ const CheckoutForm: React.FC<{
       />
       <button
         disabled={isLoading || !stripe || !elements}
-        className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors'
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors"
       >
         {isLoading ? (
-          <div className='flex items-center justify-center'>
-            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
             Processing Payment...
           </div>
         ) : (
@@ -212,7 +208,9 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
     if (orderTotals && customerData) {
       setIsLoading(true);
     }
-  }, [customerData?.email, orderTotals?.total]); // Re-create when key data changes
+    // Intentionally keyed on email/total so payment intent recreates only when those change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerData?.email, orderTotals?.total]);
 
   useEffect(() => {
     // Don't proceed if Stripe promise isn't ready yet
@@ -255,16 +253,16 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
 
     const needsTicketDetails = cartNeedsTicketDetails(
       cartDetails as Record<string, unknown> | null | undefined,
-      buyerQuestionDefsByLine
+      buyerQuestionDefsByLine,
     );
     if (
       needsTicketDetails &&
       !areTicketBuyerAnswersCompleteForCart(
-        cartDetails as Record<string, unknown> | null | undefined
+        cartDetails as Record<string, unknown> | null | undefined,
       )
     ) {
       setError(
-        'Please complete ticket details (meal choice, allergies, etc.) before paying.'
+        'Please complete ticket details (meal choice, allergies, etc.) before paying.',
       );
       setIsLoading(false);
       return;
@@ -297,7 +295,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             customerEmail: customerData?.email
               ? '***@' + customerData.email.split('@')[1]
               : 'missing',
-          }
+          },
         );
 
         // Prepare order data for webhook processing
@@ -305,7 +303,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           customerData,
           cartItems: buildOrderCartItemsFromCart(
             cartDetails as any,
-            ticketBuyerAnswers
+            ticketBuyerAnswers,
           ),
           totals: orderTotals,
           shippingRegion,
@@ -328,7 +326,8 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           },
           body: JSON.stringify({
             amount: orderTotals.total,
-            currency: getCartCurrency(cartDetails as any)?.toLowerCase() || 'eur',
+            currency:
+              getCartCurrency(cartDetails as any)?.toLowerCase() || 'eur',
             customerData,
             orderData: orderDataForWebhook,
             // Add timestamp and retry info to ensure fresh requests
@@ -348,7 +347,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           console.error(
             'Payment intent API error:',
             response.status,
-            errorText
+            errorText,
           );
 
           let parsedError: { error?: string; code?: string } | null = null;
@@ -361,7 +360,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           if (parsedError?.code === 'cart_validation_failed') {
             setError(
               parsedError.error ||
-                'Your cart is out of date. Please return to the cart and refresh.'
+                'Your cart is out of date. Please return to the cart and refresh.',
             );
             setIsLoading(false);
             return;
@@ -377,17 +376,17 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
 
           if (shouldRetry) {
             console.log(
-              `[${paymentKey}] Retrying payment intent creation due to ${response.status} error in ${retryDelay}ms (attempt ${retryCount + 2}/${maxRetries + 1})`
+              `[${paymentKey}] Retrying payment intent creation due to ${response.status} error in ${retryDelay}ms (attempt ${retryCount + 2}/${maxRetries + 1})`,
             );
             timeoutRef.current = setTimeout(
               () => createPaymentIntent(retryCount + 1),
-              retryDelay
+              retryDelay,
             );
             return;
           }
 
           throw new Error(
-            `API responded with ${response.status}: ${errorText}`
+            `API responded with ${response.status}: ${errorText}`,
           );
         }
 
@@ -414,7 +413,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           err.message?.includes('cancelled')
         ) {
           console.log(
-            'StripeCheckoutButton: Payment intent request aborted/cancelled'
+            'StripeCheckoutButton: Payment intent request aborted/cancelled',
           );
           return;
         }
@@ -435,11 +434,11 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
         if (retryCount < maxRetries && isNetworkError) {
           console.log(
             `[${paymentKey}] Retrying payment intent creation due to network error in ${retryDelay}ms (attempt ${retryCount + 2}/${maxRetries + 1})`,
-            { errorName: err.name, errorMessage: err.message }
+            { errorName: err.name, errorMessage: err.message },
           );
           timeoutRef.current = setTimeout(
             () => createPaymentIntent(retryCount + 1),
-            retryDelay
+            retryDelay,
           );
           return;
         }
@@ -465,6 +464,9 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
         timeoutRef.current = null;
       }
     };
+    // paymentKey / shippingRegion intentionally omitted — recreating the
+    // intent on every key/region flicker breaks Elements remount timing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     orderTotals,
     customerData,
@@ -488,9 +490,9 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   // Show loading spinner if we're still loading OR if Stripe promise isn't ready yet
   if (isLoading || !stripePromise) {
     return (
-      <div className='text-center py-8'>
-        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-        <p className='mt-2 text-gray-600'>
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-2 text-gray-600">
           {!stripePromise ? 'Initializing Stripe...' : 'Preparing payment...'}
         </p>
       </div>
@@ -499,8 +501,8 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
 
   if (error) {
     return (
-      <div className='text-center py-8'>
-        <p className='text-red-600 mb-4'>{error}</p>
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={() => {
             // Force complete refresh of payment component
@@ -512,7 +514,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             const newKey = `payment-retry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             setPaymentKey(newKey);
           }}
-          className='text-blue-600 hover:text-blue-800 underline'
+          className="text-blue-600 hover:text-blue-800 underline"
         >
           Try again
         </button>
@@ -523,8 +525,8 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   // Only show "Unable to initialize payment" if we have Stripe but no client secret and we're not loading
   if (!clientSecret) {
     return (
-      <div className='text-center py-8'>
-        <p className='text-gray-600'>Unable to initialize payment</p>
+      <div className="text-center py-8">
+        <p className="text-gray-600">Unable to initialize payment</p>
         <button
           onClick={() => {
             // Force complete refresh of payment component
@@ -536,7 +538,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
             const newKey = `payment-retry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             setPaymentKey(newKey);
           }}
-          className='mt-2 text-blue-600 hover:text-blue-800 underline'
+          className="mt-2 text-blue-600 hover:text-blue-800 underline"
         >
           Try again
         </button>

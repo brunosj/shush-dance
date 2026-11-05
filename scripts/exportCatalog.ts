@@ -6,13 +6,11 @@
  *   pnpm ts-node scripts/exportCatalog.ts ./legacy-catalog.json
  */
 
-/* eslint-disable no-console */
-
 import fs from 'fs';
 import path from 'path';
+import { getPayload } from 'payload';
 
 import config from '../src/payload/payload.config';
-import { getPayload } from 'payload';
 
 const run = async () => {
   const [, , outputArg] = process.argv;

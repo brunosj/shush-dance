@@ -18,7 +18,7 @@ function formatOrderDateTime(dateString: string): string {
 }
 
 function normalizeUnitAnswers(
-  answerSet: PayloadAnswerSet | undefined
+  answerSet: PayloadAnswerSet | undefined,
 ): { key: string; label: string; value: string }[] {
   if (!answerSet?.answers?.length) return [];
   return answerSet.answers.map((a) => ({
@@ -32,13 +32,11 @@ export function ticketLineHasCheckoutAnswers(line: TicketLine): boolean {
   if (!Array.isArray(line.answerSets) || line.answerSets.length === 0) {
     return false;
   }
-  return line.answerSets.some(
-    (set) => normalizeUnitAnswers(set).length > 0
-  );
+  return line.answerSets.some((set) => normalizeUnitAnswers(set).length > 0);
 }
 
 export function collectQuestionLabelsFromSales(
-  ticketSales: TicketSale[]
+  ticketSales: TicketSale[],
 ): string[] {
   const labels = new Set<string>();
   for (const sale of ticketSales) {
@@ -65,7 +63,7 @@ export function buildCheckoutAnswersExportRows(
     title: string;
     date?: string | null;
     location?: string | null;
-  }
+  },
 ): CheckoutAnswersExportResult {
   const questionColumns = collectQuestionLabelsFromSales(ticketSales);
   const rows: TicketAnswersExportRow[] = [];

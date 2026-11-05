@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+
+import type { Sale } from '../../../payload/payload-types';
 import { SalesFilters } from './SalesFilter';
 import { SalesSummary } from './SalesSummary';
 import { SalesTable } from './SalesTable';
 import { TaxSummary } from './TaxSummary';
-import type { Sale } from '../../../payload/payload-types';
 
 interface SalesDashboardProps {
   initialSales: Sale[];
@@ -25,7 +26,7 @@ export function SalesDashboard({
   const [sortBy, setSortBy] = useState<string>('soldAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedPointsOfSale, setSelectedPointsOfSale] = useState<string[]>(
-    []
+    [],
   );
 
   const filteredSales = useMemo(() => {
@@ -71,7 +72,7 @@ export function SalesDashboard({
   }, [filteredSales, sortBy, sortDirection]);
 
   return (
-    <div className='space-y-8'>
+    <div className="space-y-8">
       <SalesFilters
         dateRange={dateRange}
         setDateRange={setDateRange}
@@ -84,7 +85,7 @@ export function SalesDashboard({
         setSelectedPointsOfSale={setSelectedPointsOfSale}
       />
 
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <SalesSummary sales={sortedSales} />
         <TaxSummary sales={sortedSales} selectedCountry={selectedCountry} />
       </div>

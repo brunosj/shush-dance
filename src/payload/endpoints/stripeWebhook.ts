@@ -1,9 +1,10 @@
 import { Endpoint } from 'payload/config';
 import Stripe from 'stripe';
+
+import { importPaidCheckoutSession } from '../utils/importPaidCheckoutSession';
 import { processStripeOrderSuccess } from '../utils/processStripeOrder';
 import { retrieveStripeProcessingFeeCents } from '../utils/stripeFees';
 import { readValidatedOrderDataFromMetadata } from '../utils/validateOrderData';
-import { importPaidCheckoutSession } from '../utils/importPaidCheckoutSession';
 
 let stripeInstance: Stripe | null = null;
 const getStripeInstance = (): Stripe => {
@@ -16,7 +17,9 @@ const getStripeInstance = (): Stripe => {
   return stripeInstance;
 };
 
-function hasCartOrderData(metadata: Stripe.Metadata | null | undefined): boolean {
+function hasCartOrderData(
+  metadata: Stripe.Metadata | null | undefined,
+): boolean {
   if (!metadata) return false;
   if (metadata.orderData) return true;
   if (metadata.orderDataChunks) return true;
@@ -38,7 +41,7 @@ export const stripeWebhookEndpoint: Endpoint = {
 
     if (isLocalDev) {
       console.log(
-        '🚧 Development mode: processing webhook without signature verification'
+        '🚧 Development mode: processing webhook without signature verification',
       );
       try {
         const raw = Buffer.isBuffer(req.body)
@@ -82,12 +85,12 @@ export const stripeWebhookEndpoint: Endpoint = {
           // Payment Link / Checkout PIs have no onsite cart metadata —
           // those are imported via checkout.session.completed (+ cron).
           console.log(
-            `⏭ Skipping payment_intent.succeeded ${paymentIntent.id} (no cart orderData)`
+            `⏭ Skipping payment_intent.succeeded ${paymentIntent.id} (no cart orderData)`,
           );
         } else {
           console.log(
             '💳 Processing payment_intent.succeeded:',
-            paymentIntent.id
+            paymentIntent.id,
           );
           await processPaymentSuccess(paymentIntent, req);
         }
@@ -107,7 +110,7 @@ export const stripeWebhookEndpoint: Endpoint = {
 
 async function processCheckoutSessionCompleted(
   session: Stripe.Checkout.Session,
-  req: any
+  req: any,
 ) {
   const stripe = getStripeInstance();
   // Re-fetch so line items / customer fields are complete.
@@ -115,11 +118,11 @@ async function processCheckoutSessionCompleted(
   const result = await importPaidCheckoutSession(req.payload, stripe, full);
   if (result.status === 'created') {
     console.log(
-      `🎉 Checkout session ${result.sessionId} imported as ticket sale (${result.transactionId})`
+      `🎉 Checkout session ${result.sessionId} imported as ticket sale (${result.transactionId})`,
     );
   } else if (result.status === 'skipped') {
     console.log(
-      `⏭ Checkout session ${result.sessionId} skipped: ${result.reason}`
+      `⏭ Checkout session ${result.sessionId} skipped: ${result.reason}`,
     );
   } else {
     throw new Error(`Checkout import failed: ${result.error}`);
@@ -128,7 +131,7 @@ async function processCheckoutSessionCompleted(
 
 async function processPaymentSuccess(
   paymentIntent: Stripe.PaymentIntent,
-  req: any
+  req: any,
 ) {
   const orderData = readValidatedOrderDataFromMetadata(paymentIntent.metadata);
   const expectedAmount = Math.round(orderData.totals.total * 100);
@@ -145,7 +148,7 @@ async function processPaymentSuccess(
   try {
     if (paymentIntent.payment_method) {
       const paymentMethod = await stripe.paymentMethods.retrieve(
-        paymentIntent.payment_method as string
+        paymentIntent.payment_method as string,
       );
       paymentMethodType = paymentMethod.type;
     }
@@ -160,16 +163,16 @@ async function processPaymentSuccess(
   try {
     const feeCents = await retrieveStripeProcessingFeeCents(
       stripe,
-      paymentIntent.id
+      paymentIntent.id,
     );
     if (feeCents !== null) {
       stripeFeeEuros = feeCents / 100;
       console.log(
-        `💳 Stripe fee for ${paymentIntent.id}: €${stripeFeeEuros.toFixed(2)}`
+        `💳 Stripe fee for ${paymentIntent.id}: €${stripeFeeEuros.toFixed(2)}`,
       );
     } else {
       console.warn(
-        `⚠️ Stripe fee not available yet for ${paymentIntent.id}; will retry via fallback if needed`
+        `⚠️ Stripe fee not available yet for ${paymentIntent.id}; will retry via fallback if needed`,
       );
     }
   } catch (error) {
@@ -182,7 +185,7 @@ async function processPaymentSuccess(
     orderData,
     detectedPaymentMethod,
     orderNumber,
-    { stripeFeeEuros }
+    { stripeFeeEuros },
   );
 
   console.log('🎉 Webhook processing completed successfully');
