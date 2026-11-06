@@ -134,13 +134,13 @@ const serialize = (children: Children): React.ReactNode[] =>
             : 'Button';
         if (!href) {
           return (
-            <div key={i} className="my-4">
+            <div key={i} className="pt-3 mb-4">
               <Button label={label} disabled />
             </div>
           );
         }
         return (
-          <div key={i} className="my-4">
+          <div key={i} className="pt-3 mb-4">
             <Button
               href={href}
               label={label}
