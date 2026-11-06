@@ -1,6 +1,7 @@
 import { slateEditor } from '@payloadcms/richtext-slate';
 import type { RichTextField } from 'payload/dist/fields/config/types';
 
+import { populateRichTextButtons } from './populateRichTextButtons';
 import { richTextButtonElement } from './richTextButton';
 import { restrictRichTextLinkDrawerFields } from './richTextLinkFields';
 
@@ -16,6 +17,16 @@ export const createRichTextField = ({
   label: label,
   localized: true,
   required: false,
+  hooks: {
+    afterRead: [
+      async ({ value, req }) => {
+        if (Array.isArray(value)) {
+          await populateRichTextButtons(value, req);
+        }
+        return value;
+      },
+    ],
+  },
   editor: slateEditor({
     admin: {
       elements: [
@@ -26,7 +37,7 @@ export const createRichTextField = ({
         'h5',
         'h6',
         'link',
-
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         richTextButtonElement as any,
         'blockquote',
         'ol',

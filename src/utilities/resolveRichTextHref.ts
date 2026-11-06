@@ -31,14 +31,20 @@ export type CmsLinkShape = {
 };
 
 function resolvePageHref(value: unknown): string {
-  if (!value || typeof value === 'string') return '';
+  // Unpopulated relationship (bare id) cannot be turned into a route.
+  if (!value || typeof value === 'string' || typeof value === 'number') {
+    return '';
+  }
   const slug = (value as { slug?: string | null }).slug;
   if (!slug || slug === 'home') return '/';
   return `/${slug}`;
 }
 
 function resolveMediaHref(value: unknown): string {
-  if (!value || typeof value === 'string') return '';
+  // Unpopulated relationship (bare id) cannot be turned into a file URL.
+  if (!value || typeof value === 'string' || typeof value === 'number') {
+    return '';
+  }
   const href = resolveMediaResource(
     value as { url?: string | null; filename?: string | null },
   );
