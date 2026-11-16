@@ -444,6 +444,7 @@ export interface NewsletterEmbedBlock {
   heading?: string | null;
   iframeSrc: string;
   height?: number | null;
+  mobileHeight?: number | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'newsletterEmbed';

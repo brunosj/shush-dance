@@ -1,0 +1,14 @@
+.iframe {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: var(--newsletter-iframe-height);
+  overflow: hidden;
+  border: 0;
+}
+
+@media (max-width: 767px) {
+  .iframe {
+    height: var(--newsletter-iframe-height-mobile);
+  }
+}

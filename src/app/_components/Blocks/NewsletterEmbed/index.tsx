@@ -8,6 +8,8 @@ import {
 } from '../../../../payload/blocks/NewsletterEmbed';
 import type { NewsletterEmbedBlock } from '../../../../payload/payload-types';
 
+import styles from './index.module.css';
+
 type NewsletterEmbedProps = {
   block: NewsletterEmbedBlock;
 };
@@ -19,6 +21,7 @@ const ALLOWED_HOST_SUFFIXES = [
 ];
 
 const DEFAULT_HEIGHT = 500;
+const MOBILE_HEIGHT_FACTOR = 1.6;
 
 function isAllowedBrevoHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
@@ -48,6 +51,11 @@ const NewsletterEmbed: React.FC<NewsletterEmbedProps> = ({ block }) => {
       ? block.height
       : heightFromEmbed || DEFAULT_HEIGHT;
 
+  const mobileHeight =
+    block.mobileHeight && block.mobileHeight > 0
+      ? block.mobileHeight
+      : Math.round(height * MOBILE_HEIGHT_FACTOR);
+
   return (
     <section className="w-full my-8">
       {block.heading ? <h2 className="mb-4">{block.heading}</h2> : null}
@@ -59,8 +67,13 @@ const NewsletterEmbed: React.FC<NewsletterEmbedProps> = ({ block }) => {
         frameBorder={0}
         scrolling="no"
         allowFullScreen
-        className="block w-full max-w-full border-0 overflow-hidden"
-        style={{ height, overflow: 'hidden' }}
+        className={styles.iframe}
+        style={
+          {
+            '--newsletter-iframe-height': `${height}px`,
+            '--newsletter-iframe-height-mobile': `${mobileHeight}px`,
+          } as React.CSSProperties
+        }
       />
     </section>
   );

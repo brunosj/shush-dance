@@ -60,11 +60,21 @@ export const NewsletterEmbed: Block = {
     {
       name: 'height',
       type: 'number',
-      label: 'Iframe height (px)',
+      label: 'Desktop height (px)',
       defaultValue: 500,
       admin: {
         description:
-          'Brevo iframes cannot auto-size to content. Set this tall enough to fit the full form (no scrollbar). If you pasted full embed HTML, its height attribute is used when this is empty.',
+          'Height on larger screens. Brevo iframes cannot auto-size — set this tall enough to fit the form with no scrollbar.',
+        step: 10,
+      },
+    },
+    {
+      name: 'mobileHeight',
+      type: 'number',
+      label: 'Mobile height (px)',
+      admin: {
+        description:
+          'Height below ~768px. Leave empty to use ~1.6× the desktop height (forms get taller when fields stack).',
         step: 10,
       },
     },
