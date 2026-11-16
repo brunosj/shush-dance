@@ -12,6 +12,12 @@ export const fetchPage = async (
         'Content-Type': 'application/json',
         Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
       },
+      // Without tags/revalidate, Next can permanently cache an empty response
+      // from before the page existed (stuck 404 until redeploy).
+      next: {
+        tags: [`pages_${slug}`],
+        revalidate: 60,
+      },
     },
   );
 

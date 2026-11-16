@@ -5,6 +5,7 @@ import { adminsOrPublished } from '../../access/adminsOrPublished';
 import { pageBlocks } from '../../blocks';
 import { createRichTextField } from '../../fields/createRichTextField';
 import { slugField } from '../../fields/slug';
+import { revalidatePage } from '../../hooks/revalidatePage';
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
@@ -22,11 +23,9 @@ export const Pages: CollectionConfig = {
         `${process.env.PAYLOAD_PUBLIC_SERVER_URL}${data.slug !== 'home' ? `/${data.slug}` : ''}`,
     },
   },
-  // hooks: {
-  //   beforeChange: [populatePublishedAt],
-  //   afterChange: [revalidatePage],
-  //   afterRead: [populateArchiveBlock],
-  // },
+  hooks: {
+    afterChange: [revalidatePage],
+  },
   versions: {
     drafts: true,
   },

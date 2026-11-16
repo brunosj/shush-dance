@@ -14,6 +14,7 @@ const componentMapping: { [key: string]: React.FC<{ data: any }> } = {
   releases: ReleasesPage,
   imprint: ImprintPage,
   merch: MerchPage,
+  newsletter: ContentPage,
 };
 
 export { ContentPage as DefaultPageComponent };
