@@ -2,6 +2,7 @@ import type { Block } from 'payload/types';
 
 /**
  * Extracts an iframe src from a pasted Brevo embed snippet, or returns a bare URL as-is.
+ * Used by the frontend renderer — the CMS stores the raw paste as entered.
  */
 export function extractIframeSrc(value: unknown): string {
   if (typeof value !== 'string') return '';
@@ -29,7 +30,6 @@ export const NewsletterEmbed: Block = {
       name: 'heading',
       type: 'text',
       label: 'Heading',
-      localized: true,
       admin: {
         description: 'Optional heading shown above the form.',
       },
@@ -45,39 +45,12 @@ export const NewsletterEmbed: Block = {
         placeholder:
           'https://xxx.sibforms.com/serve/... or full <iframe …> snippet',
       },
-      hooks: {
-        beforeValidate: [
-          ({ value }) => {
-            const src = extractIframeSrc(value);
-            return src || value;
-          },
-        ],
-      },
-      validate: (value: unknown) => {
-        const src = extractIframeSrc(value);
-        if (!src) {
-          return 'Paste a Brevo iframe URL or embed code.';
-        }
-
-        try {
-          const url = new URL(src);
-          if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-            return 'Iframe URL must start with http:// or https://.';
-          }
-        } catch {
-          return 'Could not parse a valid iframe URL from the value.';
-        }
-
-        return true;
-      },
     },
     {
       name: 'height',
       type: 'number',
       label: 'Iframe height (px)',
       defaultValue: 500,
-      min: 200,
-      max: 2000,
       admin: {
         description:
           'Adjust if the form is clipped or leaves too much empty space.',
