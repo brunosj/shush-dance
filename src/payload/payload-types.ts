@@ -18,8 +18,8 @@ export interface Config {
     tracks: Track;
     audio: Audio;
     pages: Page;
-    media: Media;
     documents: Document;
+    media: Media;
     users: User;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -429,11 +429,24 @@ export interface Page {
         [k: string]: unknown;
       }[]
     | null;
+  layout?: NewsletterEmbedBlock[] | null;
   showEventsFirst?: boolean | null;
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterEmbedBlock".
+ */
+export interface NewsletterEmbedBlock {
+  heading?: string | null;
+  iframeSrc: string;
+  height?: number | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletterEmbed';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

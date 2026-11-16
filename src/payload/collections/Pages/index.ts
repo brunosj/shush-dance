@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload/types';
 
 import { admins } from '../../access/admins';
 import { adminsOrPublished } from '../../access/adminsOrPublished';
+import { pageBlocks } from '../../blocks';
 import { createRichTextField } from '../../fields/createRichTextField';
 import { slugField } from '../../fields/slug';
 
@@ -42,6 +43,20 @@ export const Pages: CollectionConfig = {
       required: true,
     },
     createRichTextField({ label: 'Content' }),
+    {
+      name: 'layout',
+      type: 'blocks',
+      label: 'Layout blocks',
+      labels: {
+        singular: 'Block',
+        plural: 'Blocks',
+      },
+      blocks: pageBlocks,
+      admin: {
+        description:
+          'Optional blocks to render below the page content (e.g. Brevo newsletter form).',
+      },
+    },
     {
       name: 'showEventsFirst',
       type: 'checkbox',

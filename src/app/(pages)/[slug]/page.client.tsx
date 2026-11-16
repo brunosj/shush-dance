@@ -3,7 +3,9 @@
 
 import { useLivePreview } from '@payloadcms/live-preview-react';
 
-import componentMapping from '../../_components/componentMapping';
+import componentMapping, {
+  DefaultPageComponent,
+} from '../../_components/componentMapping';
 
 interface PageTemplateProps {
   slug: string;
@@ -11,7 +13,7 @@ interface PageTemplateProps {
 }
 
 export const PageTemplate: React.FC<PageTemplateProps> = ({ slug, data }) => {
-  const Component = componentMapping[slug] || DefaultComponent;
+  const Component = componentMapping[slug] || DefaultPageComponent;
 
   const liveData = useLivePreview({
     serverURL: process.env.NEXT_PUBLIC_PAYLOAD_URL || '',
@@ -25,9 +27,3 @@ export const PageTemplate: React.FC<PageTemplateProps> = ({ slug, data }) => {
     </main>
   );
 };
-
-const DefaultComponent: React.FC<{ data: any }> = ({ data: _data }) => (
-  <div>
-    <p>Page not found or under construction</p>
-  </div>
-);

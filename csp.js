@@ -10,7 +10,13 @@ const policies = {
   'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
   'img-src': ["'self'", 'https://raw.githubusercontent.com'],
   'font-src': ["'self'"],
-  'frame-src': ["'self'"],
+  'frame-src': [
+    "'self'",
+    'https://sibforms.com',
+    'https://*.sibforms.com',
+    'https://my.brevo.com',
+    'https://*.brevo.com',
+  ],
   'connect-src': ["'self'", 'https://maps.googleapis.com'],
 };
 

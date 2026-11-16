@@ -1,5 +1,6 @@
 // componentMapping.tsx
 import CartPage from './CartPage';
+import ContentPage from './ContentPage';
 import EventsPage from './EventsPage';
 import HomePage from './HomePage';
 import ImprintPage from './ImprintPage';
@@ -14,4 +15,6 @@ const componentMapping: { [key: string]: React.FC<{ data: any }> } = {
   imprint: ImprintPage,
   merch: MerchPage,
 };
+
+export { ContentPage as DefaultPageComponent };
 export default componentMapping;

@@ -11,6 +11,7 @@ import {
   Social,
 } from '../../../payload/payload-types';
 import { resolveCmsLink } from '../../../utilities/resolveRichTextHref';
+import RenderBlocks from '../Blocks';
 import Button from '../Button';
 import EventListing from '../EventListing';
 import ProductCard from '../ProductCard';
@@ -66,6 +67,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
         <aside className=" text-left text-lg  ">
           <div className="lg:fixed lg:w-1/4 lg:top-1/2 transform lg:-translate-y-1/2">
             <RichText content={page.data.content} />
+            <RenderBlocks blocks={page.data.layout} />
 
             {socials && socials.items.length > 0 && (
               <nav className="mt-6 lg:mt-12 lowercase">

@@ -3,6 +3,7 @@
 import React from 'react';
 
 import { Page } from '../../../payload/payload-types';
+import RenderBlocks from '../Blocks';
 import { RichText } from '../RichText';
 
 interface ImprintPageProps {
@@ -21,6 +22,7 @@ const ImprintPage: React.FC<ImprintPageProps> = ({ data }) => {
   return (
     <article className="container layout relative overflow-hidden  ">
       <RichText content={page.data.content} className="richText" />
+      <RenderBlocks blocks={page.data.layout} />
     </article>
   );
 };
