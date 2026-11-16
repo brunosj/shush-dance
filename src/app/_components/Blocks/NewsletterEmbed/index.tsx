@@ -2,8 +2,11 @@
 
 import React from 'react';
 
+import {
+  extractIframeHeight,
+  extractIframeSrc,
+} from '../../../../payload/blocks/NewsletterEmbed';
 import type { NewsletterEmbedBlock } from '../../../../payload/payload-types';
-import { extractIframeSrc } from '../../../../payload/blocks/NewsletterEmbed';
 
 type NewsletterEmbedProps = {
   block: NewsletterEmbedBlock;
@@ -14,6 +17,8 @@ const ALLOWED_HOST_SUFFIXES = [
   'brevo.com',
   'sendinblue.com',
 ];
+
+const DEFAULT_HEIGHT = 500;
 
 function isAllowedBrevoHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
@@ -37,7 +42,11 @@ const NewsletterEmbed: React.FC<NewsletterEmbedProps> = ({ block }) => {
     return null;
   }
 
-  const height = block.height && block.height > 0 ? block.height : 500;
+  const heightFromEmbed = extractIframeHeight(block.iframeSrc);
+  const height =
+    block.height && block.height > 0
+      ? block.height
+      : heightFromEmbed || DEFAULT_HEIGHT;
 
   return (
     <section className="w-full my-8">
@@ -48,10 +57,10 @@ const NewsletterEmbed: React.FC<NewsletterEmbedProps> = ({ block }) => {
         width="100%"
         height={height}
         frameBorder={0}
-        scrolling="auto"
+        scrolling="no"
         allowFullScreen
-        className="block w-full max-w-full border-0"
-        style={{ minHeight: height }}
+        className="block w-full max-w-full border-0 overflow-hidden"
+        style={{ height, overflow: 'hidden' }}
       />
     </section>
   );

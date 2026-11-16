@@ -18,6 +18,17 @@ export function extractIframeSrc(value: unknown): string {
   return trimmed;
 }
 
+/** Pulls height="…" from a pasted Brevo iframe snippet when present. */
+export function extractIframeHeight(value: unknown): number | null {
+  if (typeof value !== 'string') return null;
+
+  const match = value.match(/\bheight\s*=\s*["']?(\d+)/i);
+  if (!match?.[1]) return null;
+
+  const height = Number.parseInt(match[1], 10);
+  return Number.isFinite(height) && height > 0 ? height : null;
+}
+
 export const NewsletterEmbed: Block = {
   slug: 'newsletterEmbed',
   labels: {
@@ -53,7 +64,7 @@ export const NewsletterEmbed: Block = {
       defaultValue: 500,
       admin: {
         description:
-          'Adjust if the form is clipped or leaves too much empty space.',
+          'Brevo iframes cannot auto-size to content. Set this tall enough to fit the full form (no scrollbar). If you pasted full embed HTML, its height attribute is used when this is empty.',
         step: 10,
       },
     },
