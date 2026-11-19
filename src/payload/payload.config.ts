@@ -31,6 +31,7 @@ import { monitorPaymentSystemEndpoint } from './endpoints/monitorPaymentSystem';
 import { publicEventTicketStatsEndpoint } from './endpoints/publicEventTicketStats';
 import { stripeBackfillTicketSalesEndpoint } from './endpoints/stripeBackfillTicketSales';
 import { stripeWebhookEndpoint } from './endpoints/stripeWebhook';
+import { ticketBuyerQuestionsEndpoint } from './endpoints/ticketBuyerQuestions';
 import { syncBandcampEndpoint } from './endpoints/syncBandcamp';
 import { testBandcampEndpoint } from './endpoints/testBandcamp';
 import { Settings } from './globals/settings';
@@ -136,6 +137,7 @@ export default buildConfig({
     stripeBackfillTicketSalesEndpoint,
     backfillStripeFeesEndpoint,
     publicEventTicketStatsEndpoint,
+    ticketBuyerQuestionsEndpoint,
   ],
   email: {
     fromName: 'SHUSH',

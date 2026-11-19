@@ -66,15 +66,14 @@ const start = async (): Promise<void> => {
     next();
   });
 
-  // Let Next.js handle all other routes (non-API, non-media routes)
+  // Payload mounts /api and calls next() when nothing matches. Returning
+  // here without a response left the socket open, so checkout waited forever
+  // on "Preparing payment..." while loading ticket questions.
   app.use((req, res) => {
-    // Skip API routes - let Payload handle them
-    if (req.url.startsWith('/api/')) {
-      return; // Don't handle API routes with Next.js
-    }
-    // Skip media routes - let Express static middleware handle them
-    if (req.url.startsWith('/media/')) {
-      return; // Don't handle media routes with Next.js
+    const url = req.url || '';
+    if (url.startsWith('/api/') || url.startsWith('/media/')) {
+      res.status(404).json({ error: 'Not found' });
+      return;
     }
     return nextHandler(req, res);
   });

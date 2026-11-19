@@ -268,6 +268,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lines }),
+          signal: AbortSignal.timeout(8000),
         });
         if (!res.ok) return;
         const data = (await res.json()) as {
@@ -279,6 +280,9 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
             ...data.questionsByLineId,
           }));
         }
+      } catch {
+        // A failed lookup must not leave checkout on "Preparing payment...".
+        // Payment-intent validation still rejects incomplete ticket answers.
       } finally {
         setIsHydratingBuyerQuestions(false);
       }

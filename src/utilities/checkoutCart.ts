@@ -38,6 +38,17 @@ export function cartLinesMissingBuyerQuestionMetadata(
     if (cartLineNeedsBuyerQuestions(metadata, lineId, defsByLine)) {
       continue;
     }
+    // Already resolved, including tiers that have no questions.
+    if (
+      defsByLine &&
+      Object.prototype.hasOwnProperty.call(defsByLine, lineId)
+    ) {
+      continue;
+    }
+    // Current carts snapshot questions at add-to-cart, even when the list is empty.
+    if (typeof metadata.buyerQuestionsJson === 'string') {
+      continue;
+    }
     const eventId =
       typeof metadata.eventId === 'string' ? metadata.eventId : '';
     const tierId = typeof metadata.tierId === 'string' ? metadata.tierId : '';
