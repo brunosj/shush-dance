@@ -391,6 +391,7 @@ export function TicketSalesSummary({ ticketSales }: TicketSalesSummaryProps) {
       { wch: 15 },
       { wch: 30 },
       { wch: 22 },
+      { wch: 10 },
       { wch: 12 },
       { wch: 12 },
       { wch: 15 },

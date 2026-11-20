@@ -93,6 +93,7 @@ export function buildCheckoutAnswersExportRows(
           Phone: sale.customerPhone || '',
           Event: eventMeta.title,
           Tier: line.ticketName,
+          Quantity: totalUnits,
           Unit: `${unitIndex + 1} of ${totalUnits}`,
           Status: sale.status,
           'Payment Status': sale.paymentStatus,
