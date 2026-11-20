@@ -31,15 +31,19 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
   const { page, events, socials } = data;
   const { cartCount: _cartCount } = useShoppingCart();
 
-  const upcomingEvents = events?.filter((event) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const upcomingEvents = events
+    ?.filter((event) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
 
-    return eventDate.getTime() >= today.getTime();
-  });
+      return eventDate.getTime() >= today.getTime();
+    })
+    .sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
 
   // Get latest release based on updatedAt
   const latestRelease = data.releases?.length
@@ -101,7 +105,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
                       ? 'Upcoming Events'
                       : 'Upcoming Event'}
                   </h2>
-                  <ul className="lg:space-y-8 space-y-4">
+                  <ul className="divide-y border-gray [&>li]:py-4 lg:[&>li]:py-8 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0">
                     {upcomingEvents.map((event) => (
                       <EventListing
                         key={event.id}
@@ -158,7 +162,7 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
                       ? 'Upcoming Events'
                       : 'Upcoming Event'}
                   </h2>
-                  <ul className="lg:space-y-8 space-y-4">
+                  <ul className="divide-y border-gray [&>li]:py-4 lg:[&>li]:py-8 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0">
                     {upcomingEvents.map((event) => (
                       <EventListing key={event.id} event={event} />
                     ))}
