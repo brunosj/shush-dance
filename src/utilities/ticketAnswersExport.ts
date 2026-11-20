@@ -84,6 +84,8 @@ export function buildCheckoutAnswersExportRows(
           }
         }
 
+        // Quantity is only on the first unit row so summing the column
+        // equals tickets in the export (not quantity × unit rows).
         const row: TicketAnswersExportRow = {
           'Ticket Number': sale.ticketNumber,
           'Order Date': formatOrderDateTime(sale.createdAt),
@@ -93,7 +95,7 @@ export function buildCheckoutAnswersExportRows(
           Phone: sale.customerPhone || '',
           Event: eventMeta.title,
           Tier: line.ticketName,
-          Quantity: totalUnits,
+          Quantity: unitIndex === 0 ? totalUnits : '',
           Unit: `${unitIndex + 1} of ${totalUnits}`,
           Status: sale.status,
           'Payment Status': sale.paymentStatus,
