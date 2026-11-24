@@ -23,7 +23,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ data }) => {
     <article className="container layout relative overflow-hidden">
       {events && events.length > 0 && (
         <section className="my-12 lg:my-0">
-          <EventList events={events} />
+          <EventList events={events} sortOrder="desc" />
         </section>
       )}
     </article>

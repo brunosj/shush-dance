@@ -5,14 +5,18 @@ import EventListing from '../EventListing';
 
 interface EventListProps {
   events: Event[];
+  /** Default: earliest → latest. Use 'desc' for latest → earliest. */
+  sortOrder?: 'asc' | 'desc';
 }
 
-const EventList: React.FC<EventListProps> = ({ events }) => {
-  // Sort events earliest → latest (most upcoming first)
+const EventList: React.FC<EventListProps> = ({
+  events,
+  sortOrder = 'asc',
+}) => {
   const eventsSortedByDate = [...events].sort((a, b) => {
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    return dateA.getTime() - dateB.getTime();
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
   });
 
   return (
