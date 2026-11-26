@@ -846,6 +846,14 @@ export interface Page {
   } | null;
   showEventsFirst?: boolean | null;
   /**
+   * Shown on the homepage. Leave empty to hide the release block (events stay automatic).
+   */
+  featuredRelease?: (string | null) | Release;
+  /**
+   * Shown on the homepage. Leave empty to hide the merch block.
+   */
+  featuredMerch?: (string | null) | Merch;
+  /**
    * Optional blocks to render below the page content (e.g. Brevo newsletter form).
    */
   layout?: NewsletterEmbedBlock[] | null;
@@ -1396,6 +1404,8 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   content?: T;
   showEventsFirst?: T;
+  featuredRelease?: T;
+  featuredMerch?: T;
   layout?:
     | T
     | {

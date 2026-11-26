@@ -19,8 +19,6 @@ export const fetchPageData = async (slug: string) => {
         page: basePage,
         socials,
         events: await fetchEvents({ upcomingOnly: true, ...draftOpts }),
-        releases: await fetchReleases({ limit: 1, ...draftOpts }),
-        merchItems: await fetchMerch({ limit: 1, ...draftOpts }),
       };
 
     case 'events':

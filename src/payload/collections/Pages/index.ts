@@ -59,12 +59,47 @@ export const Pages: CollectionConfig = {
               required: true,
             },
             createRichTextField({ label: 'Content' }),
+          ],
+        },
+        {
+          label: 'Homepage',
+          admin: {
+            condition: (data) => data.slug === 'home',
+          },
+          fields: [
             {
               name: 'showEventsFirst',
               type: 'checkbox',
               label: 'Show events before announcements?',
+            },
+            {
+              name: 'featuredRelease',
+              type: 'relationship',
+              relationTo: 'releases',
+              label: 'Featured release',
               admin: {
-                condition: (data) => data.slug === 'home',
+                description:
+                  'Manual only — nothing shows until you pick a release. Events on the homepage stay automatic.',
+              },
+              filterOptions: {
+                _status: {
+                  equals: 'published',
+                },
+              },
+            },
+            {
+              name: 'featuredMerch',
+              type: 'relationship',
+              relationTo: 'merch',
+              label: 'Featured merch',
+              admin: {
+                description:
+                  'Manual only — nothing shows until you pick a merch item.',
+              },
+              filterOptions: {
+                _status: {
+                  equals: 'published',
+                },
               },
             },
           ],

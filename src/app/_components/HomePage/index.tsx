@@ -26,9 +26,16 @@ export interface HomePageProps {
     page: PageOrLivePreview;
     socials: Social;
     events?: Event[];
-    releases?: Release[];
-    merchItems?: Merch[];
   };
+}
+
+function resolveRelationshipDoc<T extends Release | Merch>(
+  value: string | T | null | undefined,
+): T | null {
+  if (value == null || typeof value === 'string') {
+    return null;
+  }
+  return value;
 }
 
 function unwrapPage(page: PageOrLivePreview): Page | null {
@@ -48,8 +55,8 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
     ?.slice()
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const latestRelease = data.releases?.[0];
-  const latestMerch = data.merchItems?.[0];
+  const featuredRelease = resolveRelationshipDoc<Release>(page?.featuredRelease);
+  const featuredMerch = resolveRelationshipDoc<Merch>(page?.featuredMerch);
 
   if (!page) {
     return <p>Loading...</p>;
@@ -107,38 +114,38 @@ const HomePage: React.FC<HomePageProps> = ({ data }) => {
                 </div>
               )}
 
-              {latestRelease && (
+              {featuredRelease && (
                 <div className="space-y-6 border-brand-gray pb-6 lg:pb-12 border-b">
                   <ul className="list-none">
-                    <ProductCard product={latestRelease} type="release" />
+                    <ProductCard product={featuredRelease} type="release" />
                   </ul>
                 </div>
               )}
 
-              {latestMerch && (
+              {featuredMerch && (
                 <div className="space-y-6">
                   <ul className="list-none">
-                    <ProductCard product={latestMerch} type="merch" />
+                    <ProductCard product={featuredMerch} type="merch" />
                   </ul>
                 </div>
               )}
             </>
           ) : (
             <>
-              {latestRelease && (
+              {featuredRelease && (
                 <div className="space-y-6 border-brand-gray pb-6 lg:pb-12 border-b">
                   <h2>Announcing!</h2>
                   <ul className="list-none">
-                    <ProductCard product={latestRelease} type="release" />
+                    <ProductCard product={featuredRelease} type="release" />
                   </ul>
                 </div>
               )}
 
-              {latestMerch && (
+              {featuredMerch && (
                 <div className="space-y-6 border-brand-gray pb-6 lg:pb-12 border-b">
                   <h2>Latest Merch</h2>
                   <ul className="list-none">
-                    <ProductCard product={latestMerch} type="merch" />
+                    <ProductCard product={featuredMerch} type="merch" />
                   </ul>
                 </div>
               )}
