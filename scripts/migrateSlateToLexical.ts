@@ -3,19 +3,24 @@
  * Run only against a database backup (e.g. cms_v3_staging).
  *
  *   pnpm migrate:slate-to-lexical
+ *
+ * `payload run` waits for this module to finish evaluating. The work has to
+ * be top-level await, not a floating promise, or the process exits immediately.
  */
-import { migrateSlateToLexical } from '@payloadcms/richtext-lexical/migrate';
-import { getPayload } from 'payload';
+process.env.SLATE_TO_LEXICAL_DISABLE_HOOKS = 'true';
 
-import config from '../src/payload/payload.config';
+const { migrateSlateToLexical } = await import(
+  '@payloadcms/richtext-lexical/migrate'
+);
+const { getPayload } = await import('payload');
+const { default: config } = await import('../src/payload/payload.config');
 
-const run = async () => {
-  const payload = await getPayload({ config });
-  await migrateSlateToLexical({ payload });
-  process.exit(0);
-};
+console.log('Starting Slate to Lexical migration...');
 
-void run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+const payload = await getPayload({ config });
+await migrateSlateToLexical({ payload });
+
+console.log('Slate to Lexical migration finished.');
+process.exit(0);
+
+export {};

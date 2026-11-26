@@ -115,7 +115,9 @@ export function shouldUseNativeAnchor(href: string, newTab: boolean): boolean {
   if (!href) return true;
   if (newTab) return true;
   if (href.startsWith('http://') || href.startsWith('https://')) return true;
-  if (href.startsWith('/media/')) return true;
+  if (href.startsWith('/media/') || href.startsWith('/api/media/file/')) {
+    return true;
+  }
   if (/\.(pdf|zip|doc|docx)(\?|#|$)/i.test(href)) return true;
   return false;
 }

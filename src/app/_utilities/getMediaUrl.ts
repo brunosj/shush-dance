@@ -12,11 +12,32 @@ export function getMediaBaseUrl(): string {
   return base.replace(/\/$/, '');
 }
 
+const MEDIA_FILE_PREFIX = '/api/media/file/';
+
+function filenameFromMediaPath(pathname: string): string | null {
+  const path = pathname.split(/[?#]/)[0];
+
+  if (path.startsWith(MEDIA_FILE_PREFIX)) {
+    return path.slice(MEDIA_FILE_PREFIX.length);
+  }
+
+  if (path.startsWith('/media/')) {
+    return path.slice('/media/'.length);
+  }
+
+  return null;
+}
+
 export function mediaUrlFromFilename(filename: string): string {
   if (!filename) return '';
 
-  const normalized = filename.replace(/^\/+/, '').replace(/^media\//, '');
-  const path = `/media/${normalized}`;
+  const fromPath = filenameFromMediaPath(
+    filename.startsWith('/') ? filename : `/${filename}`,
+  );
+  const normalized = (fromPath ?? filename)
+    .replace(/^\/+/, '')
+    .replace(/^media\//, '');
+  const path = `${MEDIA_FILE_PREFIX}${normalized}`;
   const base = getMediaBaseUrl();
 
   return base ? `${base}${path}` : path;
@@ -39,39 +60,43 @@ export function resolveMediaUrl(
     return filename ? mediaUrlFromFilename(filename) : '';
   }
 
-  if (value.includes('/api/media/file/') && filename) {
-    return mediaUrlFromFilename(filename);
-  }
-
   // Unexpanded Payload media relationship id — use filename if available
   if (!value.includes('/') && !value.startsWith('http')) {
-    return filename ? mediaUrlFromFilename(filename) : value;
+    return mediaUrlFromFilename(filename || value);
   }
 
   const mediaBase = process.env.NEXT_PUBLIC_MEDIA_URL?.replace(/\/$/, '');
 
   if (value.startsWith('http://') || value.startsWith('https://')) {
-    if (mediaBase) {
-      try {
-        const parsed = new URL(value);
-        const isLocal =
-          parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+    try {
+      const parsed = new URL(value);
+      const fileName = filenameFromMediaPath(parsed.pathname);
 
-        if (isLocal && parsed.pathname.startsWith('/media/')) {
-          return `${mediaBase}${parsed.pathname}`;
-        }
-      } catch {
-        return value;
+      if (!fileName) return value;
+
+      const isLocal =
+        parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+      const path = `${MEDIA_FILE_PREFIX}${fileName}`;
+
+      if (mediaBase && (isLocal || parsed.pathname.startsWith('/media/'))) {
+        return `${mediaBase}${path}`;
       }
+
+      if (parsed.pathname.startsWith('/media/')) {
+        return `${parsed.origin}${path}`;
+      }
+    } catch {
+      return value;
     }
 
     return value;
   }
 
-  const path = value.startsWith('/') ? value : `/media/${value}`;
-  const base = getMediaBaseUrl();
+  const fileName = filenameFromMediaPath(
+    value.startsWith('/') ? value : `/${value}`,
+  );
 
-  return base ? `${base}${path}` : path;
+  return mediaUrlFromFilename(fileName ?? value);
 }
 
 export function resolveMediaResource(
