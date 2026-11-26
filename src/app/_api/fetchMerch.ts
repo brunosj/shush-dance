@@ -9,6 +9,11 @@ export const fetchMerch = async (): Promise<Merch[]> => {
     depth: 2,
     limit: 0,
     pagination: false,
+    where: {
+      _status: {
+        equals: 'published',
+      },
+    },
   });
 
   return (merchRes.docs ?? []) as Merch[];

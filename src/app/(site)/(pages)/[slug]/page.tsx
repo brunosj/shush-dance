@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 import { fetchPageData } from '../../../_api/fetchPageData';
 import { PageTemplate } from './page.client';
 

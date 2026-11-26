@@ -9,6 +9,11 @@ export const fetchReleases = async (): Promise<Release[]> => {
     depth: 2,
     limit: 0,
     pagination: false,
+    where: {
+      _status: {
+        equals: 'published',
+      },
+    },
   });
 
   return (releasesRes.docs ?? []) as Release[];
