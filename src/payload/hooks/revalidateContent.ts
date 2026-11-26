@@ -14,6 +14,13 @@ import {
  * Catalog, media, and socials can show on the homepage and on their own routes.
  * Bust every cached read and every page under the root layout.
  */
+function skipRevalidate(context?: { disableRevalidate?: unknown }): boolean {
+  return (
+    Boolean(context?.disableRevalidate) ||
+    process.env.SLATE_TO_LEXICAL_DISABLE_HOOKS === 'true'
+  );
+}
+
 function bustPublicSite(): void {
   safeRevalidateTag(CACHE_TAGS.site);
   safeRevalidateTag(CACHE_TAGS.pages);
@@ -27,7 +34,7 @@ export const revalidatePage: CollectionAfterChangeHook = ({
   previousDoc,
   req: { context, payload },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
 
   const isPublished = doc?._status === 'published';
   const wasPublished = previousDoc?._status === 'published';
@@ -62,7 +69,7 @@ export const revalidatePageDelete: CollectionAfterDeleteHook = ({
   doc,
   req: { context },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   const slug = typeof doc?.slug === 'string' ? doc.slug : null;
   if (slug) {
     safeRevalidateTag(CACHE_TAGS.pages);
@@ -78,7 +85,7 @@ export const revalidateEvents: CollectionAfterChangeHook = ({
   doc,
   req: { context, payload },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   payload.logger.info('Revalidating all public pages after events change');
   bustPublicSite();
   return doc;
@@ -88,7 +95,7 @@ export const revalidateEventsDelete: CollectionAfterDeleteHook = ({
   doc,
   req: { context },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   bustPublicSite();
   return doc;
 };
@@ -99,7 +106,7 @@ export const revalidateReleases: CollectionAfterChangeHook = ({
   previousDoc,
   req: { context, payload },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   const isPublished = doc?._status === 'published';
   const wasPublished = previousDoc?._status === 'published';
   if (!isPublished && !wasPublished) return doc;
@@ -112,7 +119,7 @@ export const revalidateReleasesDelete: CollectionAfterDeleteHook = ({
   doc,
   req: { context },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   bustPublicSite();
   return doc;
 };
@@ -123,7 +130,7 @@ export const revalidateMerch: CollectionAfterChangeHook = ({
   previousDoc,
   req: { context, payload },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   const isPublished = doc?._status === 'published';
   const wasPublished = previousDoc?._status === 'published';
   if (!isPublished && !wasPublished) return doc;
@@ -136,7 +143,7 @@ export const revalidateMerchDelete: CollectionAfterDeleteHook = ({
   doc,
   req: { context },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   bustPublicSite();
   return doc;
 };
@@ -146,7 +153,7 @@ export const revalidateMedia: CollectionAfterChangeHook = ({
   doc,
   req: { context, payload },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   payload.logger.info('Revalidating all public pages after media change');
   bustPublicSite();
   return doc;
@@ -156,7 +163,7 @@ export const revalidateSocials: GlobalAfterChangeHook = ({
   doc,
   req: { context, payload },
 }) => {
-  if (context?.disableRevalidate) return doc;
+  if (skipRevalidate(context)) return doc;
   payload.logger.info('Revalidating all public pages after socials change');
   bustPublicSite();
   return doc;

@@ -17,7 +17,7 @@ export const Pages: CollectionConfig = {
   admin: {
     group: 'Content',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'updatedAt'],
+    defaultColumns: ['title', 'slug', '_status', 'updatedAt'],
     preview: (doc) => {
       return `${process.env.PAYLOAD_PUBLIC_SERVER_URL}/next/preview?url=${encodeURIComponent(
         `${process.env.PAYLOAD_PUBLIC_SERVER_URL}/${doc.slug !== 'home' ? doc.slug : ''}`,
@@ -48,42 +48,52 @@ export const Pages: CollectionConfig = {
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
-      required: true,
+      type: 'tabs',
+      tabs: [
+        {
+          label: 'Content',
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+              required: true,
+            },
+            createRichTextField({ label: 'Content' }),
+            {
+              name: 'showEventsFirst',
+              type: 'checkbox',
+              label: 'Show events before announcements?',
+              admin: {
+                condition: (data) => data.slug === 'home',
+              },
+            },
+          ],
+        },
+        {
+          label: 'Layout',
+          fields: [
+            {
+              name: 'layout',
+              type: 'blocks',
+              label: 'Layout blocks',
+              labels: {
+                singular: 'Block',
+                plural: 'Blocks',
+              },
+              blocks: pageBlocks,
+              admin: {
+                description:
+                  'Optional blocks to render below the page content (e.g. Brevo newsletter form).',
+              },
+            },
+          ],
+        },
+        {
+          label: 'SEO',
+          fields: [meta],
+        },
+      ],
     },
-    createRichTextField({ label: 'Content' }),
-    {
-      name: 'layout',
-      type: 'blocks',
-      label: 'Layout blocks',
-      labels: {
-        singular: 'Block',
-        plural: 'Blocks',
-      },
-      blocks: pageBlocks,
-      admin: {
-        description:
-          'Optional blocks to render below the page content (e.g. Brevo newsletter form).',
-      },
-    },
-    {
-      name: 'showEventsFirst',
-      type: 'checkbox',
-      label: 'Show events before announcements?',
-      admin: {
-        condition: (data) => data.slug === 'home',
-      },
-    },
-    // {
-    //   name: 'publishedAt',
-    //   type: 'date',
-    //   admin: {
-    //     position: 'sidebar',
-    //   },
-    // },
-
-    meta,
     slugField(),
   ],
 };

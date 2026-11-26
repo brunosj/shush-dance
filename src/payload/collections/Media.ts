@@ -10,6 +10,8 @@ export const Media: CollectionConfig = {
   slug: 'media',
   admin: {
     group: 'Content',
+    useAsTitle: 'alt',
+    defaultColumns: ['filename', 'alt', 'updatedAt'],
   },
   upload: {
     staticDir: getMediaRoot(),

@@ -27,6 +27,39 @@ export const OnlineOrders: CollectionConfig = {
   },
   fields: [
     {
+      name: 'status',
+      type: 'select',
+      label: 'Order Status',
+      required: true,
+      defaultValue: 'pending',
+      options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Processing', value: 'processing' },
+        { label: 'Shipped', value: 'shipped' },
+        { label: 'Delivered', value: 'delivered' },
+        { label: 'Cancelled', value: 'cancelled' },
+      ],
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'paymentStatus',
+      type: 'select',
+      label: 'Payment Status',
+      required: true,
+      defaultValue: 'pending',
+      options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Paid', value: 'paid' },
+        { label: 'Failed', value: 'failed' },
+        { label: 'Refunded', value: 'refunded' },
+      ],
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
       type: 'tabs',
       tabs: [
         {
@@ -43,71 +76,43 @@ export const OnlineOrders: CollectionConfig = {
               },
             },
             {
-              name: 'status',
+              name: 'paymentMethod',
               type: 'select',
-              label: 'Order Status',
+              label: 'Payment Method',
               required: true,
-              defaultValue: 'pending',
               options: [
-                { label: 'Pending', value: 'pending' },
-                { label: 'Processing', value: 'processing' },
-                { label: 'Shipped', value: 'shipped' },
-                { label: 'Delivered', value: 'delivered' },
-                { label: 'Cancelled', value: 'cancelled' },
+                { label: 'Stripe', value: 'stripe' },
+                { label: 'PayPal', value: 'paypal' },
               ],
             },
             {
-              type: 'row',
+              type: 'collapsible',
+              label: 'Payment technical',
+              admin: {
+                initCollapsed: true,
+              },
               fields: [
                 {
-                  name: 'paymentMethod',
-                  type: 'select',
-                  label: 'Payment Method',
-                  required: true,
-                  options: [
-                    { label: 'Stripe', value: 'stripe' },
-                    { label: 'PayPal', value: 'paypal' },
-                  ],
+                  name: 'transactionId',
+                  type: 'text',
+                  label: 'Transaction ID',
                   admin: {
-                    width: '50%',
+                    readOnly: true,
+                    description: 'Payment processor transaction ID',
                   },
                 },
                 {
-                  name: 'paymentStatus',
-                  type: 'select',
-                  label: 'Payment Status',
-                  required: true,
-                  defaultValue: 'pending',
-                  options: [
-                    { label: 'Pending', value: 'pending' },
-                    { label: 'Paid', value: 'paid' },
-                    { label: 'Failed', value: 'failed' },
-                    { label: 'Refunded', value: 'refunded' },
-                  ],
+                  name: 'confirmationEmailSent',
+                  type: 'checkbox',
+                  label: 'Confirmation email sent',
+                  defaultValue: false,
                   admin: {
-                    width: '50%',
+                    readOnly: true,
+                    description:
+                      'Used to retry email delivery safely after payment processing.',
                   },
                 },
               ],
-            },
-            {
-              name: 'transactionId',
-              type: 'text',
-              label: 'Transaction ID',
-              admin: {
-                description: 'Payment processor transaction ID',
-              },
-            },
-            {
-              name: 'confirmationEmailSent',
-              type: 'checkbox',
-              label: 'Confirmation email sent',
-              defaultValue: false,
-              admin: {
-                readOnly: true,
-                description:
-                  'Used to retry email delivery safely after payment processing.',
-              },
             },
           ],
         },
@@ -223,6 +228,11 @@ export const OnlineOrders: CollectionConfig = {
                 },
               ],
             },
+            {
+              name: 'customerNotes',
+              type: 'textarea',
+              label: 'Customer Notes',
+            },
           ],
         },
         {
@@ -234,24 +244,6 @@ export const OnlineOrders: CollectionConfig = {
               label: 'Order Items',
               required: true,
               fields: [
-                {
-                  name: 'product',
-                  type: 'relationship',
-                  relationTo: ['releases', 'merch'],
-                  label: 'Product',
-                  required: false,
-                  admin: {
-                    description: 'Optional: Link to CMS product if available',
-                  },
-                },
-                {
-                  name: 'cartItemId',
-                  type: 'text',
-                  label: 'Cart Item ID',
-                  admin: {
-                    description: 'Original cart item identifier',
-                  },
-                },
                 {
                   name: 'cartItemName',
                   type: 'text',
@@ -299,6 +291,35 @@ export const OnlineOrders: CollectionConfig = {
                       admin: {
                         width: '34%',
                         step: 0.01,
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: 'collapsible',
+                  label: 'Technical',
+                  admin: {
+                    initCollapsed: true,
+                  },
+                  fields: [
+                    {
+                      name: 'product',
+                      type: 'relationship',
+                      relationTo: ['releases', 'merch'],
+                      label: 'Product',
+                      required: false,
+                      admin: {
+                        description:
+                          'Optional: Link to CMS product if available',
+                      },
+                    },
+                    {
+                      name: 'cartItemId',
+                      type: 'text',
+                      label: 'Cart Item ID',
+                      admin: {
+                        readOnly: true,
+                        description: 'Original cart item identifier',
                       },
                     },
                   ],
@@ -362,11 +383,6 @@ export const OnlineOrders: CollectionConfig = {
         {
           label: 'Notes',
           fields: [
-            {
-              name: 'customerNotes',
-              type: 'textarea',
-              label: 'Customer Notes',
-            },
             {
               name: 'internalNotes',
               type: 'textarea',

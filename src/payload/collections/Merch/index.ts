@@ -18,8 +18,9 @@ export const Merch: CollectionConfig = {
   admin: {
     group: 'Shop',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'itemType', 'price', 'updatedAt'],
+    defaultColumns: ['title', 'itemType', 'releaseDate', 'price', 'updatedAt'],
   },
+  defaultSort: '-releaseDate',
   versions: {
     drafts: true,
   },
@@ -41,30 +42,50 @@ export const Merch: CollectionConfig = {
           label: 'Info',
           fields: [
             {
-              name: 'title',
-              type: 'text',
-              label: 'Title',
-              required: true,
-            },
-            {
-              name: 'itemType',
-              type: 'select',
-              label: 'Item Type',
-              required: true,
-              options: [
-                { label: 'Clothing', value: 'clothing' },
-                { label: 'Prints', value: 'prints' },
-                { label: 'Other', value: 'other' },
+              type: 'row',
+              fields: [
+                {
+                  name: 'title',
+                  type: 'text',
+                  label: 'Title',
+                  required: true,
+                  admin: { width: '34%' },
+                },
+                {
+                  name: 'itemType',
+                  type: 'select',
+                  label: 'Item Type',
+                  required: true,
+                  options: [
+                    { label: 'Clothing', value: 'clothing' },
+                    { label: 'Prints', value: 'prints' },
+                    { label: 'Other', value: 'other' },
+                  ],
+                  admin: { width: '33%' },
+                },
+                {
+                  name: 'releaseDate',
+                  type: 'date',
+                  label: 'Release Date',
+                  required: true,
+                  admin: {
+                    width: '33%',
+                    date: {
+                      pickerAppearance: 'dayOnly',
+                      displayFormat: 'yyyy-MM-dd',
+                    },
+                    description: 'Used to sort shop listings newest → oldest',
+                  },
+                },
               ],
             },
             createRichTextField({
               label: 'Description',
             }),
-            slugField('title'),
           ],
         },
         {
-          label: 'Shipping',
+          label: 'Pricing',
           fields: [
             {
               name: 'price',
@@ -221,5 +242,6 @@ export const Merch: CollectionConfig = {
         },
       ],
     },
+    slugField('title'),
   ],
 };

@@ -7,7 +7,7 @@ export const Sales: CollectionConfig = {
   admin: {
     group: 'Shop',
     useAsTitle: 'itemName',
-    defaultColumns: ['cmsItem', 'type', 'amount', 'pointOfSale', 'soldAt'],
+    defaultColumns: ['cmsItem', 'type', 'netAmount', 'pointOfSale', 'soldAt'],
     components: {
       beforeListTable: ['./components/SyncBandcampButton#default'],
     },
@@ -24,10 +24,61 @@ export const Sales: CollectionConfig = {
 
   fields: [
     {
+      name: 'soldAt',
+      type: 'date',
+      required: true,
+      label: 'Sold at',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'pointOfSale',
+      type: 'select',
+      options: [
+        { label: 'Bandcamp', value: 'bandcamp' },
+        { label: 'Stripe', value: 'stripe' },
+        { label: 'PayPal', value: 'paypal' },
+        { label: 'In-Person', value: 'in-person' },
+        { label: 'Promo', value: 'promo' },
+      ],
+      required: true,
+      label: 'Point of sale',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'type',
+      type: 'select',
+      options: [
+        { label: 'Record', value: 'record' },
+        { label: 'Merch', value: 'merch' },
+        { label: 'Digital', value: 'digital' },
+      ],
+      required: true,
+      label: 'Type',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'netAmount',
+      type: 'number',
+      required: true,
+      label: 'Net amount',
+      admin: {
+        position: 'sidebar',
+        step: 0.01,
+        readOnly: true,
+        description: 'Total after fees and taxes',
+      },
+    },
+    {
       type: 'tabs',
       tabs: [
         {
-          label: 'Basic Information',
+          label: 'Sale',
           fields: [
             {
               type: 'row',
@@ -35,6 +86,7 @@ export const Sales: CollectionConfig = {
                 {
                   name: 'itemName',
                   type: 'text',
+                  label: 'Item',
                   required: false,
                   admin: { width: '50%' },
                 },
@@ -64,50 +116,41 @@ export const Sales: CollectionConfig = {
               type: 'row',
               fields: [
                 {
-                  name: 'pointOfSale',
-                  type: 'select',
-                  options: [
-                    { label: 'Bandcamp', value: 'bandcamp' },
-                    { label: 'Stripe', value: 'stripe' },
-                    { label: 'PayPal', value: 'paypal' },
-                    { label: 'In-Person', value: 'in-person' },
-                    { label: 'Promo', value: 'promo' },
-                  ],
-                  required: true,
-                  admin: { width: '25%' },
-                },
-                {
-                  name: 'type',
-                  type: 'select',
-                  options: [
-                    { label: 'Record', value: 'record' },
-                    { label: 'Merch', value: 'merch' },
-                    { label: 'Digital', value: 'digital' },
-                  ],
-                  required: true,
-                  admin: { width: '25%' },
-                },
-                {
                   name: 'itemType',
                   type: 'text',
-                  admin: { width: '25%' },
+                  admin: { width: '50%' },
                 },
                 {
                   name: 'package',
                   type: 'text',
-                  admin: { width: '25%' },
+                  admin: { width: '50%' },
                 },
               ],
             },
             {
-              name: 'soldAt',
-              type: 'date',
-              required: true,
+              type: 'row',
+              fields: [
+                {
+                  name: 'catalogNumber',
+                  type: 'text',
+                  admin: { width: '33%' },
+                },
+                {
+                  name: 'upc',
+                  type: 'text',
+                  admin: { width: '33%' },
+                },
+                {
+                  name: 'isrc',
+                  type: 'text',
+                  admin: { width: '33%' },
+                },
+              ],
             },
           ],
         },
         {
-          label: 'Financial Details',
+          label: 'Money',
           fields: [
             {
               type: 'row',
@@ -228,8 +271,9 @@ export const Sales: CollectionConfig = {
                   name: 'transactionFee',
                   type: 'number',
                   admin: {
-                    width: '33%',
+                    width: '50%',
                     step: 0.01,
+                    readOnly: true,
                     description: 'Platform fee',
                   },
                 },
@@ -237,21 +281,9 @@ export const Sales: CollectionConfig = {
                   name: 'feeType',
                   type: 'text',
                   admin: {
-                    width: '33%',
+                    width: '50%',
+                    readOnly: true,
                     description: 'Type of fee charged',
-                  },
-                },
-                {
-                  name: 'netAmount',
-                  type: 'number',
-                  required: true,
-                  admin: {
-                    width: '33%',
-                    step: 0.01,
-                    description: 'Total after fees and taxes',
-                    style: {
-                      color: 'green',
-                    },
                   },
                 },
               ],
@@ -259,7 +291,7 @@ export const Sales: CollectionConfig = {
           ],
         },
         {
-          label: 'Customer Information',
+          label: 'Customer',
           fields: [
             {
               type: 'row',
@@ -313,7 +345,7 @@ export const Sales: CollectionConfig = {
           ],
         },
         {
-          label: 'Platform Details',
+          label: 'Bandcamp',
           fields: [
             {
               type: 'row',
@@ -321,17 +353,17 @@ export const Sales: CollectionConfig = {
                 {
                   name: 'bandcampTransactionId',
                   type: 'text',
-                  admin: { width: '33%' },
+                  admin: { width: '33%', readOnly: true },
                 },
                 {
                   name: 'bandcampTransactionItemId',
                   type: 'text',
-                  admin: { width: '33%' },
+                  admin: { width: '33%', readOnly: true },
                 },
                 {
                   name: 'bandcampRelatedTransactionId',
                   type: 'text',
-                  admin: { width: '33%' },
+                  admin: { width: '33%', readOnly: true },
                 },
               ],
             },
@@ -341,42 +373,17 @@ export const Sales: CollectionConfig = {
                 {
                   name: 'itemUrl',
                   type: 'text',
-                  admin: { width: '50%' },
+                  admin: { width: '50%', readOnly: true },
                 },
                 {
                   name: 'referer',
                   type: 'text',
-                  admin: { width: '25%' },
+                  admin: { width: '25%', readOnly: true },
                 },
                 {
                   name: 'refererUrl',
                   type: 'text',
-                  admin: { width: '25%' },
-                },
-              ],
-            },
-          ],
-        },
-        {
-          label: 'Catalog Information',
-          fields: [
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'catalogNumber',
-                  type: 'text',
-                  admin: { width: '33%' },
-                },
-                {
-                  name: 'upc',
-                  type: 'text',
-                  admin: { width: '33%' },
-                },
-                {
-                  name: 'isrc',
-                  type: 'text',
-                  admin: { width: '33%' },
+                  admin: { width: '25%', readOnly: true },
                 },
               ],
             },

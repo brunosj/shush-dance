@@ -153,14 +153,21 @@ export interface Event {
   id: string;
   title: string;
   date: string;
+  /**
+   * Shown on the site when the event is upcoming
+   */
   time?: string | null;
   location: string;
-  artists?: (string | Artist)[] | null;
   /**
-   * Ticket prices and Stripe charges use this currency. Merch/releases remain EUR — do not mix currencies in one cart.
+   * Search existing artists, or click + to create one here (name is enough).
    */
-  currency: 'EUR' | 'GBP';
-  slug?: string | null;
+  artists?: (string | Artist)[] | null;
+  images?:
+    | {
+        image: string | Media;
+        id?: string | null;
+      }[]
+    | null;
   event_information?: {
     root: {
       type: string;
@@ -176,17 +183,15 @@ export interface Event {
     };
     [k: string]: unknown;
   } | null;
-  images?:
-    | {
-        image: string | Media;
-        id?: string | null;
-      }[]
-    | null;
   /**
    * Legacy single-image field. Use Event Flyers instead.
    */
   image?: (string | null) | Media;
   ticketsAvailable?: boolean | null;
+  /**
+   * Ticket prices and Stripe charges use this currency.
+   */
+  currency: 'EUR' | 'GBP';
   ticketTiers?:
     | {
         tierName: string;
@@ -255,6 +260,7 @@ export interface Event {
    * Optional fallback only. Prefer Stripe Price ID on each tier. If you paste a price_… / prod_… here it will also match, but the tier field is the right place. Metadata keys cms_event_key / cms_catalog_key still work too.
    */
   stripeCatalogMatchKey?: string | null;
+  slug?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -352,29 +358,35 @@ export interface TicketSale {
    * Total amount from ticketTotals.total
    */
   total?: number | null;
-  /**
-   * Auto-generated unique ticket number
-   */
-  ticketNumber: string;
   status: 'active' | 'used' | 'cancelled' | 'refunded';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   /**
    * The event this ticket is for (can be set manually later)
    */
   event?: (string | null) | Event;
   /**
+   * Auto-generated unique ticket number
+   */
+  ticketNumber: string;
+  /**
    * The tier/type of ticket purchased
    */
   ticketTier: string;
   paymentMethod: 'stripe' | 'paypal';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  /**
-   * Payment processor transaction ID
-   */
-  transactionId?: string | null;
   /**
    * Currency charged for this ticket sale
    */
   currency?: ('EUR' | 'GBP') | null;
+  /**
+   * Copied from the event at checkout
+   */
+  eventTitle?: string | null;
+  eventDate?: string | null;
+  eventLocation?: string | null;
+  /**
+   * Payment processor transaction ID
+   */
+  transactionId?: string | null;
   /**
    * Actual Stripe processing fee for this sale (allocated share of the PaymentIntent fee), in the sale currency.
    */
@@ -389,10 +401,6 @@ export interface TicketSale {
   lastName: string;
   tickets: {
     /**
-     * Original cart item identifier
-     */
-    cartItemId?: string | null;
-    /**
      * Name of the ticket from cart
      */
     ticketName: string;
@@ -403,18 +411,6 @@ export interface TicketSale {
     quantity: number;
     unitPrice: number;
     lineTotal: number;
-    /**
-     * Stripe Price ID when this line came from a Payment Link / Checkout sync
-     */
-    stripePriceId?: string | null;
-    /**
-     * Payload ticket tier ID from the event
-     */
-    tierId?: string | null;
-    /**
-     * Payload event ID for this ticket line
-     */
-    eventId?: string | null;
     vatRate?: number | null;
     unitNet?: number | null;
     vatAmount?: number | null;
@@ -434,6 +430,22 @@ export interface TicketSale {
           id?: string | null;
         }[]
       | null;
+    /**
+     * Original cart item identifier
+     */
+    cartItemId?: string | null;
+    /**
+     * Stripe Price ID when this line came from a Payment Link / Checkout sync
+     */
+    stripePriceId?: string | null;
+    /**
+     * Payload ticket tier ID from the event
+     */
+    tierId?: string | null;
+    /**
+     * Payload event ID for this ticket line
+     */
+    eventId?: string | null;
     id?: string | null;
   }[];
   ticketTotals: {
@@ -441,18 +453,6 @@ export interface TicketSale {
     vat: number;
     total: number;
   };
-  /**
-   * Date of the event (copied from event)
-   */
-  eventDate?: string | null;
-  /**
-   * Location of the event (copied from event)
-   */
-  eventLocation?: string | null;
-  /**
-   * Title of the event (copied from event)
-   */
-  eventTitle?: string | null;
   customerNotes?: string | null;
   /**
    * Internal notes (not visible to customer)
@@ -468,8 +468,16 @@ export interface TicketSale {
 export interface Release {
   id: string;
   title: string;
+  /**
+   * Search existing artists, or click + to create one here (name is enough).
+   */
   artist: string | Artist;
-  tracks?: (string | Track)[] | null;
+  catalogNumber: string;
+  releaseYear: number;
+  /**
+   * Used to sort shop listings newest → oldest
+   */
+  releaseDate: string;
   description?: {
     root: {
       type: string;
@@ -500,9 +508,14 @@ export interface Release {
     };
     [k: string]: unknown;
   } | null;
-  catalogNumber: string;
-  releaseYear: number;
-  slug?: string | null;
+  tracks?: (string | Track)[] | null;
+  artwork: string | Media;
+  images?:
+    | {
+        image: string | Media;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Price in EUR (without VAT). Leave empty if not for sale.
    */
@@ -523,13 +536,7 @@ export interface Release {
    * Check if this is a digital release (no shipping required)
    */
   isDigital?: boolean | null;
-  artwork: string | Media;
-  images?:
-    | {
-        image: string | Media;
-        id?: string | null;
-      }[]
-    | null;
+  slug?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -540,21 +547,27 @@ export interface Release {
  */
 export interface Track {
   id: string;
+  title?: string | null;
+  /**
+   * Search existing artists, or click + to create one here (name is enough).
+   */
+  artist: string | Artist;
+  release?: (string | null) | Release;
+  description?: string | null;
   audioGroup?: {
     /**
      * Select the associated audio file.
      */
     audioFile?: (string | null) | Audio;
+    /**
+     * Master / high-quality file (AIFF)
+     */
     audioHighQuality?: (string | null) | Audio;
     /**
-     * You need to refresh the page after uploading a new audio file to see the changes in the player.
+     * Preview MP3. Refresh the page after uploading a new audio file to see player changes.
      */
     audioUpload?: (string | null) | Audio;
   };
-  title?: string | null;
-  artist: string | Artist;
-  release?: (string | null) | Release;
-  description?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -564,6 +577,7 @@ export interface Track {
  */
 export interface Audio {
   id: string;
+  title: string;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -584,6 +598,10 @@ export interface Merch {
   id: string;
   title: string;
   itemType: 'clothing' | 'prints' | 'other';
+  /**
+   * Used to sort shop listings newest → oldest
+   */
+  releaseDate: string;
   description?: {
     root: {
       type: string;
@@ -599,7 +617,6 @@ export interface Merch {
     };
     [k: string]: unknown;
   } | null;
-  slug?: string | null;
   /**
    * Price in EUR (without VAT)
    */
@@ -627,6 +644,7 @@ export interface Merch {
         id?: string | null;
       }[]
     | null;
+  slug?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -637,13 +655,13 @@ export interface Merch {
  */
 export interface OnlineOrder {
   id: string;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   /**
    * Auto-generated unique order number
    */
   orderNumber: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   paymentMethod: 'stripe' | 'paypal';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   /**
    * Payment processor transaction ID
    */
@@ -663,7 +681,19 @@ export interface OnlineOrder {
     country?: string | null;
     shippingRegion?: ('germany' | 'eu' | 'restOfWorld') | null;
   };
+  customerNotes?: string | null;
   items: {
+    /**
+     * Product name from cart
+     */
+    cartItemName?: string | null;
+    /**
+     * Product description from cart
+     */
+    cartItemDescription?: string | null;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
     /**
      * Optional: Link to CMS product if available
      */
@@ -680,17 +710,6 @@ export interface OnlineOrder {
      * Original cart item identifier
      */
     cartItemId?: string | null;
-    /**
-     * Product name from cart
-     */
-    cartItemName?: string | null;
-    /**
-     * Product description from cart
-     */
-    cartItemDescription?: string | null;
-    quantity: number;
-    unitPrice: number;
-    lineTotal: number;
     id?: string | null;
   }[];
   orderTotals: {
@@ -699,7 +718,6 @@ export interface OnlineOrder {
     vat: number;
     total: number;
   };
-  customerNotes?: string | null;
   /**
    * Internal notes (not visible to customer)
    */
@@ -713,6 +731,13 @@ export interface OnlineOrder {
  */
 export interface Sale {
   id: string;
+  soldAt: string;
+  pointOfSale: 'bandcamp' | 'stripe' | 'paypal' | 'in-person' | 'promo';
+  type: 'record' | 'merch' | 'digital';
+  /**
+   * Total after fees and taxes
+   */
+  netAmount: number;
   itemName?: string | null;
   artist?: string | null;
   /**
@@ -727,11 +752,11 @@ export interface Sale {
         relationTo: 'merch';
         value: string | Merch;
       } | null);
-  pointOfSale: 'bandcamp' | 'stripe' | 'paypal' | 'in-person' | 'promo';
-  type: 'record' | 'merch' | 'digital';
   itemType?: string | null;
   package?: string | null;
-  soldAt: string;
+  catalogNumber?: string | null;
+  upc?: string | null;
+  isrc?: string | null;
   /**
    * Base price per item
    */
@@ -780,10 +805,6 @@ export interface Sale {
    * Type of fee charged
    */
   feeType?: string | null;
-  /**
-   * Total after fees and taxes
-   */
-  netAmount: number;
   buyerName?: string | null;
   buyerEmail?: string | null;
   buyerPhone?: string | null;
@@ -798,9 +819,6 @@ export interface Sale {
   itemUrl?: string | null;
   referer?: string | null;
   refererUrl?: string | null;
-  catalogNumber?: string | null;
-  upc?: string | null;
-  isrc?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -826,11 +844,11 @@ export interface Page {
     };
     [k: string]: unknown;
   } | null;
+  showEventsFirst?: boolean | null;
   /**
    * Optional blocks to render below the page content (e.g. Brevo newsletter form).
    */
   layout?: NewsletterEmbedBlock[] | null;
-  showEventsFirst?: boolean | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1044,17 +1062,16 @@ export interface EventsSelect<T extends boolean = true> {
   time?: T;
   location?: T;
   artists?: T;
-  currency?: T;
-  slug?: T;
-  event_information?: T;
   images?:
     | T
     | {
         image?: T;
         id?: T;
       };
+  event_information?: T;
   image?: T;
   ticketsAvailable?: T;
+  currency?: T;
   ticketTiers?:
     | T
     | {
@@ -1085,6 +1102,7 @@ export interface EventsSelect<T extends boolean = true> {
       };
   ticket_email_footer?: T;
   stripeCatalogMatchKey?: T;
+  slug?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1095,14 +1113,17 @@ export interface EventsSelect<T extends boolean = true> {
 export interface TicketSalesSelect<T extends boolean = true> {
   totalQuantity?: T;
   total?: T;
-  ticketNumber?: T;
   status?: T;
+  paymentStatus?: T;
   event?: T;
+  ticketNumber?: T;
   ticketTier?: T;
   paymentMethod?: T;
-  paymentStatus?: T;
-  transactionId?: T;
   currency?: T;
+  eventTitle?: T;
+  eventDate?: T;
+  eventLocation?: T;
+  transactionId?: T;
   stripeFee?: T;
   confirmationEmailSent?: T;
   customerEmail?: T;
@@ -1112,15 +1133,11 @@ export interface TicketSalesSelect<T extends boolean = true> {
   tickets?:
     | T
     | {
-        cartItemId?: T;
         ticketName?: T;
         ticketDescription?: T;
         quantity?: T;
         unitPrice?: T;
         lineTotal?: T;
-        stripePriceId?: T;
-        tierId?: T;
-        eventId?: T;
         vatRate?: T;
         unitNet?: T;
         vatAmount?: T;
@@ -1137,6 +1154,10 @@ export interface TicketSalesSelect<T extends boolean = true> {
                   };
               id?: T;
             };
+        cartItemId?: T;
+        stripePriceId?: T;
+        tierId?: T;
+        eventId?: T;
         id?: T;
       };
   ticketTotals?:
@@ -1146,9 +1167,6 @@ export interface TicketSalesSelect<T extends boolean = true> {
         vat?: T;
         total?: T;
       };
-  eventDate?: T;
-  eventLocation?: T;
-  eventTitle?: T;
   customerNotes?: T;
   internalNotes?: T;
   updatedAt?: T;
@@ -1161,12 +1179,19 @@ export interface TicketSalesSelect<T extends boolean = true> {
 export interface ReleasesSelect<T extends boolean = true> {
   title?: T;
   artist?: T;
-  tracks?: T;
-  description?: T;
-  credits?: T;
   catalogNumber?: T;
   releaseYear?: T;
-  slug?: T;
+  releaseDate?: T;
+  description?: T;
+  credits?: T;
+  tracks?: T;
+  artwork?: T;
+  images?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
   price?: T;
   shippingPrices?:
     | T
@@ -1180,13 +1205,7 @@ export interface ReleasesSelect<T extends boolean = true> {
       };
   stockQuantity?: T;
   isDigital?: T;
-  artwork?: T;
-  images?:
-    | T
-    | {
-        image?: T;
-        id?: T;
-      };
+  slug?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -1198,8 +1217,8 @@ export interface ReleasesSelect<T extends boolean = true> {
 export interface MerchSelect<T extends boolean = true> {
   title?: T;
   itemType?: T;
+  releaseDate?: T;
   description?: T;
-  slug?: T;
   price?: T;
   shippingPrices?:
     | T
@@ -1220,6 +1239,7 @@ export interface MerchSelect<T extends boolean = true> {
         image?: T;
         id?: T;
       };
+  slug?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -1229,10 +1249,10 @@ export interface MerchSelect<T extends boolean = true> {
  * via the `definition` "online-orders_select".
  */
 export interface OnlineOrdersSelect<T extends boolean = true> {
-  orderNumber?: T;
   status?: T;
-  paymentMethod?: T;
   paymentStatus?: T;
+  orderNumber?: T;
+  paymentMethod?: T;
   transactionId?: T;
   confirmationEmailSent?: T;
   customerEmail?: T;
@@ -1248,16 +1268,17 @@ export interface OnlineOrdersSelect<T extends boolean = true> {
         country?: T;
         shippingRegion?: T;
       };
+  customerNotes?: T;
   items?:
     | T
     | {
-        product?: T;
-        cartItemId?: T;
         cartItemName?: T;
         cartItemDescription?: T;
         quantity?: T;
         unitPrice?: T;
         lineTotal?: T;
+        product?: T;
+        cartItemId?: T;
         id?: T;
       };
   orderTotals?:
@@ -1268,7 +1289,6 @@ export interface OnlineOrdersSelect<T extends boolean = true> {
         vat?: T;
         total?: T;
       };
-  customerNotes?: T;
   internalNotes?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1278,14 +1298,18 @@ export interface OnlineOrdersSelect<T extends boolean = true> {
  * via the `definition` "sales_select".
  */
 export interface SalesSelect<T extends boolean = true> {
+  soldAt?: T;
+  pointOfSale?: T;
+  type?: T;
+  netAmount?: T;
   itemName?: T;
   artist?: T;
   cmsItem?: T;
-  pointOfSale?: T;
-  type?: T;
   itemType?: T;
   package?: T;
-  soldAt?: T;
+  catalogNumber?: T;
+  upc?: T;
+  isrc?: T;
   itemPrice?: T;
   quantity?: T;
   currency?: T;
@@ -1298,7 +1322,6 @@ export interface SalesSelect<T extends boolean = true> {
   itemTotal?: T;
   transactionFee?: T;
   feeType?: T;
-  netAmount?: T;
   buyerName?: T;
   buyerEmail?: T;
   buyerPhone?: T;
@@ -1313,9 +1336,6 @@ export interface SalesSelect<T extends boolean = true> {
   itemUrl?: T;
   referer?: T;
   refererUrl?: T;
-  catalogNumber?: T;
-  upc?: T;
-  isrc?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1336,6 +1356,10 @@ export interface ArtistsSelect<T extends boolean = true> {
  * via the `definition` "tracks_select".
  */
 export interface TracksSelect<T extends boolean = true> {
+  title?: T;
+  artist?: T;
+  release?: T;
+  description?: T;
   audioGroup?:
     | T
     | {
@@ -1343,10 +1367,6 @@ export interface TracksSelect<T extends boolean = true> {
         audioHighQuality?: T;
         audioUpload?: T;
       };
-  title?: T;
-  artist?: T;
-  release?: T;
-  description?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1355,6 +1375,7 @@ export interface TracksSelect<T extends boolean = true> {
  * via the `definition` "audio_select".
  */
 export interface AudioSelect<T extends boolean = true> {
+  title?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -1374,12 +1395,12 @@ export interface AudioSelect<T extends boolean = true> {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   content?: T;
+  showEventsFirst?: T;
   layout?:
     | T
     | {
         newsletterEmbed?: T | NewsletterEmbedBlockSelect<T>;
       };
-  showEventsFirst?: T;
   meta?:
     | T
     | {

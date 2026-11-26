@@ -14,15 +14,9 @@ export const Releases: CollectionConfig = {
   admin: {
     group: 'Shop',
     useAsTitle: 'title',
-    defaultColumns: [
-      'title',
-      'artist',
-      'catalogNumber',
-      'releaseYear',
-      'price',
-      'updatedAt',
-    ],
+    defaultColumns: ['title', 'artist', 'catalogNumber', 'releaseDate', 'price'],
   },
+  defaultSort: '-releaseDate',
   versions: {
     drafts: true,
   },
@@ -41,7 +35,7 @@ export const Releases: CollectionConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'Info',
+          label: 'Details',
           fields: [
             {
               name: 'title',
@@ -55,20 +49,12 @@ export const Releases: CollectionConfig = {
               relationTo: 'artists',
               label: 'Artist',
               required: true,
+              admin: {
+                allowCreate: true,
+                description:
+                  'Search existing artists, or click + to create one here (name is enough).',
+              },
             },
-            {
-              name: 'tracks',
-              type: 'relationship',
-              relationTo: 'tracks',
-              label: 'Tracks',
-              hasMany: true,
-            },
-            createRichTextField({
-              label: 'Description',
-            }),
-            createRichTextField({
-              label: 'Credits',
-            }),
             {
               type: 'row',
               fields: [
@@ -78,7 +64,7 @@ export const Releases: CollectionConfig = {
                   label: 'Catalog Number',
                   required: true,
                   admin: {
-                    width: '50%',
+                    width: '33%',
                   },
                 },
                 {
@@ -87,16 +73,74 @@ export const Releases: CollectionConfig = {
                   label: 'Release Year',
                   required: true,
                   admin: {
-                    width: '50%',
+                    width: '33%',
+                  },
+                },
+                {
+                  name: 'releaseDate',
+                  type: 'date',
+                  label: 'Release Date',
+                  required: true,
+                  admin: {
+                    width: '34%',
+                    date: {
+                      pickerAppearance: 'dayOnly',
+                      displayFormat: 'yyyy-MM-dd',
+                    },
+                    description:
+                      'Used to sort shop listings newest → oldest',
                   },
                 },
               ],
             },
-            slugField('title'),
           ],
         },
         {
-          label: 'Shipping',
+          label: 'Content',
+          fields: [
+            createRichTextField({
+              label: 'Description',
+            }),
+            createRichTextField({
+              label: 'Credits',
+            }),
+            {
+              name: 'tracks',
+              type: 'relationship',
+              relationTo: 'tracks',
+              label: 'Tracks',
+              hasMany: true,
+            },
+          ],
+        },
+        {
+          label: 'Media',
+          fields: [
+            {
+              name: 'artwork',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Artwork',
+              required: true,
+            },
+            {
+              name: 'images',
+              type: 'array',
+              label: 'Additional Images',
+              fields: [
+                {
+                  name: 'image',
+                  type: 'upload',
+                  relationTo: 'media',
+                  label: 'Image',
+                  required: true,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Pricing',
           fields: [
             {
               name: 'price',
@@ -226,33 +270,8 @@ export const Releases: CollectionConfig = {
             },
           ],
         },
-        {
-          label: 'Images',
-          fields: [
-            {
-              name: 'artwork',
-              type: 'upload',
-              relationTo: 'media',
-              label: 'Artwork',
-              required: true,
-            },
-            {
-              name: 'images',
-              type: 'array',
-              label: 'Additional Images',
-              fields: [
-                {
-                  name: 'image',
-                  type: 'upload',
-                  relationTo: 'media',
-                  label: 'Image',
-                  required: true,
-                },
-              ],
-            },
-          ],
-        },
       ],
     },
+    slugField('title'),
   ],
 };

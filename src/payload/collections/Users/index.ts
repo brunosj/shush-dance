@@ -45,6 +45,9 @@ const Users: CollectionConfig = {
           value: 'user',
         },
       ],
+      admin: {
+        position: 'sidebar',
+      },
       hooks: {
         beforeChange: [ensureFirstUserIsAdmin],
       },

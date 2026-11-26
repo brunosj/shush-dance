@@ -18,6 +18,8 @@ const Audio: CollectionConfig = {
   slug: 'audio',
   admin: {
     group: 'Music',
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'filename', 'mimeType', 'updatedAt'],
   },
   upload: {
     staticDir: getAudioUploadDir(),
@@ -95,22 +97,12 @@ const Audio: CollectionConfig = {
     },
   ],
   fields: [
-    // {
-    //   name: 'title',
-    //   type: 'text',
-    //   required: true,
-    // },
-    // {
-    //   name: 'Caption',
-    //   type: 'textarea',
-    // },
-    // {
-    //   name: 'createdAt',
-    //   type: 'date',
-    //   admin: {
-    //     readOnly: true,
-    //   },
-    // },
+    {
+      name: 'title',
+      type: 'text',
+      label: 'Title',
+      required: true,
+    },
   ],
 };
 

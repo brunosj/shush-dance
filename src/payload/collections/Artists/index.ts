@@ -9,7 +9,7 @@ export const Artists: CollectionConfig = {
   admin: {
     group: 'Music',
     useAsTitle: 'artistName',
-    defaultColumns: ['artistName', 'slug', 'updatedAt'],
+    defaultColumns: ['artistName', 'image', 'updatedAt'],
   },
   access: {
     read: () => true,
@@ -18,27 +18,34 @@ export const Artists: CollectionConfig = {
     delete: admins,
   },
   fields: [
-    // Artist Field
     {
       name: 'artistName',
       type: 'text',
       label: 'Artist Name',
       required: true,
     },
-    // Summary Field
-    createRichTextField({
+    {
+      type: 'collapsible',
       label: 'Artist Bio',
-    }),
-
-    // Image Field
+      admin: {
+        initCollapsed: true,
+      },
+      fields: [
+        createRichTextField({
+          label: 'Artist Bio',
+        }),
+      ],
+    },
     {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
       label: 'Artist Image',
       required: false,
+      admin: {
+        position: 'sidebar',
+      },
     },
-    // Slug Field
     slugField('artistName'),
   ],
 };

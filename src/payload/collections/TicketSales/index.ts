@@ -75,6 +75,50 @@ export const TicketSales: CollectionConfig = {
       },
     },
     {
+      name: 'status',
+      type: 'select',
+      label: 'Ticket Status',
+      required: true,
+      defaultValue: 'active',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Used', value: 'used' },
+        { label: 'Cancelled', value: 'cancelled' },
+        { label: 'Refunded', value: 'refunded' },
+      ],
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'paymentStatus',
+      type: 'select',
+      label: 'Payment Status',
+      required: true,
+      defaultValue: 'pending',
+      options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Paid', value: 'paid' },
+        { label: 'Failed', value: 'failed' },
+        { label: 'Refunded', value: 'refunded' },
+      ],
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'event',
+      type: 'relationship',
+      relationTo: 'events',
+      label: 'Event',
+      required: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'The event this ticket is for (can be set manually later)',
+      },
+    },
+    {
       type: 'tabs',
       tabs: [
         {
@@ -88,30 +132,6 @@ export const TicketSales: CollectionConfig = {
               unique: true,
               admin: {
                 description: 'Auto-generated unique ticket number',
-              },
-            },
-            {
-              name: 'status',
-              type: 'select',
-              label: 'Ticket Status',
-              required: true,
-              defaultValue: 'active',
-              options: [
-                { label: 'Active', value: 'active' },
-                { label: 'Used', value: 'used' },
-                { label: 'Cancelled', value: 'cancelled' },
-                { label: 'Refunded', value: 'refunded' },
-              ],
-            },
-            {
-              name: 'event',
-              type: 'relationship',
-              relationTo: 'events',
-              label: 'Event',
-              required: false, // Made optional since we might not have event ID during checkout
-              admin: {
-                description:
-                  'The event this ticket is for (can be set manually later)',
               },
             },
             {
@@ -140,66 +160,93 @@ export const TicketSales: CollectionConfig = {
                   },
                 },
                 {
-                  name: 'paymentStatus',
+                  name: 'currency',
                   type: 'select',
-                  label: 'Payment Status',
-                  required: true,
-                  defaultValue: 'pending',
+                  label: 'Currency',
+                  defaultValue: 'EUR',
                   options: [
-                    { label: 'Pending', value: 'pending' },
-                    { label: 'Paid', value: 'paid' },
-                    { label: 'Failed', value: 'failed' },
-                    { label: 'Refunded', value: 'refunded' },
+                    { label: 'EUR', value: 'EUR' },
+                    { label: 'GBP', value: 'GBP' },
                   ],
                   admin: {
+                    width: '50%',
+                    description: 'Currency charged for this ticket sale',
+                    readOnly: true,
+                  },
+                },
+              ],
+            },
+            {
+              name: 'eventTitle',
+              type: 'text',
+              label: 'Event Title',
+              admin: {
+                readOnly: true,
+                description: 'Copied from the event at checkout',
+              },
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'eventDate',
+                  type: 'date',
+                  label: 'Event Date',
+                  admin: {
+                    readOnly: true,
+                    width: '50%',
+                  },
+                },
+                {
+                  name: 'eventLocation',
+                  type: 'text',
+                  label: 'Event Location',
+                  admin: {
+                    readOnly: true,
                     width: '50%',
                   },
                 },
               ],
             },
             {
-              name: 'transactionId',
-              type: 'text',
-              label: 'Transaction ID',
+              type: 'collapsible',
+              label: 'Payment',
               admin: {
-                description: 'Payment processor transaction ID',
+                initCollapsed: true,
               },
-            },
-            {
-              name: 'currency',
-              type: 'select',
-              label: 'Currency',
-              defaultValue: 'EUR',
-              options: [
-                { label: 'EUR', value: 'EUR' },
-                { label: 'GBP', value: 'GBP' },
+              fields: [
+                {
+                  name: 'transactionId',
+                  type: 'text',
+                  label: 'Transaction ID',
+                  admin: {
+                    readOnly: true,
+                    description: 'Payment processor transaction ID',
+                  },
+                },
+                {
+                  name: 'stripeFee',
+                  type: 'number',
+                  label: 'Stripe Fee',
+                  admin: {
+                    description:
+                      'Actual Stripe processing fee for this sale (allocated share of the PaymentIntent fee), in the sale currency.',
+                    step: 0.01,
+                    readOnly: true,
+                  },
+                },
+                {
+                  name: 'confirmationEmailSent',
+                  type: 'checkbox',
+                  label: 'Confirmation email sent',
+                  defaultValue: false,
+                  admin: {
+                    readOnly: true,
+                    description:
+                      'Used to retry ticket email delivery safely after payment processing.',
+                  },
+                },
               ],
-              admin: {
-                description: 'Currency charged for this ticket sale',
-                readOnly: true,
-              },
-            },
-            {
-              name: 'stripeFee',
-              type: 'number',
-              label: 'Stripe Fee',
-              admin: {
-                description:
-                  'Actual Stripe processing fee for this sale (allocated share of the PaymentIntent fee), in the sale currency.',
-                step: 0.01,
-                readOnly: true,
-              },
-            },
-            {
-              name: 'confirmationEmailSent',
-              type: 'checkbox',
-              label: 'Confirmation email sent',
-              defaultValue: false,
-              admin: {
-                readOnly: true,
-                description:
-                  'Used to retry ticket email delivery safely after payment processing.',
-              },
             },
           ],
         },
@@ -263,14 +310,6 @@ export const TicketSales: CollectionConfig = {
               required: true,
               fields: [
                 {
-                  name: 'cartItemId',
-                  type: 'text',
-                  label: 'Cart Item ID',
-                  admin: {
-                    description: 'Original cart item identifier',
-                  },
-                },
-                {
                   name: 'ticketName',
                   type: 'text',
                   label: 'Ticket Name',
@@ -323,53 +362,36 @@ export const TicketSales: CollectionConfig = {
                   ],
                 },
                 {
-                  name: 'stripePriceId',
-                  type: 'text',
-                  label: 'Stripe Price ID',
-                  admin: {
-                    description:
-                      'Stripe Price ID when this line came from a Payment Link / Checkout sync',
-                  },
-                },
-                {
-                  name: 'tierId',
-                  type: 'text',
-                  label: 'Tier ID',
-                  admin: {
-                    description: 'Payload ticket tier ID from the event',
-                  },
-                },
-                {
-                  name: 'eventId',
-                  type: 'text',
-                  label: 'Event ID',
-                  admin: {
-                    description: 'Payload event ID for this ticket line',
-                  },
-                },
-                {
-                  name: 'vatRate',
-                  type: 'number',
-                  label: 'VAT Rate (%)',
-                  admin: {
-                    step: 0.01,
-                  },
-                },
-                {
-                  name: 'unitNet',
-                  type: 'number',
-                  label: 'Unit Net',
-                  admin: {
-                    step: 0.01,
-                  },
-                },
-                {
-                  name: 'vatAmount',
-                  type: 'number',
-                  label: 'VAT Amount',
-                  admin: {
-                    step: 0.01,
-                  },
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'vatRate',
+                      type: 'number',
+                      label: 'VAT Rate (%)',
+                      admin: {
+                        width: '33%',
+                        step: 0.01,
+                      },
+                    },
+                    {
+                      name: 'unitNet',
+                      type: 'number',
+                      label: 'Unit Net',
+                      admin: {
+                        width: '33%',
+                        step: 0.01,
+                      },
+                    },
+                    {
+                      name: 'vatAmount',
+                      type: 'number',
+                      label: 'VAT Amount',
+                      admin: {
+                        width: '34%',
+                        step: 0.01,
+                      },
+                    },
+                  ],
                 },
                 {
                   name: 'answerSets',
@@ -400,6 +422,52 @@ export const TicketSales: CollectionConfig = {
                           type: 'textarea',
                         },
                       ],
+                    },
+                  ],
+                },
+                {
+                  type: 'collapsible',
+                  label: 'Technical',
+                  admin: {
+                    initCollapsed: true,
+                  },
+                  fields: [
+                    {
+                      name: 'cartItemId',
+                      type: 'text',
+                      label: 'Cart Item ID',
+                      admin: {
+                        readOnly: true,
+                        description: 'Original cart item identifier',
+                      },
+                    },
+                    {
+                      name: 'stripePriceId',
+                      type: 'text',
+                      label: 'Stripe Price ID',
+                      admin: {
+                        readOnly: true,
+                        description:
+                          'Stripe Price ID when this line came from a Payment Link / Checkout sync',
+                      },
+                    },
+                    {
+                      name: 'tierId',
+                      type: 'text',
+                      label: 'Tier ID',
+                      admin: {
+                        readOnly: true,
+                        description: 'Payload ticket tier ID from the event',
+                      },
+                    },
+                    {
+                      name: 'eventId',
+                      type: 'text',
+                      label: 'Event ID',
+                      admin: {
+                        readOnly: true,
+                        description: 'Payload event ID for this ticket line',
+                      },
                     },
                   ],
                 },
@@ -446,35 +514,6 @@ export const TicketSales: CollectionConfig = {
                   ],
                 },
               ],
-            },
-          ],
-        },
-        {
-          label: 'Event Details',
-          fields: [
-            {
-              name: 'eventDate',
-              type: 'date',
-              label: 'Event Date',
-              admin: {
-                description: 'Date of the event (copied from event)',
-              },
-            },
-            {
-              name: 'eventLocation',
-              type: 'text',
-              label: 'Event Location',
-              admin: {
-                description: 'Location of the event (copied from event)',
-              },
-            },
-            {
-              name: 'eventTitle',
-              type: 'text',
-              label: 'Event Title',
-              admin: {
-                description: 'Title of the event (copied from event)',
-              },
             },
           ],
         },

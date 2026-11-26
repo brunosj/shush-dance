@@ -12,7 +12,7 @@ async function queryMerch(options?: { limit?: number }): Promise<Merch[]> {
     depth: 1,
     limit: limit && limit > 0 ? limit : 0,
     pagination: false,
-    sort: '-updatedAt',
+    sort: '-releaseDate',
     where: {
       _status: {
         equals: 'published',

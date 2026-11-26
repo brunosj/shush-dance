@@ -4,6 +4,12 @@ import {
   lexicalEditor,
   LinkFeature,
 } from '@payloadcms/richtext-lexical';
+import {
+  defaultSlateConverters,
+  SlateToLexicalFeature,
+} from '@payloadcms/richtext-lexical/migrate';
+
+import { SlateButtonConverter } from './slateButtonConverter';
 
 /**
  * Shared Lexical editor: default formatting tools, a fixed top toolbar,
@@ -29,5 +35,11 @@ export const shushLexicalEditor = lexicalEditor({
     }),
     InlineToolbarFeature(),
     FixedToolbarFeature(),
+    // Converters for `migrateSlateToLexical`. Hooks stay off so the script's
+    // writes do not convert the same field again on the way out.
+    SlateToLexicalFeature({
+      disableHooks: true,
+      converters: [...defaultSlateConverters, SlateButtonConverter],
+    }),
   ],
 });

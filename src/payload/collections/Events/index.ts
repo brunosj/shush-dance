@@ -13,8 +13,15 @@ export const Events: CollectionConfig = {
   admin: {
     group: 'Events',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'updatedAt'],
+    defaultColumns: [
+      'title',
+      'date',
+      'location',
+      'ticketsAvailable',
+      'updatedAt',
+    ],
   },
+  defaultSort: '-date',
   hooks: {
     afterChange: [revalidateEvents],
     afterDelete: [revalidateEventsDelete],
@@ -46,14 +53,24 @@ export const Events: CollectionConfig = {
                   type: 'date',
                   label: 'Event Date',
                   required: true,
-                  admin: { width: '33%' },
+                  admin: {
+                    width: '33%',
+                    date: {
+                      pickerAppearance: 'dayOnly',
+                      displayFormat: 'yyyy-MM-dd',
+                    },
+                  },
                 },
                 {
                   name: 'time',
                   type: 'text',
                   label: 'Event Time',
                   required: false,
-                  admin: { width: '33%' },
+                  admin: {
+                    width: '33%',
+                    placeholder: '21:00',
+                    description: 'Shown on the site when the event is upcoming',
+                  },
                 },
                 {
                   name: 'location',
@@ -70,35 +87,26 @@ export const Events: CollectionConfig = {
               relationTo: 'artists',
               label: 'Artists',
               hasMany: true,
-            },
-            {
-              name: 'currency',
-              type: 'select',
-              label: 'Currency',
-              required: true,
-              defaultValue: 'EUR',
-              options: [
-                { label: 'EUR (€)', value: 'EUR' },
-                { label: 'GBP (£)', value: 'GBP' },
-              ],
               admin: {
+                allowCreate: true,
+                isSortable: true,
                 description:
-                  'Ticket prices and Stripe charges use this currency. Merch/releases remain EUR — do not mix currencies in one cart.',
+                  'Search existing artists, or click + to create one here (name is enough).',
               },
             },
-            slugField(),
           ],
         },
         {
           label: 'Content',
           fields: [
-            createRichTextField({
-              label: 'Event Information',
-            }),
             {
               name: 'images',
               type: 'array',
               label: 'Event Flyers',
+              labels: {
+                singular: 'Flyer',
+                plural: 'Flyers',
+              },
               required: false,
               fields: [
                 {
@@ -109,6 +117,9 @@ export const Events: CollectionConfig = {
                 },
               ],
             },
+            createRichTextField({
+              label: 'Event Information',
+            }),
             {
               name: 'image',
               type: 'upload',
@@ -127,10 +138,32 @@ export const Events: CollectionConfig = {
           label: 'Tickets',
           fields: [
             {
-              name: 'ticketsAvailable',
-              type: 'checkbox',
-              label: 'Tickets Available',
-              defaultValue: true,
+              type: 'row',
+              fields: [
+                {
+                  name: 'ticketsAvailable',
+                  type: 'checkbox',
+                  label: 'Tickets Available',
+                  defaultValue: true,
+                  admin: { width: '50%' },
+                },
+                {
+                  name: 'currency',
+                  type: 'select',
+                  label: 'Currency',
+                  required: true,
+                  defaultValue: 'EUR',
+                  options: [
+                    { label: 'EUR (€)', value: 'EUR' },
+                    { label: 'GBP (£)', value: 'GBP' },
+                  ],
+                  admin: {
+                    width: '50%',
+                    description:
+                      'Ticket prices and Stripe charges use this currency.',
+                  },
+                },
+              ],
             },
             {
               name: 'ticketTiers',
@@ -198,130 +231,157 @@ export const Events: CollectionConfig = {
                   ],
                 },
                 {
-                  name: 'buyerQuestions',
-                  type: 'array',
-                  label: 'Checkout questions (onsite cart)',
+                  type: 'collapsible',
+                  label: 'Checkout questions',
                   admin: {
-                    description:
-                      'Optional questions asked at checkout, once per ticket unit (e.g. meal choice, allergies). Not used for Payment Links.',
+                    initCollapsed: true,
                   },
                   fields: [
                     {
-                      name: 'key',
-                      type: 'text',
-                      label: 'Field key',
-                      required: true,
-                      admin: {
-                        description: 'Stable id, e.g. meal or allergies',
-                      },
-                    },
-                    {
-                      name: 'label',
-                      type: 'text',
-                      label: 'Label',
-                      required: true,
-                    },
-                    {
-                      type: 'row',
-                      fields: [
-                        {
-                          name: 'type',
-                          type: 'select',
-                          label: 'Type',
-                          required: true,
-                          defaultValue: 'select',
-                          options: [
-                            { label: 'Select', value: 'select' },
-                            { label: 'Short text', value: 'text' },
-                            { label: 'Long text', value: 'textarea' },
-                          ],
-                          admin: { width: '50%' },
-                        },
-                        {
-                          name: 'required',
-                          type: 'checkbox',
-                          label: 'Required',
-                          defaultValue: true,
-                          admin: { width: '50%' },
-                        },
-                      ],
-                    },
-                    {
-                      name: 'options',
+                      name: 'buyerQuestions',
                       type: 'array',
-                      label: 'Select options',
+                      label: 'Questions (onsite cart)',
                       admin: {
-                        condition: (_, siblingData) =>
-                          siblingData?.type === 'select',
+                        description:
+                          'Optional questions asked at checkout, once per ticket unit (e.g. meal choice, allergies). Not used for Payment Links.',
                       },
                       fields: [
                         {
-                          name: 'value',
+                          name: 'key',
                           type: 'text',
+                          label: 'Field key',
+                          required: true,
+                          admin: {
+                            description: 'Stable id, e.g. meal or allergies',
+                          },
+                        },
+                        {
+                          name: 'label',
+                          type: 'text',
+                          label: 'Label',
                           required: true,
                         },
+                        {
+                          type: 'row',
+                          fields: [
+                            {
+                              name: 'type',
+                              type: 'select',
+                              label: 'Type',
+                              required: true,
+                              defaultValue: 'select',
+                              options: [
+                                { label: 'Select', value: 'select' },
+                                { label: 'Short text', value: 'text' },
+                                { label: 'Long text', value: 'textarea' },
+                              ],
+                              admin: { width: '50%' },
+                            },
+                            {
+                              name: 'required',
+                              type: 'checkbox',
+                              label: 'Required',
+                              defaultValue: true,
+                              admin: { width: '50%' },
+                            },
+                          ],
+                        },
+                        {
+                          name: 'options',
+                          type: 'array',
+                          label: 'Select options',
+                          admin: {
+                            condition: (_, siblingData) =>
+                              siblingData?.type === 'select',
+                          },
+                          fields: [
+                            {
+                              name: 'value',
+                              type: 'text',
+                              required: true,
+                            },
+                          ],
+                        },
+                        {
+                          name: 'helpText',
+                          type: 'text',
+                          label: 'Help text',
+                        },
                       ],
-                    },
-                    {
-                      name: 'helpText',
-                      type: 'text',
-                      label: 'Help text',
                     },
                   ],
                 },
                 {
-                  type: 'row',
+                  type: 'collapsible',
+                  label: 'Stripe / Payment Link',
+                  admin: {
+                    initCollapsed: true,
+                  },
                   fields: [
                     {
-                      name: 'stripePriceId',
-                      type: 'text',
-                      label: 'Stripe Price ID',
-                      required: false,
-                      admin: {
-                        width: '50%',
-                        description:
-                          'For Payment Link / Checkout sales (not onsite cart). Paste the Stripe Price ID (price_…) — not prod_… or plink_…. Sync from Stripe matches this.',
-                      },
-                    },
-                    {
-                      name: 'ticketLink',
-                      type: 'text',
-                      label: 'Ticket / Payment Link URL',
-                      required: false,
-                      admin: {
-                        width: '50%',
-                        description:
-                          'Optional reference URL for this tier’s Payment Link. Sync matches on Stripe Price ID above, not this URL.',
-                      },
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'stripePriceId',
+                          type: 'text',
+                          label: 'Stripe Price ID',
+                          required: false,
+                          admin: {
+                            width: '50%',
+                            description:
+                              'For Payment Link / Checkout sales (not onsite cart). Paste the Stripe Price ID (price_…) — not prod_… or plink_…. Sync from Stripe matches this.',
+                          },
+                        },
+                        {
+                          name: 'ticketLink',
+                          type: 'text',
+                          label: 'Ticket / Payment Link URL',
+                          required: false,
+                          admin: {
+                            width: '50%',
+                            description:
+                              'Optional reference URL for this tier’s Payment Link. Sync matches on Stripe Price ID above, not this URL.',
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
               ],
             },
             {
-              ...createRichTextField({
-                label: 'Ticket Email Footer',
-              }),
+              type: 'collapsible',
+              label: 'Email & Stripe advanced',
               admin: {
-                description:
-                  'Optional content appended to ticket confirmation emails below the SHUSH crew signature.',
+                initCollapsed: true,
                 condition: (data) => data.ticketsAvailable === true,
               },
-            },
-            {
-              name: 'stripeCatalogMatchKey',
-              type: 'text',
-              label: 'Stripe catalog match key',
-              required: false,
-              admin: {
-                description:
-                  'Optional fallback only. Prefer Stripe Price ID on each tier. If you paste a price_… / prod_… here it will also match, but the tier field is the right place. Metadata keys cms_event_key / cms_catalog_key still work too.',
-                condition: (data) => data.ticketsAvailable === true,
-              },
+              fields: [
+                {
+                  ...createRichTextField({
+                    label: 'Ticket Email Footer',
+                  }),
+                  admin: {
+                    description:
+                      'Optional content appended to ticket confirmation emails below the SHUSH crew signature.',
+                  },
+                },
+                {
+                  name: 'stripeCatalogMatchKey',
+                  type: 'text',
+                  label: 'Stripe catalog match key',
+                  required: false,
+                  admin: {
+                    description:
+                      'Optional fallback only. Prefer Stripe Price ID on each tier. If you paste a price_… / prod_… here it will also match, but the tier field is the right place. Metadata keys cms_event_key / cms_catalog_key still work too.',
+                  },
+                },
+              ],
             },
           ],
         },
       ],
     },
+    slugField(),
   ],
 };
