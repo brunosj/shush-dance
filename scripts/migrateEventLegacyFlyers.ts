@@ -6,10 +6,14 @@
  *
  *   pnpm migrate:event-legacy-flyers --dry-run
  *   pnpm migrate:event-legacy-flyers
+ *
+ * `payload run` waits for this module to finish evaluating. The work has to
+ * be top-level await, not a floating promise, or the process exits immediately.
  */
-import { getPayload } from 'payload';
+const dryRun = process.argv.includes('--dry-run');
 
-import config from '../src/payload/payload.config';
+const { getPayload } = await import('payload');
+const { default: config } = await import('../src/payload/payload.config');
 
 function mediaId(
   value: string | { id?: string | number } | null | undefined,
@@ -20,82 +24,85 @@ function mediaId(
   return String(value.id);
 }
 
-async function run() {
-  const dryRun = process.argv.includes('--dry-run');
-  const payload = await getPayload({ config });
+console.log(
+  `migrateEventLegacyFlyers — ${dryRun ? 'dry-run' : 'live'}`,
+);
 
-  let page = 1;
-  let updated = 0;
-  let skipped = 0;
-  let failed = 0;
-  let hasNextPage = true;
+const payload = await getPayload({ config });
 
-  while (hasNextPage) {
-    const result = await payload.find({
-      collection: 'events',
-      page,
-      limit: 100,
-      depth: 0,
-      overrideAccess: true,
-      where: {
-        image: { exists: true },
-      },
-    });
+let page = 1;
+let updated = 0;
+let skipped = 0;
+let failed = 0;
+let hasNextPage = true;
 
-    for (const event of result.docs) {
-      const legacyId = mediaId(event.image);
-      if (!legacyId) {
-        skipped += 1;
-        continue;
-      }
-
-      const existing = Array.isArray(event.images) ? event.images : [];
-      const alreadyPresent = existing.some(
-        (row) => mediaId(row?.image) === legacyId,
-      );
-
-      if (alreadyPresent) {
-        skipped += 1;
-        continue;
-      }
-
-      const nextImages = [{ image: legacyId }, ...existing];
-      const label = event.title || event.slug || event.id;
-
-      console.log(
-        `${dryRun ? 'Would update' : 'Updating'} ${event.id} (${label}): add legacy flyer ${legacyId} → images[${nextImages.length}]`,
-      );
-
-      if (!dryRun) {
-        try {
-          await payload.update({
-            collection: 'events',
-            id: event.id,
-            data: { images: nextImages },
-            overrideAccess: true,
-            context: { disableRevalidate: true },
-          });
-          updated += 1;
-        } catch (error) {
-          failed += 1;
-          console.error(`Failed to update ${event.id}:`, error);
-        }
-      } else {
-        updated += 1;
-      }
-    }
-
-    hasNextPage = Boolean(result.hasNextPage);
-    page += 1;
-  }
+while (hasNextPage) {
+  const result = await payload.find({
+    collection: 'events',
+    page,
+    limit: 100,
+    depth: 0,
+    overrideAccess: true,
+    where: {
+      image: { exists: true },
+    },
+  });
 
   console.log(
-    `${dryRun ? 'Would update' : 'Updated'} ${updated}; skipped ${skipped}; failed ${failed}`,
+    `Page ${page}: ${result.docs.length} event(s) with legacy image (totalDocs=${result.totalDocs})`,
   );
-  process.exit(failed > 0 ? 1 : 0);
+
+  for (const event of result.docs) {
+    const legacyId = mediaId(event.image);
+    if (!legacyId) {
+      skipped += 1;
+      continue;
+    }
+
+    const existing = Array.isArray(event.images) ? event.images : [];
+    const alreadyPresent = existing.some(
+      (row) => mediaId(row?.image) === legacyId,
+    );
+
+    if (alreadyPresent) {
+      skipped += 1;
+      continue;
+    }
+
+    const nextImages = [{ image: legacyId }, ...existing];
+    const label = event.title || event.slug || event.id;
+
+    console.log(
+      `${dryRun ? 'Would update' : 'Updating'} ${event.id} (${label}): add legacy flyer ${legacyId} → images[${nextImages.length}]`,
+    );
+
+    if (!dryRun) {
+      try {
+        await payload.update({
+          collection: 'events',
+          id: event.id,
+          data: { images: nextImages },
+          overrideAccess: true,
+          context: { disableRevalidate: true },
+        });
+        updated += 1;
+      } catch (error) {
+        failed += 1;
+        console.error(`Failed to update ${event.id}:`, error);
+      }
+    } else {
+      updated += 1;
+    }
+  }
+
+  hasNextPage = Boolean(result.hasNextPage);
+  page += 1;
 }
 
-run().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+console.log(
+  `${dryRun ? 'Would update' : 'Updated'} ${updated}; skipped ${skipped}; failed ${failed}`,
+);
+
+process.exit(failed > 0 ? 1 : 0);
+
+export {};

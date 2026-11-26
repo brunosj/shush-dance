@@ -121,5 +121,11 @@ export function resolveMediaResource(
     return resolveMediaUrl(resource);
   }
 
-  return resolveMediaUrl(resource.url, resource.filename);
+  // Disk `filename` is authoritative. Many Media.url values still point at
+  // stale /media/ basenames (e.g. Foo.png vs Foo-1.png after re-upload).
+  if (resource.filename) {
+    return mediaUrlFromFilename(resource.filename);
+  }
+
+  return resolveMediaUrl(resource.url);
 }
