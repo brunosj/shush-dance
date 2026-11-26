@@ -65,6 +65,9 @@ importers:
       payload:
         specifier: 3.94.1
         version: 3.94.1(graphql@16.15.0)(typescript@5.9.3)
+      plaiceholder:
+        specifier: ^3.0.0
+        version: 3.0.0(sharp@0.35.4(@types/node@22.19.9))
       qs:
         specifier: 6.13.0
         version: 6.13.0
@@ -3308,6 +3311,11 @@ packages:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
 
+  plaiceholder@3.0.0:
+    resolution: {integrity: sha512-jwHxxHPnr1BwRzPCeZgEK2BMsEy2327sWynw3qb6XC/oGgGDUTPtR8pFxFQmNArhMBwhkUbUr5OPhhIJpCa8eQ==}
+    peerDependencies:
+      sharp: '>= 0.30.6'
+
   pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
@@ -5609,7 +5617,7 @@ snapshots:
 
   '@preact/signals-core@1.14.5': {}
 
-  '@reduxjs/toolkit@1.9.7(react-redux@7.2.9(react-dom@19.2.9(react@19.2.9))(react@19.2.9))(react@19.2.9)':
+  '@reduxjs/toolkit@1.9.7(react-redux@7.2.9(react-dom@17.0.2(react@19.2.9))(react@19.2.9))(react@19.2.9)':
     dependencies:
       immer: 9.0.21
       redux: 4.2.1
@@ -7954,6 +7962,10 @@ snapshots:
 
   pirates@4.0.7: {}
 
+  plaiceholder@3.0.0(sharp@0.35.4(@types/node@22.19.9)):
+    dependencies:
+      sharp: 0.35.4(@types/node@22.19.9)
+
   pluralize@8.0.0: {}
 
   possible-typed-array-names@1.1.0: {}
@@ -8710,7 +8722,7 @@ snapshots:
 
   use-shopping-cart@3.2.0(react@19.2.9)(redux@4.2.1):
     dependencies:
-      '@reduxjs/toolkit': 1.9.7(react-redux@7.2.9(react-dom@19.2.9(react@19.2.9))(react@19.2.9))(react@19.2.9)
+      '@reduxjs/toolkit': 1.9.7(react-redux@7.2.9(react-dom@17.0.2(react@19.2.9))(react@19.2.9))(react@19.2.9)
       '@stripe/stripe-js': 1.54.2
       date-fns: 2.30.0
       react: 19.2.9

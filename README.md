@@ -1,69 +1,46 @@
-<!-- ![SHUSH Logo](https://res.cloudinary.com/) -->
+# shush-dance
 
-## Description
+Website for [SHUSH](https://shush.dance): combined **Next.js App Router** + **Payload 3** (admin at `/admin`), Stripe/PayPal shop and ticket flows.
 
-This repo contains the website of [SHUSH](https://shush.dance).
-
-## Technologies
-
-This is a [Next.js](https://nextjs.org) app using the [App Router](https://nextjs.org/docs/app). Data is sourced from [Payload](https://payloadcms.com/) and the backend lives on the same server at /admin. It integrates with [Stripe](https://stripe.com/) and [Paypal](https://www.paypal.com/) for payments.
-
-## Installation
-
-1. Use the git CLI to close the repo
-
-```
-gh repo clone brunosj/shush-dance
-```
-
-2. Install dependencies
+## Setup
 
 ```bash
 pnpm install
-# or
-yarn install
-```
-
-3. Navigate into the site's directory and start the development server
-
-```bash
+cp .env.example .env
 pnpm dev
-# or
-yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the frontend, and [http://localhost:3000/admin](http://localhost:3000/admin) for the backend.
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Admin: [http://localhost:3000/admin](http://localhost:3000/admin)
 
-## Structure
+Node **22+** and **pnpm 10** (see `package.json` `engines` / `packageManager`).
 
-```
-.
-├── node_modules
-├── public
-    ├── locales
-└── src
-    ├── api
-    ├── common
-    ├── hooks
-    ├── modules
-    ├── pages
-    ├── styles
-    ├── types
-    ├── utils
-├── .eslintrc.json
-├── .gitignore
-├── next-i18next.config.js
-├── next-config.js
-├── pnpm-lock.yaml
-├── package.json
-├── postcss.config.js
-├── README.md
-├── tailwind.config.js
-└── tsconfig.json
-
+## Layout
 
 ```
+src/
+  app/
+    (site)/          # Public site (App Router)
+    (payload)/       # Payload admin + API
+    _api/            # Local Payload data helpers
+    _components/     # UI (CMSImage, listings, …)
+    _utilities/      # Media URLs, site URL, …
+  payload/
+    collections/     # CMS collections
+    hooks/           # e.g. generateBlurDataURL, revalidate
+    fields/          # Shared field factories
+    migrations/
+scripts/             # One-off tasks (backfill blur, Slate→Lexical, …)
+docs/
+```
 
-## Further development
+## Media LQIP
 
-This repository is maintained by [brunosj](https://github.com/brunosj).
+New uploads store `Media.blurDataURL`; use `pnpm backfill:blur` once on the server for existing files. See [docs/IMAGES_LQIP.md](docs/IMAGES_LQIP.md).
+
+## Docs
+
+- [PAYLOAD_V3_MIGRATION.md](docs/PAYLOAD_V3_MIGRATION.md)
+- [docs/IMAGES_LQIP.md](docs/IMAGES_LQIP.md)
+
+Cross-project patterns: [ldz-kit](https://github.com/landozone/ldz-kit) React lane.

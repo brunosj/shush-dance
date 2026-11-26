@@ -1,12 +1,12 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 
-import type { Merch, Release } from '../../../payload/payload-types';
+import type { Media, Merch, Release } from '../../../payload/payload-types';
 import {
   resolveMediaResource,
   resolveMediaUrl,
 } from '../../_utilities/getMediaUrl';
+import { CMSImage } from '../CMSImage';
 import Button from '../Button';
 import { RichText } from '../RichText';
 
@@ -18,20 +18,17 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, type }) => {
   const isRelease = type === 'release';
 
-  // Get the appropriate image based on type
-  const imageUrl = isRelease
-    ? (() => {
-        const artwork = (product as Release).artwork;
-        return typeof artwork === 'string'
-          ? resolveMediaUrl(artwork)
-          : resolveMediaResource(artwork);
-      })()
-    : (() => {
-        const mainImage = (product as Merch).mainImage;
-        return typeof mainImage === 'string'
-          ? resolveMediaUrl(mainImage)
-          : resolveMediaResource(mainImage);
-      })();
+  const imageResource: string | Media | null | undefined = isRelease
+    ? (product as Release).artwork
+  : (product as Merch).mainImage;
+
+  const imageUrl =
+    typeof imageResource === 'string'
+      ? resolveMediaUrl(imageResource)
+      : resolveMediaResource(imageResource);
+
+  const imageMedia =
+    imageResource && typeof imageResource !== 'string' ? imageResource : null;
 
   // Get the appropriate link with anchor
   const basePath = isRelease ? '/releases' : '/merch';
@@ -61,9 +58,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, type }) => {
         <Link href={linkHref} className="">
           {/* Image */}
           {imageUrl && (
-            <Image
+            <CMSImage
               src={imageUrl}
               alt={product.title}
+              media={imageMedia}
               fill
               className="object-contain w-full"
             />

@@ -291,6 +291,7 @@ export interface Artist {
  */
 export interface Media {
   id: string;
+  blurDataURL?: string | null;
   alt: string;
   caption?: {
     root: {
@@ -812,6 +813,11 @@ export interface Page {
    */
   layout?: NewsletterEmbedBlock[] | null;
   showEventsFirst?: boolean | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    keywords?: string | null;
+  };
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1356,6 +1362,13 @@ export interface PagesSelect<T extends boolean = true> {
         newsletterEmbed?: T | NewsletterEmbedBlockSelect<T>;
       };
   showEventsFirst?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        keywords?: T;
+      };
   slug?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1396,6 +1409,7 @@ export interface DocumentsSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
+  blurDataURL?: T;
   alt?: T;
   caption?: T;
   updatedAt?: T;

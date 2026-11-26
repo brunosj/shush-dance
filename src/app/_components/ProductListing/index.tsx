@@ -1,19 +1,21 @@
 import 'yet-another-react-lightbox/styles.css';
 
-import Image from 'next/image';
 import React, { useState } from 'react';
 import Lightbox from 'yet-another-react-lightbox';
 
+import type { Media } from '../../../payload/payload-types';
 import { TSHIRT_SIZES } from '../../../utilities/productVariants';
 import type {
   ExtendedMerch,
   ExtendedRelease,
 } from '../../_types/extended-payload-types';
 import {
+  getMediaBlurDataURL,
   resolveMediaResource,
   resolveMediaUrl,
 } from '../../_utilities/getMediaUrl';
 import AddToCartButton from '../AddToCartButton';
+import { CMSImage } from '../CMSImage';
 import { RichText } from '../RichText';
 
 interface ProductListingProps {
@@ -36,20 +38,19 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
   const isRelease = type === 'release';
   const isMerch = type === 'merch';
 
-  // Get main image based on type
-  const mainImageUrl = isRelease
-    ? (() => {
-        const artwork = (product as ExtendedRelease).artwork;
-        return typeof artwork === 'string'
-          ? resolveMediaUrl(artwork)
-          : resolveMediaResource(artwork);
-      })()
-    : (() => {
-        const mainImage = (product as ExtendedMerch).mainImage;
-        return typeof mainImage === 'string'
-          ? resolveMediaUrl(mainImage)
-          : resolveMediaResource(mainImage);
-      })();
+  const mainImageResource: string | Media | null | undefined = isRelease
+    ? (product as ExtendedRelease).artwork
+    : (product as ExtendedMerch).mainImage;
+
+  const mainImageUrl =
+    typeof mainImageResource === 'string'
+      ? resolveMediaUrl(mainImageResource)
+      : resolveMediaResource(mainImageResource);
+
+  const mainImageMedia =
+    mainImageResource && typeof mainImageResource !== 'string'
+      ? mainImageResource
+      : null;
 
   // Release-specific data
   const releaseData = isRelease
@@ -76,11 +77,18 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
     : undefined;
 
   const transformedImages = images?.map((img) => {
+    const resource = img.image;
     const imageUrl =
-      typeof img.image === 'string'
-        ? resolveMediaUrl(img.image)
-        : resolveMediaResource(img.image);
-    return { src: imageUrl, alt: `${title} additional image` };
+      typeof resource === 'string'
+        ? resolveMediaUrl(resource)
+        : resolveMediaResource(resource);
+    const media =
+      resource && typeof resource !== 'string' ? resource : undefined;
+    return {
+      src: imageUrl,
+      alt: `${title} additional image`,
+      blurDataURL: getMediaBlurDataURL(media),
+    };
   });
 
   // Check if this item is clothing based on the structured itemType field
@@ -107,9 +115,10 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
         {/* Artwork/Main Image */}
         {mainImageUrl && (
           <div className="release-artwork relative h-[40vh] w-full">
-            <Image
+            <CMSImage
               src={mainImageUrl}
               alt={`${title} artwork`}
+              media={mainImageMedia}
               fill
               className="object-contain object-left w-full h-auto cursor-pointer"
               onClick={() => handleThumbnailClick(0)}
@@ -215,9 +224,10 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
                 key={index}
                 className="release-image relative aspect-square w-full"
               >
-                <Image
+                <CMSImage
                   src={img.src}
                   alt={img.alt}
+                  blurDataURL={img.blurDataURL}
                   fill
                   className={`w-full object-cover cursor-pointer ${
                     index === activeSlide

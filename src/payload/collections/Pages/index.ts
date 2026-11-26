@@ -4,8 +4,10 @@ import { admins } from '../../access/admins';
 import { adminsOrPublished } from '../../access/adminsOrPublished';
 import { pageBlocks } from '../../blocks';
 import { createRichTextField } from '../../fields/createRichTextField';
+import { meta } from '../../fields/meta';
 import { slugField } from '../../fields/slug';
 import { revalidatePage } from '../../hooks/revalidatePage';
+import { getDraftPreviewSecret } from '../../utilities/draftPreviewSecret';
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
@@ -16,7 +18,7 @@ export const Pages: CollectionConfig = {
     preview: (doc) => {
       return `${process.env.PAYLOAD_PUBLIC_SERVER_URL}/next/preview?url=${encodeURIComponent(
         `${process.env.PAYLOAD_PUBLIC_SERVER_URL}/${doc.slug !== 'home' ? doc.slug : ''}`,
-      )}&secret=${process.env.PAYLOAD_PUBLIC_DRAFT_SECRET}`;
+      )}&secret=${getDraftPreviewSecret()}`;
     },
     livePreview: {
       url: ({ data, collectionConfig }) => {
@@ -77,6 +79,7 @@ export const Pages: CollectionConfig = {
     //   },
     // },
 
+    meta,
     slugField(),
   ],
 };

@@ -2,6 +2,7 @@ import { draftMode } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { payloadToken } from '../../../_api/token';
+import { getDraftPreviewSecret } from '../../../../payload/utilities/draftPreviewSecret';
 
 export async function GET(
   req: Request & {
@@ -22,7 +23,7 @@ export async function GET(
   }
 
   if (!token) {
-    new Response('You are not allowed to preview this page', { status: 403 });
+    return new Response('You are not allowed to preview this page', { status: 403 });
   }
 
   // validate the Payload token
@@ -44,7 +45,8 @@ export async function GET(
     });
   }
 
-  if (secret !== process.env.NEXT_PRIVATE_DRAFT_SECRET) {
+  const draftSecret = getDraftPreviewSecret();
+  if (!draftSecret || secret !== draftSecret) {
     return new Response('Invalid token', { status: 401 });
   }
 

@@ -1,9 +1,9 @@
-import Image from 'next/image';
 import { useState } from 'react';
 import { formatCurrencyString, useShoppingCart } from 'use-shopping-cart';
 
 import { normalizeCurrency } from '../../../utilities/currency';
 import { resolveMediaUrl } from '../../_utilities/getMediaUrl';
+import { CMSImage } from '../CMSImage';
 
 type Props = {
   item: {
@@ -62,7 +62,7 @@ const CartItem = ({ item }: Props) => {
     <div className="flex flex-col lg:flex-row items-center mb-3 p-2 justify-between rounded-md">
       <div className="flex items-center gap-4 w-full lg:w-auto">
         <div className="relative h-20 aspect-square">
-          <Image
+          <CMSImage
             src={resolveMediaUrl(image) || '/path/to/default/image.jpg'}
             alt={name || 'Product'}
             className="object-contain"

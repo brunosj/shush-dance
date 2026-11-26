@@ -39,13 +39,6 @@ const siteMetadata: Metadata = {
     images: ['https://shush.dance/SHUSH_logo_SEO.png'],
   },
 
-  // Verification for search engines
-  verification: {
-    google: 'google-site-verification=your-google-verification-code',
-    yandex: 'yandex-verification=your-yandex-verification-code',
-    yahoo: 'yahoo-site-verification=your-yahoo-verification-code',
-  },
-
   // Alternate languages
   alternates: {
     canonical: 'https://shush.dance',

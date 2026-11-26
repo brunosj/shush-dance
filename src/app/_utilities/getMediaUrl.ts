@@ -1,8 +1,17 @@
+import type { Media } from '../../payload/payload-types';
+
 /**
  * Base URL for media assets. In local dev against a production DB, set
  * NEXT_PUBLIC_MEDIA_URL=https://shush.dance so images load from production
  * instead of localhost (where files may not exist).
  */
+
+export function getMediaBlurDataURL(
+  media: Pick<Media, 'blurDataURL'> | null | undefined,
+): string | undefined {
+  const value = media?.blurDataURL?.trim();
+  return value ? value : undefined;
+}
 export function getMediaBaseUrl(): string {
   const base =
     process.env.NEXT_PUBLIC_MEDIA_URL ||

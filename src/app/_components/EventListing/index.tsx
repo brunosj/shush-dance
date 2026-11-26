@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useShoppingCart } from 'use-shopping-cart';
@@ -17,6 +16,7 @@ import {
 import { formatDate } from '../../_utilities/formatDateTime';
 import { resolveMediaResource } from '../../_utilities/getMediaUrl';
 import Button from '../Button';
+import { CMSImage } from '../CMSImage';
 import { RichText } from '../RichText';
 
 interface EventListingProps {
@@ -140,10 +140,11 @@ const EventListing: React.FC<EventListingProps> = ({
           <div className="relative h-full">
             <div className="flex flex-wrap gap-2 items-start">
               {images.map((img) => (
-                <Image
+                <CMSImage
                   key={img.id}
                   src={resolveMediaResource(img)}
                   alt={img.alt}
+                  media={img}
                   width={imageHover ? 64 : 200}
                   height={imageHover ? 64 : 200}
                   className={
@@ -230,9 +231,10 @@ const EventListing: React.FC<EventListingProps> = ({
             transform: 'translate(-50%, -50%)',
           }}
         >
-          <Image
+          <CMSImage
             src={resolveMediaResource(hoverImage)}
             alt={hoverImage.alt}
+            media={hoverImage}
             fill
             className="object-contain w-full"
           />
