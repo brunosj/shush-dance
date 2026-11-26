@@ -5,7 +5,7 @@ import { RichText as LexicalRichText } from '@payloadcms/richtext-lexical/react'
 import React from 'react';
 
 import { lexicalJSXConverters } from './lexicalConverters';
-import serialize from './serialize';
+import serialize, { type SlateChildren } from './serialize';
 
 function isLexicalContent(
   content: unknown,
@@ -16,6 +16,10 @@ function isLexicalContent(
     content !== null &&
     'root' in content
   );
+}
+
+function isSlateContent(content: unknown): content is SlateChildren {
+  return Array.isArray(content);
 }
 
 export const RichText: React.FC<{ className?: string; content: unknown }> = ({
@@ -37,9 +41,11 @@ export const RichText: React.FC<{ className?: string; content: unknown }> = ({
     );
   }
 
-  return (
-    <div className={`richText ${className || ''}`}>
-      {serialize(content as Parameters<typeof serialize>[0])}
-    </div>
-  );
+  if (isSlateContent(content)) {
+    return (
+      <div className={`richText ${className || ''}`}>{serialize(content)}</div>
+    );
+  }
+
+  return null;
 };

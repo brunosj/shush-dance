@@ -1,8 +1,10 @@
 import type { Page } from '../../payload/payload-types';
 
+import { CACHE_TAGS } from './cacheTags';
+import { cached } from './cached';
 import { getLocalPayload } from './localPayload';
 
-export const fetchPages = async (): Promise<Page[]> => {
+async function queryPages(): Promise<Page[]> {
   const payload = await getLocalPayload();
   const pageRes = await payload.find({
     collection: 'pages',
@@ -15,4 +17,10 @@ export const fetchPages = async (): Promise<Page[]> => {
   });
 
   return (pageRes.docs ?? []) as Page[];
+}
+
+export const fetchPages = async (): Promise<Page[]> => {
+  return cached(queryPages, ['pages-list'], {
+    tags: [CACHE_TAGS.site, CACHE_TAGS.pages, CACHE_TAGS.sitemap],
+  })();
 };

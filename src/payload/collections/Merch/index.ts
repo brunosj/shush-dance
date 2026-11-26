@@ -4,6 +4,10 @@ import { admins } from '../../access/admins';
 import { adminsOrPublished } from '../../access/adminsOrPublished';
 import { createRichTextField } from '../../fields/createRichTextField';
 import { slugField } from '../../fields/slug';
+import {
+  revalidateMerch,
+  revalidateMerchDelete,
+} from '../../hooks/revalidateContent';
 
 export const Merch: CollectionConfig = {
   slug: 'merch',
@@ -18,6 +22,10 @@ export const Merch: CollectionConfig = {
   },
   versions: {
     drafts: true,
+  },
+  hooks: {
+    afterChange: [revalidateMerch],
+    afterDelete: [revalidateMerchDelete],
   },
   access: {
     read: adminsOrPublished,

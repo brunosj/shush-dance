@@ -1,12 +1,17 @@
 import type { Metadata } from 'next';
+import { draftMode } from 'next/headers';
 import { notFound } from 'next/navigation';
-
-export const dynamic = 'force-dynamic';
 
 import { fetchPage } from '../../../_api/fetchPage';
 import { fetchPageData } from '../../../_api/fetchPageData';
+import EventsPage from '../../../_components/EventsPage';
+import HomePage from '../../../_components/HomePage';
+import MerchPage from '../../../_components/MerchPage';
+import ReleasesPage from '../../../_components/ReleasesPage';
 import { getSiteUrl } from '../../../_utilities/siteUrl';
 import { PageTemplate } from './page.client';
+
+const SERVER_CATALOG_SLUGS = new Set(['events', 'releases', 'merch']);
 
 interface PageParams {
   params: Promise<{ slug?: string }>;
@@ -58,6 +63,8 @@ export async function generateMetadata({
 export default async function Page({ params }: PageParams) {
   const { slug: slugParam } = await params;
   const slug = slugParam || 'home';
+  const { isEnabled: isDraft } = await draftMode();
+
   let data;
 
   try {
@@ -71,15 +78,33 @@ export default async function Page({ params }: PageParams) {
     throw error;
   }
 
+  // Live preview needs a client boundary; public traffic stays on the server tree.
+  if (isDraft) {
+    return <PageTemplate slug={slug} data={data} />;
+  }
+
+  if (slug === 'home') {
+    return (
+      <main>
+        <HomePage data={data} />
+      </main>
+    );
+  }
+
+  if (SERVER_CATALOG_SLUGS.has(slug)) {
+    const CatalogPage =
+      slug === 'events'
+        ? EventsPage
+        : slug === 'releases'
+          ? ReleasesPage
+          : MerchPage;
+
+    return (
+      <main>
+        <CatalogPage data={data} />
+      </main>
+    );
+  }
+
   return <PageTemplate slug={slug} data={data} />;
 }
-
-// export async function generateStaticParams() {
-//   const pages = await fetchPages();
-
-//   return pages
-//     .filter(
-//       ({ slug }) => slug !== 'home' && slug !== 'media' && slug !== 'audio'
-//     )
-//     .map(({ slug }) => ({ slug }));
-// }

@@ -6,7 +6,10 @@ import { pageBlocks } from '../../blocks';
 import { createRichTextField } from '../../fields/createRichTextField';
 import { meta } from '../../fields/meta';
 import { slugField } from '../../fields/slug';
-import { revalidatePage } from '../../hooks/revalidatePage';
+import {
+  revalidatePage,
+  revalidatePageDelete,
+} from '../../hooks/revalidateContent';
 import { getDraftPreviewSecret } from '../../utilities/draftPreviewSecret';
 
 export const Pages: CollectionConfig = {
@@ -32,6 +35,7 @@ export const Pages: CollectionConfig = {
   },
   hooks: {
     afterChange: [revalidatePage],
+    afterDelete: [revalidatePageDelete],
   },
   versions: {
     drafts: true,

@@ -37,7 +37,7 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
         return (
           <li
             key={key}
-            className="flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-gray last:border-b-0 "
+            className="flex justify-between flex-col border-b pb-3 lg:pb-6 space-y-2 border-brand-gray last:border-b-0 "
           >
             <div className="flex flex-col">
               <h4 className="font-bold ">{item?.name || 'Product'}</h4>
@@ -70,14 +70,14 @@ const CartItemsList: React.FC<CartItemsListProps> = ({
               >
                 +
               </button>
-              <div className="h-6 border-l border-gray"></div>
+              <div className="h-6 border-l border-brand-gray"></div>
               <p>
                 {formatCurrencyString({
                   value: Math.round(totalPrice * 100),
                   currency: itemCurrency,
                 })}
               </p>
-              <div className="h-6 border-l border-gray"></div>
+              <div className="h-6 border-l border-brand-gray"></div>
               <button
                 className="text-black px-2 py-1 rounded"
                 onClick={() => removeItem(key)}

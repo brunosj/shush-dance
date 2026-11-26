@@ -25,7 +25,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, type }) => {
   const imageUrl =
     typeof imageResource === 'string'
       ? resolveMediaUrl(imageResource)
-      : resolveMediaResource(imageResource);
+      : resolveMediaResource(imageResource, 'thumb');
 
   const imageMedia =
     imageResource && typeof imageResource !== 'string' ? imageResource : null;

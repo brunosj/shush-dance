@@ -63,7 +63,9 @@ remotePatterns.push({
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    unoptimized: Boolean(process.env.NEXT_PUBLIC_MEDIA_URL),
+    // Keep Next optimizer off; Payload imageSizes + Caddy /media serve derivatives.
+    // Local/prod both use static /media URLs (optionally via NEXT_PUBLIC_MEDIA_URL).
+    unoptimized: true,
     remotePatterns,
     localPatterns: [
       {

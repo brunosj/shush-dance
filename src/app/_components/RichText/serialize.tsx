@@ -164,3 +164,5 @@ const serialize = (children: Children): React.ReactNode[] =>
   });
 
 export default serialize;
+
+export type SlateChildren = Children;

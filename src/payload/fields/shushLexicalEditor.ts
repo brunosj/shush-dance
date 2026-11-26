@@ -5,8 +5,6 @@ import {
   LinkFeature,
 } from '@payloadcms/richtext-lexical';
 
-import { slateToLexicalMigrationFeature } from './slateToLexicalFeature';
-
 /**
  * Shared Lexical editor: default formatting tools, a fixed top toolbar,
  * and the button/link appearance used by existing content.
@@ -31,6 +29,5 @@ export const shushLexicalEditor = lexicalEditor({
     }),
     InlineToolbarFeature(),
     FixedToolbarFeature(),
-    slateToLexicalMigrationFeature,
   ],
 });

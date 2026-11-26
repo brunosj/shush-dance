@@ -1,3 +1,5 @@
+'use client';
+
 import 'yet-another-react-lightbox/styles.css';
 
 import React, { useState } from 'react';
@@ -45,6 +47,11 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
   const mainImageUrl =
     typeof mainImageResource === 'string'
       ? resolveMediaUrl(mainImageResource)
+      : resolveMediaResource(mainImageResource, 'card');
+
+  const mainImageFullUrl =
+    typeof mainImageResource === 'string'
+      ? resolveMediaUrl(mainImageResource)
       : resolveMediaResource(mainImageResource);
 
   const mainImageMedia =
@@ -78,18 +85,30 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
 
   const transformedImages = images?.map((img) => {
     const resource = img.image;
-    const imageUrl =
+    const fullUrl =
       typeof resource === 'string'
         ? resolveMediaUrl(resource)
         : resolveMediaResource(resource);
+    const thumbUrl =
+      typeof resource === 'string'
+        ? resolveMediaUrl(resource)
+        : resolveMediaResource(resource, 'thumb');
     const media =
       resource && typeof resource !== 'string' ? resource : undefined;
     return {
-      src: imageUrl,
+      src: fullUrl,
+      thumb: thumbUrl,
       alt: `${title} additional image`,
       blurDataURL: getMediaBlurDataURL(media),
     };
   });
+
+  const lightboxSlides = [
+    ...(mainImageFullUrl
+      ? [{ src: mainImageFullUrl, alt: `${title} artwork` }]
+      : []),
+    ...(transformedImages ?? []).map(({ src, alt }) => ({ src, alt })),
+  ];
 
   // Check if this item is clothing based on the structured itemType field
   const isClothingItem = merchData?.itemType === 'clothing';
@@ -225,7 +244,7 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
                 className="release-image relative aspect-square w-full"
               >
                 <CMSImage
-                  src={img.src}
+                  src={img.thumb}
                   alt={img.alt}
                   blurDataURL={img.blurDataURL}
                   fill
@@ -234,7 +253,7 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
                       ? 'border-purple-500'
                       : 'border-transparent'
                   }`}
-                  onClick={() => handleThumbnailClick(index)}
+                  onClick={() => handleThumbnailClick(index + (mainImageFullUrl ? 1 : 0))}
                 />
               </div>
             ))}
@@ -246,7 +265,7 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
       <Lightbox
         open={lightboxOpen}
         close={closeLightbox}
-        slides={transformedImages ?? []}
+        slides={lightboxSlides}
         index={activeSlide}
       />
     </div>

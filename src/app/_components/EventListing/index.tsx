@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useShoppingCart } from 'use-shopping-cart';
@@ -142,7 +144,7 @@ const EventListing: React.FC<EventListingProps> = ({
               {images.map((img) => (
                 <CMSImage
                   key={img.id}
-                  src={resolveMediaResource(img)}
+                  src={resolveMediaResource(img, 'thumb')}
                   alt={img.alt}
                   media={img}
                   width={imageHover ? 64 : 200}
@@ -232,7 +234,7 @@ const EventListing: React.FC<EventListingProps> = ({
           }}
         >
           <CMSImage
-            src={resolveMediaResource(hoverImage)}
+            src={resolveMediaResource(hoverImage, 'card')}
             alt={hoverImage.alt}
             media={hoverImage}
             fill

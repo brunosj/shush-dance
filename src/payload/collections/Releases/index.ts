@@ -4,6 +4,10 @@ import { admins } from '../../access/admins';
 import { adminsOrPublished } from '../../access/adminsOrPublished';
 import { createRichTextField } from '../../fields/createRichTextField';
 import { slugField } from '../../fields/slug';
+import {
+  revalidateReleases,
+  revalidateReleasesDelete,
+} from '../../hooks/revalidateContent';
 
 export const Releases: CollectionConfig = {
   slug: 'releases',
@@ -21,6 +25,10 @@ export const Releases: CollectionConfig = {
   },
   versions: {
     drafts: true,
+  },
+  hooks: {
+    afterChange: [revalidateReleases],
+    afterDelete: [revalidateReleasesDelete],
   },
   access: {
     read: adminsOrPublished,

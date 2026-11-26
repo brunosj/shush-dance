@@ -1,4 +1,5 @@
-// fetchPageData.ts
+import { draftMode } from 'next/headers';
+
 import { fetchEvents } from './fetchEvents';
 import { fetchMerch } from './fetchMerch';
 import { fetchPage } from './fetchPage';
@@ -6,40 +7,41 @@ import { fetchReleases } from './fetchReleases';
 import { fetchSocials } from './fetchSocials';
 
 export const fetchPageData = async (slug: string) => {
-  // Base page data fetched for all pages
-  const basePage = await fetchPage(slug);
-  const socials = await fetchSocials();
+  const { isEnabled: draft } = await draftMode();
+  const draftOpts = draft ? { draft: true } : undefined;
 
-  // Additional data fetched conditionally based on the slug
+  const basePage = await fetchPage(slug);
+  const socials = await fetchSocials(draftOpts);
+
   switch (slug) {
     case 'home':
       return {
         page: basePage,
-        socials: socials,
-        events: await fetchEvents(),
-        releases: await fetchReleases(),
-        merchItems: await fetchMerch(),
+        socials,
+        events: await fetchEvents({ upcomingOnly: true, ...draftOpts }),
+        releases: await fetchReleases({ limit: 1, ...draftOpts }),
+        merchItems: await fetchMerch({ limit: 1, ...draftOpts }),
       };
 
     case 'events':
       return {
         page: basePage,
-        events: await fetchEvents(),
+        events: await fetchEvents(draftOpts),
       };
 
     case 'releases':
       return {
         page: basePage,
-        releases: await fetchReleases(),
+        releases: await fetchReleases(draftOpts),
       };
 
     case 'merch':
       return {
         page: basePage,
-        merchItems: await fetchMerch(),
+        merchItems: await fetchMerch(draftOpts),
       };
 
     default:
-      return { page: basePage, socials: socials };
+      return { page: basePage, socials };
   }
 };

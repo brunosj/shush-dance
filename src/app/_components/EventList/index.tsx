@@ -20,7 +20,7 @@ const EventList: React.FC<EventListProps> = ({
   });
 
   return (
-    <ul className="relative divide-y border-gray [&>li]:py-6 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0">
+    <ul className="relative divide-y border-brand-gray [&>li]:py-6 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0">
       {eventsSortedByDate.map((event) => (
         <EventListing key={event.id} event={event} />
       ))}

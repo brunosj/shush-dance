@@ -38,9 +38,14 @@ docs/
 
 New uploads store `Media.blurDataURL`; use `pnpm backfill:blur` once on the server for existing files. See [docs/IMAGES_LQIP.md](docs/IMAGES_LQIP.md).
 
+## Cache & performance
+
+See [docs/PERFORMANCE_CACHE.md](docs/PERFORMANCE_CACHE.md) (tagged data cache, lean home queries, `/media` + `imageSizes`).
+
 ## Docs
 
 - [PAYLOAD_V3_MIGRATION.md](docs/PAYLOAD_V3_MIGRATION.md)
 - [docs/IMAGES_LQIP.md](docs/IMAGES_LQIP.md)
+- [docs/PERFORMANCE_CACHE.md](docs/PERFORMANCE_CACHE.md)
 
 Cross-project patterns: [ldz-kit](https://github.com/landozone/ldz-kit) React lane.

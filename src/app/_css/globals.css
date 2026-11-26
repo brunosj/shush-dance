@@ -1,6 +1,23 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-pri: #fefef6;
+  --color-sec: #97aaff;
+  --color-ter: #8bbf9f;
+  --color-brand-gray: #b3b3b3;
+  --color-darkGray: #666666;
+  --font-sans: Helvetica, Arial, sans-serif;
+  --animate-marquee: marquee 120s linear infinite;
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
 
 /* * {
   outline: gray solid 1px;
@@ -68,7 +85,7 @@
 }
 
 .textHover {
-  @apply hover:text-gray duration-300;
+  @apply hover:text-brand-gray duration-300;
 }
 
 .filter-bottom {

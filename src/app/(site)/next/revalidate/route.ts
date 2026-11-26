@@ -2,6 +2,8 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+import { CACHE_TAGS } from '../../../_api/cacheTags';
+
 function getRevalidationSecret(): string | undefined {
   return (
     process.env.NEXT_PRIVATE_REVALIDATION_KEY || process.env.REVALIDATION_KEY
@@ -12,12 +14,11 @@ export async function GET(request: NextRequest): Promise<Response> {
   const collection = request.nextUrl.searchParams.get('collection');
   const slug = request.nextUrl.searchParams.get('slug');
   const path = request.nextUrl.searchParams.get('revalidatePath');
+  const tag = request.nextUrl.searchParams.get('tag');
   const secret = request.nextUrl.searchParams.get('secret');
   const expectedSecret = getRevalidationSecret();
 
   if (!secret || !expectedSecret || secret !== expectedSecret) {
-    // Do not indicate that the revalidation key is incorrect in the response
-    // This will protect this API route from being exploited
     return new Response('Invalid request', { status: 400 });
   }
 
@@ -26,15 +27,46 @@ export async function GET(request: NextRequest): Promise<Response> {
     paths: [],
   };
 
-  if (typeof collection === 'string' && typeof slug === 'string') {
-    const tag = `${collection}_${slug}`;
+  if (typeof tag === 'string' && tag.length > 0) {
     revalidateTag(tag, 'max');
     revalidated.tags.push(tag);
+    if (tag === CACHE_TAGS.site) {
+      revalidatePath('/', 'layout');
+      revalidated.paths.push('/ (layout)');
+    }
+  }
 
-    // Also bust the page route itself (home lives at `/`)
-    const routePath = collection === 'pages' ? (slug === 'home' ? '/' : `/${slug}`) : `/${collection}/${slug}`;
-    revalidatePath(routePath);
-    revalidated.paths.push(routePath);
+  if (typeof collection === 'string') {
+    const collectionTag =
+      collection === 'pages'
+        ? CACHE_TAGS.pages
+        : collection === 'events'
+          ? CACHE_TAGS.events
+          : collection === 'releases'
+            ? CACHE_TAGS.releases
+            : collection === 'merch'
+              ? CACHE_TAGS.merch
+              : collection === 'socials'
+                ? CACHE_TAGS.socials
+                : `${collection}`;
+
+    revalidateTag(collectionTag, 'max');
+    revalidated.tags.push(collectionTag);
+
+    if (collection !== 'pages') {
+      revalidateTag(CACHE_TAGS.site, 'max');
+      revalidated.tags.push(CACHE_TAGS.site);
+      revalidatePath('/', 'layout');
+      revalidated.paths.push('/ (layout)');
+    }
+
+    if (typeof slug === 'string' && collection === 'pages') {
+      revalidateTag(CACHE_TAGS.page(slug), 'max');
+      revalidated.tags.push(CACHE_TAGS.page(slug));
+      const routePath = slug === 'home' ? '/' : `/${slug}`;
+      revalidatePath(routePath);
+      revalidated.paths.push(routePath);
+    }
   }
 
   if (typeof path === 'string' && path.startsWith('/')) {
@@ -46,5 +78,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     return new Response('Invalid request', { status: 400 });
   }
 
-  return NextResponse.json({ revalidated: true, ...revalidated, now: Date.now() });
+  return NextResponse.json({
+    revalidated: true,
+    ...revalidated,
+    now: Date.now(),
+  });
 }

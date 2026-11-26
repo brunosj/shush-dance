@@ -67,13 +67,13 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           const release = item as Release;
           return typeof release.artwork === 'string'
             ? resolveMediaUrl(release.artwork)
-            : resolveMediaResource(release.artwork) || '';
+            : resolveMediaResource(release.artwork, 'thumb') || '';
         }
 
         const merch = item as Merch;
         return typeof merch.mainImage === 'string'
           ? resolveMediaUrl(merch.mainImage)
-          : resolveMediaResource(merch.mainImage) || '';
+          : resolveMediaResource(merch.mainImage, 'thumb') || '';
       };
 
       const cartItem = {

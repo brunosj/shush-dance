@@ -1,19 +1,32 @@
-'use client';
-
 import React from 'react';
 
 import { Event, Page } from '../../../payload/payload-types';
 import EventList from '../EventList';
 
-interface EventsPageProps {
+type PageOrLivePreview =
+  | Page
+  | { data?: Page | null; isLoading?: boolean }
+  | null
+  | undefined;
+
+export interface EventsPageProps {
   data: {
-    page: { data: Page | null | undefined };
+    page: PageOrLivePreview;
     events?: Event[];
   };
 }
 
+function unwrapPage(page: PageOrLivePreview): Page | null {
+  if (page == null) return null;
+  if ('data' in page && !('title' in page)) {
+    return page.data ?? null;
+  }
+  return page as Page;
+}
+
 const EventsPage: React.FC<EventsPageProps> = ({ data }) => {
-  const { page, events } = data;
+  const page = unwrapPage(data.page);
+  const { events } = data;
 
   if (!page) {
     return <p>Loading...</p>;

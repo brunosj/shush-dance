@@ -3,6 +3,10 @@ import type { CollectionConfig } from 'payload';
 import { admins } from '../../access/admins';
 import { createRichTextField } from '../../fields/createRichTextField';
 import { slugField } from '../../fields/slug';
+import {
+  revalidateEvents,
+  revalidateEventsDelete,
+} from '../../hooks/revalidateContent';
 
 export const Events: CollectionConfig = {
   slug: 'events',
@@ -10,6 +14,10 @@ export const Events: CollectionConfig = {
     group: 'Events',
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'updatedAt'],
+  },
+  hooks: {
+    afterChange: [revalidateEvents],
+    afterDelete: [revalidateEventsDelete],
   },
   access: {
     read: () => true,

@@ -2,6 +2,8 @@
 
 New uploads get `Media.blurDataURL` via the `generateBlurDataURL` `beforeChange` hook. The frontend uses `CMSImage` + `next/image` `placeholder="blur"`.
 
+Public image URLs use `/media/<filename>` (and `thumb` / `card` sizes). See [PERFORMANCE_CACHE.md](PERFORMANCE_CACHE.md).
+
 ## Backfill existing media (one-off)
 
 Run on the server that has MongoDB and media files (production: `MEDIA_DIR` → `/home/lando/shush/media`):
