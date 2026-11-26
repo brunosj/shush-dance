@@ -24,6 +24,7 @@
     "export:events": "node scripts/exportEvents.cjs ./events.json",
     "export:products": "node scripts/exportProducts.cjs ./products.json",
     "migrate:event-ticket-tiers": "cross-env NODE_OPTIONS=--no-deprecation payload run ./scripts/migrateEventTicketTiers.ts",
+    "migrate:event-legacy-flyers": "cross-env NODE_OPTIONS=--no-deprecation payload run ./scripts/migrateEventLegacyFlyers.ts",
     "backfill:stripe-fees": "cross-env NODE_OPTIONS=--no-deprecation payload run ./scripts/backfillStripeFees.cjs",
     "test:order-processing": "ts-node scripts/testOrderProcessing.ts",
     "test:order-validation": "ts-node scripts/testOrderValidation.ts",
