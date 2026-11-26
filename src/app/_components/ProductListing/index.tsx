@@ -178,14 +178,16 @@ const ProductListing: React.FC<ProductListingProps> = ({ product, type }) => {
       </div>
 
       {/* Description */}
-      {description && description.length > 0 && (
+      {Array.isArray(description) && description.length > 0 && (
         <div className="release-description">
           <RichText content={description} className="richTextSmallP" />
         </div>
       )}
 
       {/* Credits (Release only) */}
-      {isRelease && releaseData?.credits && releaseData.credits.length > 0 && (
+      {isRelease &&
+        Array.isArray(releaseData?.credits) &&
+        releaseData.credits.length > 0 && (
         <div className="release-credits">
           <h4 className="font-semibold mb-4">Credits</h4>
           <RichText content={releaseData.credits} className="richTextSmallP" />

@@ -1,4 +1,4 @@
-import { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 import Stripe from 'stripe';
 
 import { processStripeOrderSuccess } from '../utils/processStripeOrder';
@@ -20,14 +20,15 @@ const getStripeInstance = (): Stripe => {
 export const ensureOrderCreatedEndpoint: Endpoint = {
   path: '/ensure-order-created',
   method: 'post',
-  handler: async (req, res) => {
+  handler: async (req) => {
     try {
-      const { paymentIntentId } = req.body;
+      const body = (await req.json()) as { paymentIntentId?: string };
+      const { paymentIntentId } = body;
 
       if (!paymentIntentId) {
-        return res.status(400).json({
+        return Response.json({
           error: 'Payment intent ID required',
-        });
+        }, { status: 400 });
       }
 
       console.log(
@@ -40,7 +41,7 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
         await stripe.paymentIntents.retrieve(paymentIntentId);
 
       if (paymentIntent.status !== 'succeeded') {
-        return res.json({
+        return Response.json({
           success: true,
           message: `Payment not yet completed (status: ${paymentIntent.status})`,
           webhookWorked: true,
@@ -56,9 +57,9 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
         paymentIntent.currency !== validatedOrderData.stripeCurrency ||
         paymentIntent.amount_received !== expectedAmount
       ) {
-        return res.status(400).json({
+        return Response.json({
           error: 'Paid amount or currency does not match validated order',
-        });
+        }, { status: 400 });
       }
 
       if (paymentIntent.payment_method) {
@@ -95,7 +96,7 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
 
       console.log('🎉 Fallback order creation completed successfully');
 
-      return res.json({
+      return Response.json({
         success: true,
         message: result.created
           ? 'Fallback order created successfully'
@@ -104,10 +105,10 @@ export const ensureOrderCreatedEndpoint: Endpoint = {
       });
     } catch (error: any) {
       console.error('❌ Fallback order creation failed:', error);
-      return res.status(500).json({
+      return Response.json({
         error: 'Failed to ensure order creation',
         details: error.message,
-      });
+      }, { status: 500 });
     }
   },
 };

@@ -1,4 +1,4 @@
-import type { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 import Stripe from 'stripe';
 
 interface MonitoringResult {
@@ -633,25 +633,26 @@ const sendAlert = async (
 export const monitorPaymentSystemEndpoint: Endpoint = {
   path: '/monitor-payment-system',
   method: 'get', // Changed to GET for Uptime Kuma compatibility
-  handler: async (req, res) => {
+  handler: async (req) => {
     // Simple API key authentication via query parameter or header
-    const apiKey = req.headers['x-api-key'] || req.query.key;
+    const apiKey =
+      req.headers.get('x-api-key') || req.searchParams.get('key');
     const expectedApiKey =
       process.env.MONITOR_API_KEY || 'your-secret-monitor-key';
 
     if (apiKey !== expectedApiKey) {
       console.error('Unauthorized monitoring request');
-      return res.status(401).json({
+      return Response.json({
         status: 'error',
         message: 'Unauthorized - Invalid API key',
         timestamp: new Date().toISOString(),
-      });
+      }, { status: 401 });
     }
 
     // Check if we should skip payment intent creation (avoid Stripe transactions)
     const skipPaymentIntents =
-      req.query.skipPaymentIntents === 'true' ||
-      req.headers['x-skip-payment-intents'] === 'true';
+      req.searchParams.get('skipPaymentIntents') === 'true' ||
+      req.headers.get('x-skip-payment-intents') === 'true';
 
     const monitorId = `monitor-${Date.now()}`;
     console.log(`[${monitorId}] 🔍 Starting payment system monitoring...`, {
@@ -751,7 +752,7 @@ export const monitorPaymentSystemEndpoint: Endpoint = {
         });
 
         // For Uptime Kuma: simple success response with health info
-        return res.status(200).json({
+        return Response.json({
           status: 'ok',
           message: skipPaymentIntents
             ? 'Payment system connectivity healthy (no transactions)'
@@ -850,7 +851,7 @@ Recommended Actions:
           errorPattern,
         );
 
-        return res.status(500).json({
+        return Response.json({
           status: 'error',
           message: `Payment system failure: ${errorMessage}`,
           stripe: results.stripe.success ? 'ok' : 'fail',
@@ -872,7 +873,7 @@ Recommended Actions:
           errorPattern: results.endpoint.errorPattern || 'unknown',
           timestamp: results.timestamp,
           mode: skipPaymentIntents ? 'no-transactions' : 'full-test',
-        });
+        }, { status: 500 });
       }
     } catch (error: any) {
       console.error(
@@ -885,7 +886,7 @@ Recommended Actions:
         `Monitoring script crashed: ${error.message}`,
       );
 
-      return res.status(500).json({
+      return Response.json({
         status: 'error',
         message: `Monitor crashed: ${error.message}`,
         stripe: 'unknown',
@@ -893,7 +894,7 @@ Recommended Actions:
         order: 'unknown',
         health: getServerHealth(),
         timestamp: new Date().toISOString(),
-      });
+      }, { status: 500 });
     }
   },
 };

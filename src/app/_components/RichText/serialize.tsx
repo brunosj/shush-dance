@@ -1,7 +1,6 @@
 import escapeHTML from 'escape-html';
 import Link from 'next/link';
 import React, { Fragment } from 'react';
-import { Text } from 'slate';
 
 import {
   resolveRichTextHref,
@@ -11,6 +10,14 @@ import Button from '../Button';
 import styles from './index.module.css';
 
 type Children = Leaf[];
+
+function isTextNode(node: Leaf): boolean {
+  return (
+    typeof node.text === 'string' &&
+    (!node.type || node.type === undefined) &&
+    (!node.children || node.children.length === 0)
+  );
+}
 
 type Leaf = {
   type: string;
@@ -24,6 +31,7 @@ type Leaf = {
   doc?: { relationTo?: string; value?: unknown };
   newTab?: boolean;
   label?: string;
+  text?: string;
   [key: string]: unknown;
 };
 
@@ -63,7 +71,7 @@ function renderLink(
 
 const serialize = (children: Children): React.ReactNode[] =>
   children.map((node, i) => {
-    if (Text.isText(node)) {
+    if (isTextNode(node)) {
       let text = (
         <span dangerouslySetInnerHTML={{ __html: escapeHTML(node.text) }} />
       );

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from 'payload/components/elements';
+import { Button } from '@payloadcms/ui';
 import React, { useEffect, useState } from 'react';
 
 const LoadingDots = () => {

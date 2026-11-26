@@ -1,4 +1,4 @@
-import type { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 
 import { normalizeBuyerQuestionDefs } from '../../utilities/buyerQuestions';
 
@@ -16,13 +16,19 @@ function asId(value: unknown): string {
 export const ticketBuyerQuestionsEndpoint: Endpoint = {
   path: '/checkout/ticket-buyer-questions',
   method: 'post',
-  handler: async (req, res) => {
+  handler: async (req) => {
     try {
-      const lines = Array.isArray(req.body?.lines)
-        ? (req.body.lines as LineRequest[])
+      let body: { lines?: unknown };
+      try {
+        body = (await req.json()) as { lines?: unknown };
+      } catch {
+        body = {};
+      }
+      const lines = Array.isArray(body?.lines)
+        ? (body.lines as LineRequest[])
         : [];
       if (lines.length > 50) {
-        return res.status(400).json({ error: 'Too many cart lines' });
+        return Response.json({ error: 'Too many cart lines' }, { status: 400 });
       }
 
       const questionsByLineId: Record<
@@ -66,12 +72,13 @@ export const ticketBuyerQuestionsEndpoint: Endpoint = {
           : [];
       }
 
-      return res.status(200).json({ questionsByLineId });
+      return Response.json({ questionsByLineId });
     } catch (error) {
       console.error('Failed to load ticket buyer questions:', error);
-      return res
-        .status(500)
-        .json({ error: 'Failed to load ticket questions.' });
+      return Response.json(
+        { error: 'Failed to load ticket questions.' },
+        { status: 500 },
+      );
     }
   },
 };

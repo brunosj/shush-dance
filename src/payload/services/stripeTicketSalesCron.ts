@@ -12,7 +12,7 @@ let started = false;
 
 export function setupStripeTicketSalesCron(): void {
   if (started) return;
-  if (process.env.NEXT_BUILD) return;
+  if (process.env.NEXT_PHASE === 'phase-production-build') return;
   if (process.env.STRIPE_TICKET_SYNC_CRON_ENABLED === 'false') return;
 
   const key =

@@ -1,6 +1,4 @@
-import { Field } from 'payload/types';
-
-import AudioSelectField from '../components/AudioField/AudioSelectField';
+import { Field } from 'payload';
 
 const audioField: Field = {
   name: 'audioFile',
@@ -13,7 +11,7 @@ const audioField: Field = {
   admin: {
     description: 'Select the associated audio file.',
     components: {
-      Field: AudioSelectField,
+      Field: './components/AudioField/AudioSelectField#default',
     },
   },
 };

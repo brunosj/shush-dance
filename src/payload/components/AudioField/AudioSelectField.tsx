@@ -1,7 +1,7 @@
 'use client';
 
-import { Props } from 'payload/components/fields/Relationship';
-import { Label, useField } from 'payload/components/forms';
+import { FieldLabel, useField } from '@payloadcms/ui';
+import type { RelationshipFieldClientComponent } from 'payload';
 import React, { useEffect, useState } from 'react';
 
 import type { Audio } from '../../payload-types';
@@ -9,79 +9,50 @@ import CustomAudioPlayer from '../CustomAudioPlayer';
 
 const baseClass = 'custom-audio-select';
 
-const AudioSelectField: React.FC<Props> = (props) => {
-  const { path, label, required } = props;
-  const { value = '', setValue } = useField<string>({
-    path,
-    validate: (val: string, { siblingData }) => {
-      // Allow audioFile to be empty if audioUpload is present
-      if (!val && siblingData.audioUpload) {
-        return true;
-      }
-      return val ? true : 'Please select a valid audio file';
-    },
-  });
+const AudioSelectField: RelationshipFieldClientComponent = (props) => {
+  const { path, field } = props;
+  const { value = '', setValue } = useField<string>({ path });
+  const label = field?.label;
+  const required = field?.required;
 
-  const [audioSrc, setAudioSrc] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [audioFile, setAudioFile] = useState<Audio | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchAudioFile = async () => {
-      if (!value) {
-        console.log('No audio file ID provided.');
-        return;
-      }
+    if (!value) {
+      setAudioFile(null);
+      return;
+    }
 
-      console.log('Fetching audio file for ID:', value);
-
-      setLoading(true);
-      setError(null);
-
+    const fetchAudio = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch(`/api/audio/${value}`);
-
-        console.log('Fetch Response Status:', response.status);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch the selected audio file');
-        }
-
-        const audio: Audio = await response.json();
-        console.log('Fetched Audio Data:', audio);
-
-        const resolvedUrl = audio.url || `/api/audio/${audio.filename}`;
-        console.log('Resolved Audio URL:', resolvedUrl);
-
-        setAudioSrc(resolvedUrl);
-        setValue(audio.id);
-      } catch (err) {
-        console.error('Error fetching audio file:', err);
-        setError(
-          'Error fetching the selected audio file. Please try again later.',
-        );
+        const data = (await response.json()) as Audio;
+        setAudioFile(data);
+      } catch (error) {
+        console.error('Error fetching audio file:', error);
+        setAudioFile(null);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchAudioFile();
-  }, [value, setValue]);
-
-  if (loading) {
-    console.log('Loading audio file...');
-    return <p>Loading audio file...</p>;
-  }
-
-  if (error) {
-    console.log('Error encountered:', error);
-    return <p>{error}</p>;
-  }
+    void fetchAudio();
+  }, [value]);
 
   return (
-    <div className={baseClass} style={{ paddingBottom: '1.5rem' }}>
-      <Label htmlFor={path} label={label} required={required} />
-      <CustomAudioPlayer key={audioSrc} src={audioSrc} />
+    <div className={baseClass}>
+      <FieldLabel label={label} required={required} />
+      <select
+        value={value || ''}
+        onChange={(e) => setValue(e.target.value)}
+        className={`${baseClass}__select`}
+      >
+        <option value="">Select an audio file</option>
+      </select>
+      {isLoading && <p>Loading preview...</p>}
+      {audioFile?.url && <CustomAudioPlayer src={audioFile.url} />}
     </div>
   );
 };

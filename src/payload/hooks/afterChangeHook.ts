@@ -1,4 +1,4 @@
-import { CollectionAfterChangeHook } from 'payload/types';
+import { CollectionAfterChangeHook } from 'payload';
 
 const afterChangeHook: CollectionAfterChangeHook = async ({
   doc, // full document data

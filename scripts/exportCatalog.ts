@@ -26,7 +26,6 @@ const run = async () => {
 
   const payload = await getPayload({
     config,
-    secret: process.env.PAYLOAD_SECRET,
   });
 
   console.log('Exporting legacy catalog from shush-dance...');

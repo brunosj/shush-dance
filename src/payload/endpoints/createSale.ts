@@ -1,10 +1,11 @@
-import { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 
 export const createSaleEndpoint: Endpoint = {
   path: '/create-sale',
   method: 'post',
-  handler: async (req, res) => {
+  handler: async (req) => {
     try {
+      const body = (await req.json()) as any;
       const {
         itemId: _itemId,
         itemType,
@@ -19,7 +20,7 @@ export const createSaleEndpoint: Endpoint = {
         shippingRegion,
         customerEmail,
         transactionId,
-      } = req.body;
+      } = body;
 
       // Validate required fields
       if (
@@ -30,9 +31,9 @@ export const createSaleEndpoint: Endpoint = {
         !paymentMethod
       ) {
         console.error('Missing required fields');
-        return res.status(400).json({
+        return Response.json({
           error: 'Missing required sale data',
-        });
+        }, { status: 400 });
       }
 
       // Prepare the sale data
@@ -62,16 +63,16 @@ export const createSaleEndpoint: Endpoint = {
         data: saleData,
       });
 
-      return res.status(200).json({
+      return Response.json({
         success: true,
         saleId: sale.id,
       });
     } catch (error: any) {
       console.error('Create sale error:', error);
-      return res.status(500).json({
+      return Response.json({
         error: 'Failed to create sale record',
         details: error.message,
-      });
+      }, { status: 500 });
     }
   },
 };

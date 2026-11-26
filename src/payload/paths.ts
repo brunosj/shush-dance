@@ -1,10 +1,14 @@
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
 
 /**
- * App root (`shush-dance/`), whether this file is loaded from `src/payload` or `dist/payload`.
+ * App root (`shush-dance/`), whether this file is loaded from `src/payload` or compiled output.
  */
 export function getProjectRoot(): string {
-  return path.resolve(__dirname, '../..');
+  return path.resolve(dirname, '../..');
 }
 
 export function getEnvFilePath(): string {
@@ -19,6 +23,10 @@ export function getMediaRoot(): string {
     return process.env.MEDIA_DIR;
   }
   return path.resolve(getProjectRoot(), '../../media');
+}
+
+export function getAudioUploadDir(): string {
+  return path.join(getMediaRoot(), 'audio');
 }
 
 export function getDocumentsUploadDir(): string {

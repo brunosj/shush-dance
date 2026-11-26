@@ -1,11 +1,13 @@
-import { webpackBundler } from '@payloadcms/bundler-webpack';
-import { mongooseAdapter } from '@payloadcms/db-mongodb';
-import { slateEditor } from '@payloadcms/richtext-slate';
-import dotenv from 'dotenv';
-import path from 'path';
-import { buildConfig } from 'payload/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { extendAdminWebpack } from './adminWebpack';
+import { mongooseAdapter } from '@payloadcms/db-mongodb';
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer';
+import { shushLexicalEditor } from './fields/shushLexicalEditor';
+import dotenv from 'dotenv';
+import { buildConfig } from 'payload';
+import sharp from 'sharp';
+
 import { Artists } from './collections/Artists';
 import Audio from './collections/Audio';
 import { Documents } from './collections/Documents';
@@ -19,8 +21,6 @@ import { Sales } from './collections/Sales';
 import { TicketSales } from './collections/TicketSales';
 import Tracks from './collections/Tracks';
 import Users from './collections/Users';
-import Icon from './components/Icon';
-import Logo from './components/Logo';
 import { backfillStripeFeesEndpoint } from './endpoints/backfillStripeFees';
 import { createPaymentIntentEndpoint } from './endpoints/createPaymentIntent';
 import { createSaleEndpoint } from './endpoints/createSale';
@@ -38,11 +38,11 @@ import { Settings } from './globals/settings';
 import { Socials } from './globals/Socials';
 import { getEnvFilePath } from './paths';
 
-dotenv.config({
-  path: getEnvFilePath(),
-});
+dotenv.config({ path: getEnvFilePath() });
 
-/** Node 17+ resolves `localhost` to IPv6 (::1) first; mongod often only listens on 127.0.0.1. */
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
+
 function resolveDatabaseUri(uri: string | undefined): string | undefined {
   if (!uri) return uri;
   return uri
@@ -54,22 +54,28 @@ function resolveDatabaseUri(uri: string | undefined): string | undefined {
 }
 
 export default buildConfig({
+  secret: process.env.PAYLOAD_SECRET || '',
   admin: {
     user: Users.slug,
-    bundler: webpackBundler(),
-    webpack: extendAdminWebpack,
+    importMap: {
+      baseDir: path.resolve(dirname),
+    },
     components: {
       graphics: {
-        Logo,
-        Icon,
+        Logo: './components/Logo#default',
+        Icon: './components/Icon#default',
+      },
+    },
+    meta: {
+      openGraph: {
+        images: [],
       },
     },
   },
-  editor: slateEditor({}),
+  editor: shushLexicalEditor,
   db: mongooseAdapter({
-    url: resolveDatabaseUri(process.env.DATABASE_URI),
+    url: resolveDatabaseUri(process.env.DATABASE_URI) || '',
     connectOptions: {
-      // Prefer IPv4 when the URI still contains a hostname that resolves both ways.
       family: 4,
     },
   }),
@@ -81,49 +87,27 @@ export default buildConfig({
     graphQLPlayground: '/api/graphql-playground',
   },
   collections: [
-    // Events
     Events,
     TicketSales,
-    // Shop
     Releases,
     Merch,
     OnlineOrders,
     Sales,
-    // Music
     Artists,
     Tracks,
     Audio,
-    // Content
     Pages,
     Documents,
     Media,
-    // Admin
     Users,
   ],
   globals: [Socials, Settings],
   typescript: {
-    outputFile: path.resolve(__dirname, 'payload-types.ts'),
+    outputFile: path.resolve(dirname, 'payload-types.ts'),
     declare: false,
   },
   cors: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
   csrf: [process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(Boolean),
-  rateLimit: {
-    // Honour X-Forwarded-For so the limiter keys on the real visitor IP
-    // instead of the nginx proxy address (otherwise every request shares
-    // a single 127.0.0.1 bucket and the whole site gets rate limited).
-    trustProxy: true,
-    window: 15 * 60 * 1000,
-    max: 5000,
-    // Never rate limit internal server-side requests. All SSR data fetching
-    // authenticates with the server-only API key, and the Stripe webhook is
-    // trusted; counting these against the limit is what 404s the homepage.
-    skip: (req) => {
-      const authHeader = req.headers?.authorization || '';
-      if (authHeader.includes('API-Key')) return true;
-      if (req.path?.startsWith('/stripe-webhook')) return true;
-      return false;
-    },
-  },
   endpoints: [
     healthEndpoint,
     testBandcampEndpoint,
@@ -139,10 +123,9 @@ export default buildConfig({
     publicEventTicketStatsEndpoint,
     ticketBuyerQuestionsEndpoint,
   ],
-  email: {
-    fromName: 'SHUSH',
-    fromAddress: 'hello@shush.dance',
-    logMockCredentials: false,
+  email: nodemailerAdapter({
+    defaultFromName: 'SHUSH',
+    defaultFromAddress: 'hello@shush.dance',
     transportOptions: {
       host: process.env.SMTP_HOST,
       port: 587,
@@ -151,5 +134,6 @@ export default buildConfig({
         pass: process.env.SMTP_PASS,
       },
     },
-  },
+  }),
+  sharp,
 });

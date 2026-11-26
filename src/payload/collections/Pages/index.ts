@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload/types';
+import type { CollectionConfig } from 'payload';
 
 import { admins } from '../../access/admins';
 import { adminsOrPublished } from '../../access/adminsOrPublished';
@@ -19,8 +19,13 @@ export const Pages: CollectionConfig = {
       )}&secret=${process.env.PAYLOAD_PUBLIC_DRAFT_SECRET}`;
     },
     livePreview: {
-      url: ({ data }) =>
-        `${process.env.PAYLOAD_PUBLIC_SERVER_URL}${data.slug !== 'home' ? `/${data.slug}` : ''}`,
+      url: ({ data, collectionConfig }) => {
+        if (collectionConfig.slug !== 'pages' || !data?.slug) {
+          return null;
+        }
+        const path = data.slug === 'home' ? '' : `/${data.slug}`;
+        return `${process.env.PAYLOAD_PUBLIC_SERVER_URL}${path}`;
+      },
     },
   },
   hooks: {

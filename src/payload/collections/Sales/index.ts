@@ -1,8 +1,6 @@
-import { CollectionConfig } from 'payload/types';
+import { CollectionConfig } from 'payload';
 
 import { admins } from '../../access/admins';
-import { SyncBandcampButton } from '../../components/SyncBandcampButton';
-
 export const Sales: CollectionConfig = {
   slug: 'sales',
 
@@ -11,7 +9,7 @@ export const Sales: CollectionConfig = {
     useAsTitle: 'itemName',
     defaultColumns: ['cmsItem', 'type', 'amount', 'pointOfSale', 'soldAt'],
     components: {
-      BeforeListTable: [SyncBandcampButton],
+      beforeListTable: ['./components/SyncBandcampButton#default'],
     },
   },
 

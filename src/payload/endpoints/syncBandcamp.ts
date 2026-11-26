@@ -1,4 +1,4 @@
-import { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 
 import { fetchBands, fetchSalesForBand } from '../services/bandcamp';
 
@@ -148,7 +148,7 @@ async function logUnmatchedItem(
 export const syncBandcampEndpoint: Endpoint = {
   path: '/sync-bandcamp',
   method: 'post',
-  handler: async (req, res) => {
+  handler: async (req) => {
     try {
       // Fetch bands
       const bands = await fetchBands();
@@ -309,7 +309,7 @@ export const syncBandcampEndpoint: Endpoint = {
         },
       });
 
-      res.status(200).json({
+      return Response.json({
         success: true,
         totalSales: totalFound,
         newSales: totalCreated,
@@ -318,10 +318,13 @@ export const syncBandcampEndpoint: Endpoint = {
       });
     } catch (error) {
       console.error('Sync error:', error);
-      res.status(500).json({
-        success: false,
-        error: error.message,
-      });
+      return Response.json(
+        {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 },
+      );
     }
   },
 };

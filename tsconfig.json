@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "esModuleInterop": true,
-    "target": "ES2015",
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -9,7 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "incremental": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
@@ -18,16 +19,18 @@
       {
         "name": "next"
       }
-    ]
-  },
-  "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"],
-  "ts-node": {
-    "transpileOnly": true,
-    "swc": true,
-    "compilerOptions": {
-      "module": "CommonJS",
-      "moduleResolution": "node"
+    ],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@payload-config": ["./src/payload/payload.config.ts"]
     }
-  }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
 }

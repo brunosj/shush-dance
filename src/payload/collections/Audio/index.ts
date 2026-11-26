@@ -1,6 +1,8 @@
 // collections/AudioFiles.ts
-import path from 'path';
-import { CollectionConfig } from 'payload/types';
+import { addDataAndFileToRequest } from '@payloadcms/next/utilities';
+import type { CollectionConfig } from 'payload';
+
+import { getAudioUploadDir } from '../../paths';
 
 const _MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = [
@@ -18,7 +20,7 @@ const Audio: CollectionConfig = {
     group: 'Music',
   },
   upload: {
-    staticDir: path.resolve(__dirname, '../../../../media/audio'),
+    staticDir: getAudioUploadDir(),
     mimeTypes: ALLOWED_MIME_TYPES,
   },
   access: {
@@ -28,18 +30,25 @@ const Audio: CollectionConfig = {
     {
       path: '/custom-upload',
       method: 'post',
-      handler: async (req, res, _next) => {
+      handler: async (req) => {
         try {
-          const { title } = req.body;
-          const file = req.files.file;
+          await addDataAndFileToRequest(req);
+          const title = (req.data as { title?: string } | undefined)?.title;
+          const file = req.file;
 
           if (!file) {
-            return res.status(400).json({ error: 'No file uploaded' });
+            return Response.json(
+              { error: 'No file uploaded' },
+              { status: 400 },
+            );
           }
 
           // Validate file type
           if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-            return res.status(400).json({ error: 'Invalid file type' });
+            return Response.json(
+              { error: 'Invalid file type' },
+              { status: 400 },
+            );
           }
 
           // Validate file size
@@ -62,23 +71,25 @@ const Audio: CollectionConfig = {
             collection: 'audio',
             data: {
               title,
-              file: file.id,
             },
-            file: file,
+            file,
           });
 
-          res.status(200).json({
+          return Response.json({
             message: 'Audio successfully uploaded.',
             doc: {
               id: audioDoc.id,
               title,
-              filename: file.originalname,
+              filename: file.name,
               url: audioDoc.url,
             },
           });
         } catch (error) {
           console.error('Error in custom audio upload endpoint:', error);
-          res.status(500).json({ error: 'Error uploading audio file' });
+          return Response.json(
+            { error: 'Error uploading audio file' },
+            { status: 500 },
+          );
         }
       },
     },

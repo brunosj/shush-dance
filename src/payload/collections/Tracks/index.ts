@@ -1,4 +1,4 @@
-import { CollectionConfig } from 'payload/types';
+import { CollectionConfig } from 'payload';
 
 import audioField from '../../fields/audioField';
 import afterChangeHook from '../../hooks/afterChangeHook';

@@ -1,4 +1,4 @@
-import { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 import Stripe from 'stripe';
 
 import { importPaidCheckoutSession } from '../utils/importPaidCheckoutSession';
@@ -29,7 +29,7 @@ function hasCartOrderData(
 export const stripeWebhookEndpoint: Endpoint = {
   path: '/stripe-webhook',
   method: 'post',
-  handler: async (req, res) => {
+  handler: async (req) => {
     console.log('🎯 Stripe webhook received');
 
     const isLocalDev =
@@ -39,42 +39,34 @@ export const stripeWebhookEndpoint: Endpoint = {
 
     let event: Stripe.Event;
 
+    const raw = await req.text();
+
     if (isLocalDev) {
       console.log(
         '🚧 Development mode: processing webhook without signature verification',
       );
       try {
-        const raw = Buffer.isBuffer(req.body)
-          ? req.body.toString('utf8')
-          : typeof req.body === 'string'
-            ? req.body
-            : JSON.stringify(req.body);
         event = JSON.parse(raw) as Stripe.Event;
       } catch (error) {
         console.error('❌ Failed to parse webhook body:', error);
-        return res.status(400).json({ error: 'Invalid webhook body' });
+        return Response.json({ error: 'Invalid webhook body' }, { status: 400 });
       }
     } else {
-      const sig = req.headers['stripe-signature'];
+      const sig = req.headers.get('stripe-signature');
       const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
       if (!sig || !endpointSecret) {
         console.error('Missing Stripe signature or webhook secret');
-        return res.status(400).json({ error: 'Missing webhook configuration' });
+        return Response.json({ error: 'Missing webhook configuration' }, { status: 400 });
       }
 
       try {
         const stripe = getStripeInstance();
-        const rawBody = Buffer.isBuffer(req.body)
-          ? req.body
-          : typeof req.body === 'string'
-            ? req.body
-            : JSON.stringify(req.body);
-        event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
+        event = stripe.webhooks.constructEvent(raw, sig, endpointSecret);
         console.log('✅ Webhook signature verified:', event.type);
       } catch (err: any) {
         console.error('❌ Webhook signature verification failed:', err.message);
-        return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+        return Response.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
       }
     }
 
@@ -101,10 +93,10 @@ export const stripeWebhookEndpoint: Endpoint = {
       }
     } catch (error: any) {
       console.error('❌ Error processing webhook event:', error);
-      return res.status(500).json({ error: error.message });
+      return Response.json({ error: error.message }, { status: 500 });
     }
 
-    return res.json({ received: true });
+    return Response.json({ received: true });
   },
 };
 

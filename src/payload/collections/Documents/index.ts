@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload/types';
+import type { CollectionConfig } from 'payload';
 
 import { getDocumentsUploadDir } from '../../paths';
 
@@ -14,7 +14,6 @@ export const Documents: CollectionConfig = {
     defaultColumns: ['title', 'filename', 'updatedAt'],
   },
   upload: {
-    staticURL: '/media/documents',
     staticDir: getDocumentsUploadDir(),
     mimeTypes: [
       'application/pdf',

@@ -1,4 +1,4 @@
-import type { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 import Stripe from 'stripe';
 
 import {
@@ -640,54 +640,49 @@ async function createGenericKlarnaTicketSale(
 export const stripeBackfillTicketSalesEndpoint: Endpoint = {
   path: '/sync-stripe-ticket-sales',
   method: 'post',
-  handler: async (req, res) => {
-    const apiKey = req.headers['x-api-key'] || req.query?.key;
+  handler: async (req) => {
+    const apiKey =
+      req.headers.get('x-api-key') || req.searchParams.get('key');
     const expectedKey =
       process.env.STRIPE_TICKET_BACKFILL_KEY || process.env.MONITOR_API_KEY;
     if (!expectedKey || apiKey !== expectedKey) {
-      return res.status(401).json({
+      return Response.json({
         ok: false,
         error: 'Unauthorized',
-      });
+      }, { status: 401 });
     }
 
     if (!process.env.STRIPE_SECRET_KEY) {
-      return res.status(500).json({
+      return Response.json({
         ok: false,
         error: 'STRIPE_SECRET_KEY not configured',
-      });
+      }, { status: 500 });
     }
 
     let body: Record<string, unknown> = {};
-    if (req.body != null) {
-      if (typeof req.body === 'string') {
-        try {
-          body = JSON.parse(req.body) as Record<string, unknown>;
-        } catch {
-          body = {};
-        }
-      } else if (typeof req.body === 'object') {
-        body = req.body as Record<string, unknown>;
-      }
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      body = {};
     }
-    const sinceRaw = body.since ?? req.query?.since;
-    const untilRaw = body.until ?? req.query?.until;
+    const sinceRaw = body.since ?? req.searchParams.get('since');
+    const untilRaw = body.until ?? req.searchParams.get('until');
 
     const sinceSec = parseUnixSeconds(sinceRaw);
     if (sinceSec === null) {
-      return res.status(400).json({
+      return Response.json({
         ok: false,
         error: 'Missing or invalid "since" (ISO date or unix seconds)',
-      });
+      }, { status: 400 });
     }
 
     let untilSec = parseUnixSeconds(untilRaw);
     if (untilSec === null) untilSec = Math.floor(Date.now() / 1000);
     if (untilSec < sinceSec) {
-      return res.status(400).json({
+      return Response.json({
         ok: false,
         error: '"until" must be on or after "since"',
-      });
+      }, { status: 400 });
     }
 
     const stripe = getStripe();
@@ -820,7 +815,7 @@ export const stripeBackfillTicketSalesEndpoint: Endpoint = {
       piStartingAfter = piPage.data[piPage.data.length - 1].id;
     }
 
-    return res.status(200).json({
+    return Response.json({
       ok: true,
       created: created.length,
       skipped: skipped.length,

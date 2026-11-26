@@ -1,11 +1,11 @@
-import { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 
 import { fetchBands, fetchSalesForBand } from '../services/bandcamp';
 
 export const testBandcampEndpoint: Endpoint = {
   path: '/test-bandcamp',
   method: 'get',
-  handler: async (req, res) => {
+  handler: async (req) => {
     try {
       // Test last 30 days of sales
       const endDate = new Date();
@@ -34,7 +34,7 @@ export const testBandcampEndpoint: Endpoint = {
         }),
       );
 
-      res.status(200).json({
+      return Response.json({
         success: true,
         message: 'Successfully connected to Bandcamp API',
         timestamp: new Date().toISOString(),
@@ -47,11 +47,14 @@ export const testBandcampEndpoint: Endpoint = {
       });
     } catch (error) {
       console.error('Bandcamp API Test Error:', error);
-      res.status(500).json({
+      return Response.json(
+        {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString(),
-      });
+        },
+        { status: 500 },
+      );
     }
   },
 };

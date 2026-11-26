@@ -1,27 +1,27 @@
-FROM node:18.8-alpine as base
+FROM node:22.23-alpine AS base
 
-FROM base as builder
+FROM base AS builder
 
 WORKDIR /home/node/app
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY . .
-RUN yarn install
-RUN yarn build
+RUN pnpm run build
 
-FROM base as runtime
+FROM base AS runtime
 
 ENV NODE_ENV=production
-ENV PAYLOAD_CONFIG_PATH=dist/payload.config.js
-
 WORKDIR /home/node/app
-COPY package*.json  ./
-COPY yarn.lock ./
 
-RUN yarn install --production
-COPY --from=builder /home/node/app/dist ./dist
-COPY --from=builder /home/node/app/build ./build
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile --prod
+
+COPY --from=builder /home/node/app/.next ./.next
+COPY --from=builder /home/node/app/public ./public
+COPY --from=builder /home/node/app/next.config.mjs ./
+COPY --from=builder /home/node/app/src ./src
 
 EXPOSE 3000
 
-CMD ["node", "dist/server.js"]
+CMD ["pnpm", "serve"]

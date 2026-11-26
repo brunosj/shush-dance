@@ -1,4 +1,4 @@
-import { Field } from 'payload/types';
+import { Field } from 'payload';
 
 type TextFieldOptions = {
   label: string;

@@ -1,4 +1,4 @@
-import type { Block } from 'payload/types';
+import type { Block } from 'payload';
 
 /**
  * Extracts an iframe src from a pasted Brevo embed snippet, or returns a bare URL as-is.

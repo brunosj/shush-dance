@@ -5,7 +5,7 @@ set -x
 
 echo "Starting SHUSH deployment..."
 
-export PATH=$HOME/.nvm/versions/node/v22.20.0/bin:$HOME/.local/share/pnpm:$PATH
+export PATH=$HOME/.nvm/versions/node/v22.23.5/bin:$HOME/.local/share/pnpm:$PATH
 
 REPO_DIR="/home/lando/shush/repo"
 PM2_NAME="shushv2"
@@ -26,11 +26,8 @@ echo "=========================================="
 echo "STEP 2: Build"
 echo "=========================================="
 
-# build:next boots Express briefly so Payload can init Next's production build.
-# It must not use PORT 3000 — PM2 is still serving the live app there.
-pnpm run build:payload
-pnpm run build:server
-pnpm run build:next
+# Do not run beside a live `next dev` on the same checkout (Turbopack cache).
+pnpm run build
 
 echo "=========================================="
 echo "STEP 3: Ensure media symlink"

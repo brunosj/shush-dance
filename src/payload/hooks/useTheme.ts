@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 
 const getCurrentTheme = () => {
+  if (typeof document === 'undefined') return 'light';
   return document.documentElement.getAttribute('data-theme') || 'light';
 };
 
 const useTheme = () => {
-  const [theme, setTheme] = useState(getCurrentTheme());
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     const updateTheme = () => {

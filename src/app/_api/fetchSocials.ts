@@ -1,16 +1,11 @@
 import type { Social } from '../../payload/payload-types';
 
-export const fetchSocials = async (): Promise<Social> => {
-  const socialsRes: Social = await fetch(
-    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/globals/socials`,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
-      },
-      next: { revalidate: 1 },
-    },
-  ).then((res) => res.json());
+import { getLocalPayload } from './localPayload';
 
-  return socialsRes ?? { id: '' };
+export const fetchSocials = async (): Promise<Social> => {
+  const payload = await getLocalPayload();
+  return (await payload.findGlobal({
+    slug: 'socials',
+    depth: 2,
+  })) as Social;
 };

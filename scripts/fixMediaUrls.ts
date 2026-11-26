@@ -17,6 +17,7 @@ import path from 'path';
 import { getPayload } from 'payload';
 
 import config from '../src/payload/payload.config';
+import { getMediaRoot } from '../src/payload/paths';
 
 type Args = {
   dryRun: boolean;
@@ -62,14 +63,13 @@ const run = async () => {
 
   const payload = await getPayload({
     config,
-    secret: process.env.PAYLOAD_SECRET,
   });
 
   const mediaDir =
     args.mediaDir ||
     process.env.MEDIA_DIR ||
     // In production: /home/lando/media (6 levels up from dist/payload/collections/)
-    path.resolve(__dirname, '../media');
+    getMediaRoot();
 
   console.log('Fixing media URLs with:');
   console.log(`- staticURL: ${staticURL}`);

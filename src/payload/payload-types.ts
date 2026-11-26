@@ -6,7 +6,66 @@
  * and re-run `payload generate:types` to regenerate this file.
  */
 
+/**
+ * Supported timezones in IANA format.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supportedTimezones".
+ */
+export type SupportedTimezones =
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
+
 export interface Config {
+  auth: {
+    users: UserAuthOperations;
+  };
+  blocks: {};
   collections: {
     events: Event;
     'ticket-sales': TicketSale;
@@ -21,12 +80,69 @@ export interface Config {
     documents: Document;
     media: Media;
     users: User;
+    'payload-kv': PayloadKv;
+    'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
+  collectionsJoins: {};
+  collectionsSelect: {
+    events: EventsSelect<false> | EventsSelect<true>;
+    'ticket-sales': TicketSalesSelect<false> | TicketSalesSelect<true>;
+    releases: ReleasesSelect<false> | ReleasesSelect<true>;
+    merch: MerchSelect<false> | MerchSelect<true>;
+    'online-orders': OnlineOrdersSelect<false> | OnlineOrdersSelect<true>;
+    sales: SalesSelect<false> | SalesSelect<true>;
+    artists: ArtistsSelect<false> | ArtistsSelect<true>;
+    tracks: TracksSelect<false> | TracksSelect<true>;
+    audio: AudioSelect<false> | AudioSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    documents: DocumentsSelect<false> | DocumentsSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
+  };
+  db: {
+    defaultIDType: string;
+  };
+  fallbackLocale: null;
   globals: {
     socials: Social;
     settings: Setting;
+  };
+  globalsSelect: {
+    socials: SocialsSelect<false> | SocialsSelect<true>;
+    settings: SettingsSelect<false> | SettingsSelect<true>;
+  };
+  locale: null;
+  widgets: {
+    collections: CollectionsWidget;
+  };
+  user: User;
+  jobs: {
+    tasks: unknown;
+    workflows: unknown;
+  };
+}
+export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
   };
 }
 /**
@@ -40,30 +156,58 @@ export interface Event {
   time?: string | null;
   location: string;
   artists?: (string | Artist)[] | null;
+  /**
+   * Ticket prices and Stripe charges use this currency. Merch/releases remain EUR — do not mix currencies in one cart.
+   */
   currency: 'EUR' | 'GBP';
   slug?: string | null;
-  event_information?:
-    | {
+  event_information?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
         [k: string]: unknown;
-      }[]
-    | null;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   images?:
     | {
         image: string | Media;
         id?: string | null;
       }[]
     | null;
-  image?: string | Media | null;
+  /**
+   * Legacy single-image field. Use Event Flyers instead.
+   */
+  image?: (string | null) | Media;
   ticketsAvailable?: boolean | null;
   ticketTiers?:
     | {
         tierName: string;
+        /**
+         * Final customer-facing ticket price in the event currency, VAT included.
+         */
         price: number;
+        /**
+         * VAT rate included in the price above. Defaults to 7%. Override for UK events (e.g. 20% or 0%) as needed.
+         */
         vatRate?: number | null;
         visible?: boolean | null;
         strikeThrough?: boolean | null;
+        /**
+         * Optional questions asked at checkout, once per ticket unit (e.g. meal choice, allergies). Not used for Payment Links.
+         */
         buyerQuestions?:
           | {
+              /**
+               * Stable id, e.g. meal or allergies
+               */
               key: string;
               label: string;
               type: 'select' | 'text' | 'textarea';
@@ -78,16 +222,38 @@ export interface Event {
               id?: string | null;
             }[]
           | null;
+        /**
+         * For Payment Link / Checkout sales (not onsite cart). Paste the Stripe Price ID (price_…) — not prod_… or plink_…. Sync from Stripe matches this.
+         */
         stripePriceId?: string | null;
+        /**
+         * Optional reference URL for this tier’s Payment Link. Sync matches on Stripe Price ID above, not this URL.
+         */
         ticketLink?: string | null;
         id?: string | null;
       }[]
     | null;
-  ticket_email_footer?:
-    | {
+  /**
+   * Optional content appended to ticket confirmation emails below the SHUSH crew signature.
+   */
+  ticket_email_footer?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
         [k: string]: unknown;
-      }[]
-    | null;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Optional fallback only. Prefer Stripe Price ID on each tier. If you paste a price_… / prod_… here it will also match, but the tier field is the right place. Metadata keys cms_event_key / cms_catalog_key still work too.
+   */
   stripeCatalogMatchKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -99,12 +265,22 @@ export interface Event {
 export interface Artist {
   id: string;
   artistName: string;
-  artist_bio?:
-    | {
+  artist_bio?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
         [k: string]: unknown;
-      }[]
-    | null;
-  image?: string | Media | null;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  image?: (string | null) | Media;
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -116,14 +292,25 @@ export interface Artist {
 export interface Media {
   id: string;
   alt: string;
-  caption?:
-    | {
+  caption?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
         [k: string]: unknown;
-      }[]
-    | null;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
+  thumbnailURL?: string | null;
   filename?: string | null;
   mimeType?: string | null;
   filesize?: number | null;
@@ -138,35 +325,83 @@ export interface Media {
  */
 export interface TicketSale {
   id: string;
+  /**
+   * Total number of tickets (sum of all ticket quantities)
+   */
   totalQuantity?: number | null;
+  /**
+   * Total amount from ticketTotals.total
+   */
   total?: number | null;
+  /**
+   * Auto-generated unique ticket number
+   */
   ticketNumber: string;
   status: 'active' | 'used' | 'cancelled' | 'refunded';
+  /**
+   * The event this ticket is for (can be set manually later)
+   */
   event?: (string | null) | Event;
+  /**
+   * The tier/type of ticket purchased
+   */
   ticketTier: string;
   paymentMethod: 'stripe' | 'paypal';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  /**
+   * Payment processor transaction ID
+   */
   transactionId?: string | null;
+  /**
+   * Currency charged for this ticket sale
+   */
   currency?: ('EUR' | 'GBP') | null;
+  /**
+   * Actual Stripe processing fee for this sale (allocated share of the PaymentIntent fee), in the sale currency.
+   */
   stripeFee?: number | null;
+  /**
+   * Used to retry ticket email delivery safely after payment processing.
+   */
   confirmationEmailSent?: boolean | null;
   customerEmail: string;
   customerPhone?: string | null;
   firstName: string;
   lastName: string;
   tickets: {
+    /**
+     * Original cart item identifier
+     */
     cartItemId?: string | null;
+    /**
+     * Name of the ticket from cart
+     */
     ticketName: string;
+    /**
+     * Description of the ticket from cart
+     */
     ticketDescription?: string | null;
     quantity: number;
     unitPrice: number;
     lineTotal: number;
+    /**
+     * Stripe Price ID when this line came from a Payment Link / Checkout sync
+     */
     stripePriceId?: string | null;
+    /**
+     * Payload ticket tier ID from the event
+     */
     tierId?: string | null;
+    /**
+     * Payload event ID for this ticket line
+     */
     eventId?: string | null;
     vatRate?: number | null;
     unitNet?: number | null;
     vatAmount?: number | null;
+    /**
+     * One entry per ticket unit when checkout questions were answered
+     */
     answerSets?:
       | {
           answers?:
@@ -187,10 +422,22 @@ export interface TicketSale {
     vat: number;
     total: number;
   };
+  /**
+   * Date of the event (copied from event)
+   */
   eventDate?: string | null;
+  /**
+   * Location of the event (copied from event)
+   */
   eventLocation?: string | null;
+  /**
+   * Title of the event (copied from event)
+   */
   eventTitle?: string | null;
   customerNotes?: string | null;
+  /**
+   * Internal notes (not visible to customer)
+   */
   internalNotes?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -204,19 +451,42 @@ export interface Release {
   title: string;
   artist: string | Artist;
   tracks?: (string | Track)[] | null;
-  description?:
-    | {
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
         [k: string]: unknown;
-      }[]
-    | null;
-  credits?:
-    | {
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  credits?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
         [k: string]: unknown;
-      }[]
-    | null;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   catalogNumber: string;
   releaseYear: number;
   slug?: string | null;
+  /**
+   * Price in EUR (without VAT). Leave empty if not for sale.
+   */
   price?: number | null;
   shippingPrices: {
     germany: number;
@@ -226,7 +496,13 @@ export interface Release {
     restOfWorld: number;
     restOfWorldAdditional: number;
   };
+  /**
+   * Leave empty for unlimited stock
+   */
   stockQuantity?: number | null;
+  /**
+   * Check if this is a digital release (no shipping required)
+   */
   isDigital?: boolean | null;
   artwork: string | Media;
   images?:
@@ -246,8 +522,14 @@ export interface Release {
 export interface Track {
   id: string;
   audioGroup?: {
+    /**
+     * Select the associated audio file.
+     */
     audioFile?: (string | null) | Audio;
     audioHighQuality?: (string | null) | Audio;
+    /**
+     * You need to refresh the page after uploading a new audio file to see the changes in the player.
+     */
     audioUpload?: (string | null) | Audio;
   };
   title?: string | null;
@@ -266,6 +548,7 @@ export interface Audio {
   updatedAt: string;
   createdAt: string;
   url?: string | null;
+  thumbnailURL?: string | null;
   filename?: string | null;
   mimeType?: string | null;
   filesize?: number | null;
@@ -282,12 +565,25 @@ export interface Merch {
   id: string;
   title: string;
   itemType: 'clothing' | 'prints' | 'other';
-  description?:
-    | {
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
         [k: string]: unknown;
-      }[]
-    | null;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   slug?: string | null;
+  /**
+   * Price in EUR (without VAT)
+   */
   price: number;
   shippingPrices: {
     germany: number;
@@ -297,12 +593,18 @@ export interface Merch {
     restOfWorld: number;
     restOfWorldAdditional: number;
   };
+  /**
+   * Leave empty for unlimited stock
+   */
   stockQuantity?: number | null;
+  /**
+   * Check if this is a digital product (no shipping required)
+   */
   isDigital?: boolean | null;
   mainImage: string | Media;
   images?:
     | {
-        image?: string | Media | null;
+        image?: (string | null) | Media;
         id?: string | null;
       }[]
     | null;
@@ -316,11 +618,20 @@ export interface Merch {
  */
 export interface OnlineOrder {
   id: string;
+  /**
+   * Auto-generated unique order number
+   */
   orderNumber: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   paymentMethod: 'stripe' | 'paypal';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  /**
+   * Payment processor transaction ID
+   */
   transactionId?: string | null;
+  /**
+   * Used to retry email delivery safely after payment processing.
+   */
   confirmationEmailSent?: boolean | null;
   customerEmail: string;
   customerPhone?: string | null;
@@ -334,6 +645,9 @@ export interface OnlineOrder {
     shippingRegion?: ('germany' | 'eu' | 'restOfWorld') | null;
   };
   items: {
+    /**
+     * Optional: Link to CMS product if available
+     */
     product?:
       | ({
           relationTo: 'releases';
@@ -343,8 +657,17 @@ export interface OnlineOrder {
           relationTo: 'merch';
           value: string | Merch;
         } | null);
+    /**
+     * Original cart item identifier
+     */
     cartItemId?: string | null;
+    /**
+     * Product name from cart
+     */
     cartItemName?: string | null;
+    /**
+     * Product description from cart
+     */
     cartItemDescription?: string | null;
     quantity: number;
     unitPrice: number;
@@ -358,6 +681,9 @@ export interface OnlineOrder {
     total: number;
   };
   customerNotes?: string | null;
+  /**
+   * Internal notes (not visible to customer)
+   */
   internalNotes?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -370,6 +696,9 @@ export interface Sale {
   id: string;
   itemName?: string | null;
   artist?: string | null;
+  /**
+   * Related Release or Merch item from the CMS
+   */
   cmsItem?:
     | ({
         relationTo: 'releases';
@@ -384,18 +713,57 @@ export interface Sale {
   itemType?: string | null;
   package?: string | null;
   soldAt: string;
+  /**
+   * Base price per item
+   */
   itemPrice?: number | null;
+  /**
+   * Number of items sold
+   */
   quantity: number;
+  /**
+   * Currency code (e.g., EUR, USD)
+   */
   currency?: string | null;
+  /**
+   * Price × Quantity
+   */
   subTotal?: number | null;
+  /**
+   * Extra amount paid by customer
+   */
   additionalFanContribution?: number | null;
+  /**
+   * Tax paid by seller
+   */
   sellerTax?: number | null;
+  /**
+   * Tax paid to marketplace
+   */
   marketplaceTax?: number | null;
+  /**
+   * Applicable tax rate
+   */
   taxRate?: number | null;
+  /**
+   * Shipping cost
+   */
   shipping?: number | null;
+  /**
+   * Subtotal + Additional contribution (Amount received)
+   */
   itemTotal?: number | null;
+  /**
+   * Platform fee
+   */
   transactionFee?: number | null;
+  /**
+   * Type of fee charged
+   */
   feeType?: string | null;
+  /**
+   * Total after fees and taxes
+   */
   netAmount: number;
   buyerName?: string | null;
   buyerEmail?: string | null;
@@ -424,11 +792,24 @@ export interface Sale {
 export interface Page {
   id: string;
   title: string;
-  content?:
-    | {
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
         [k: string]: unknown;
-      }[]
-    | null;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Optional blocks to render below the page content (e.g. Brevo newsletter form).
+   */
   layout?: NewsletterEmbedBlock[] | null;
   showEventsFirst?: boolean | null;
   slug?: string | null;
@@ -441,9 +822,21 @@ export interface Page {
  * via the `definition` "NewsletterEmbedBlock".
  */
 export interface NewsletterEmbedBlock {
+  /**
+   * Optional heading shown above the form.
+   */
   heading?: string | null;
+  /**
+   * From Brevo: Share → Iframe. Paste either the full iframe HTML or just the src URL (sibforms.com or my.brevo.com).
+   */
   iframeSrc: string;
+  /**
+   * Height on larger screens. Brevo iframes cannot auto-size — set this tall enough to fit the form with no scrollbar.
+   */
   height?: number | null;
+  /**
+   * Height below ~768px. Leave empty to use ~1.6× the desktop height (forms get taller when fields stack).
+   */
   mobileHeight?: number | null;
   id?: string | null;
   blockName?: string | null;
@@ -455,10 +848,14 @@ export interface NewsletterEmbedBlock {
  */
 export interface Document {
   id: string;
+  /**
+   * Shown in the admin and when picking this document in links.
+   */
   title: string;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
+  thumbnailURL?: string | null;
   filename?: string | null;
   mimeType?: string | null;
   filesize?: number | null;
@@ -482,9 +879,102 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
-  password: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv".
+ */
+export interface PayloadKv {
+  id: string;
+  key: string;
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-locked-documents".
+ */
+export interface PayloadLockedDocument {
+  id: string;
+  document?:
+    | ({
+        relationTo: 'events';
+        value: string | Event;
+      } | null)
+    | ({
+        relationTo: 'ticket-sales';
+        value: string | TicketSale;
+      } | null)
+    | ({
+        relationTo: 'releases';
+        value: string | Release;
+      } | null)
+    | ({
+        relationTo: 'merch';
+        value: string | Merch;
+      } | null)
+    | ({
+        relationTo: 'online-orders';
+        value: string | OnlineOrder;
+      } | null)
+    | ({
+        relationTo: 'sales';
+        value: string | Sale;
+      } | null)
+    | ({
+        relationTo: 'artists';
+        value: string | Artist;
+      } | null)
+    | ({
+        relationTo: 'tracks';
+        value: string | Track;
+      } | null)
+    | ({
+        relationTo: 'audio';
+        value: string | Audio;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: string | Page;
+      } | null)
+    | ({
+        relationTo: 'documents';
+        value: string | Document;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: string | User;
+      } | null);
+  globalSlug?: string | null;
+  user: {
+    relationTo: 'users';
+    value: string | User;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -522,6 +1012,471 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  title?: T;
+  date?: T;
+  time?: T;
+  location?: T;
+  artists?: T;
+  currency?: T;
+  slug?: T;
+  event_information?: T;
+  images?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  image?: T;
+  ticketsAvailable?: T;
+  ticketTiers?:
+    | T
+    | {
+        tierName?: T;
+        price?: T;
+        vatRate?: T;
+        visible?: T;
+        strikeThrough?: T;
+        buyerQuestions?:
+          | T
+          | {
+              key?: T;
+              label?: T;
+              type?: T;
+              required?: T;
+              options?:
+                | T
+                | {
+                    value?: T;
+                    id?: T;
+                  };
+              helpText?: T;
+              id?: T;
+            };
+        stripePriceId?: T;
+        ticketLink?: T;
+        id?: T;
+      };
+  ticket_email_footer?: T;
+  stripeCatalogMatchKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ticket-sales_select".
+ */
+export interface TicketSalesSelect<T extends boolean = true> {
+  totalQuantity?: T;
+  total?: T;
+  ticketNumber?: T;
+  status?: T;
+  event?: T;
+  ticketTier?: T;
+  paymentMethod?: T;
+  paymentStatus?: T;
+  transactionId?: T;
+  currency?: T;
+  stripeFee?: T;
+  confirmationEmailSent?: T;
+  customerEmail?: T;
+  customerPhone?: T;
+  firstName?: T;
+  lastName?: T;
+  tickets?:
+    | T
+    | {
+        cartItemId?: T;
+        ticketName?: T;
+        ticketDescription?: T;
+        quantity?: T;
+        unitPrice?: T;
+        lineTotal?: T;
+        stripePriceId?: T;
+        tierId?: T;
+        eventId?: T;
+        vatRate?: T;
+        unitNet?: T;
+        vatAmount?: T;
+        answerSets?:
+          | T
+          | {
+              answers?:
+                | T
+                | {
+                    key?: T;
+                    label?: T;
+                    value?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+        id?: T;
+      };
+  ticketTotals?:
+    | T
+    | {
+        subtotal?: T;
+        vat?: T;
+        total?: T;
+      };
+  eventDate?: T;
+  eventLocation?: T;
+  eventTitle?: T;
+  customerNotes?: T;
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "releases_select".
+ */
+export interface ReleasesSelect<T extends boolean = true> {
+  title?: T;
+  artist?: T;
+  tracks?: T;
+  description?: T;
+  credits?: T;
+  catalogNumber?: T;
+  releaseYear?: T;
+  slug?: T;
+  price?: T;
+  shippingPrices?:
+    | T
+    | {
+        germany?: T;
+        germanyAdditional?: T;
+        eu?: T;
+        euAdditional?: T;
+        restOfWorld?: T;
+        restOfWorldAdditional?: T;
+      };
+  stockQuantity?: T;
+  isDigital?: T;
+  artwork?: T;
+  images?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "merch_select".
+ */
+export interface MerchSelect<T extends boolean = true> {
+  title?: T;
+  itemType?: T;
+  description?: T;
+  slug?: T;
+  price?: T;
+  shippingPrices?:
+    | T
+    | {
+        germany?: T;
+        germanyAdditional?: T;
+        eu?: T;
+        euAdditional?: T;
+        restOfWorld?: T;
+        restOfWorldAdditional?: T;
+      };
+  stockQuantity?: T;
+  isDigital?: T;
+  mainImage?: T;
+  images?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "online-orders_select".
+ */
+export interface OnlineOrdersSelect<T extends boolean = true> {
+  orderNumber?: T;
+  status?: T;
+  paymentMethod?: T;
+  paymentStatus?: T;
+  transactionId?: T;
+  confirmationEmailSent?: T;
+  customerEmail?: T;
+  customerPhone?: T;
+  firstName?: T;
+  lastName?: T;
+  shippingAddress?:
+    | T
+    | {
+        street?: T;
+        city?: T;
+        postalCode?: T;
+        country?: T;
+        shippingRegion?: T;
+      };
+  items?:
+    | T
+    | {
+        product?: T;
+        cartItemId?: T;
+        cartItemName?: T;
+        cartItemDescription?: T;
+        quantity?: T;
+        unitPrice?: T;
+        lineTotal?: T;
+        id?: T;
+      };
+  orderTotals?:
+    | T
+    | {
+        subtotal?: T;
+        shipping?: T;
+        vat?: T;
+        total?: T;
+      };
+  customerNotes?: T;
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sales_select".
+ */
+export interface SalesSelect<T extends boolean = true> {
+  itemName?: T;
+  artist?: T;
+  cmsItem?: T;
+  pointOfSale?: T;
+  type?: T;
+  itemType?: T;
+  package?: T;
+  soldAt?: T;
+  itemPrice?: T;
+  quantity?: T;
+  currency?: T;
+  subTotal?: T;
+  additionalFanContribution?: T;
+  sellerTax?: T;
+  marketplaceTax?: T;
+  taxRate?: T;
+  shipping?: T;
+  itemTotal?: T;
+  transactionFee?: T;
+  feeType?: T;
+  netAmount?: T;
+  buyerName?: T;
+  buyerEmail?: T;
+  buyerPhone?: T;
+  city?: T;
+  regionOrState?: T;
+  country?: T;
+  countryCode?: T;
+  buyerNote?: T;
+  bandcampTransactionId?: T;
+  bandcampTransactionItemId?: T;
+  bandcampRelatedTransactionId?: T;
+  itemUrl?: T;
+  referer?: T;
+  refererUrl?: T;
+  catalogNumber?: T;
+  upc?: T;
+  isrc?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "artists_select".
+ */
+export interface ArtistsSelect<T extends boolean = true> {
+  artistName?: T;
+  artist_bio?: T;
+  image?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tracks_select".
+ */
+export interface TracksSelect<T extends boolean = true> {
+  audioGroup?:
+    | T
+    | {
+        audioFile?: T;
+        audioHighQuality?: T;
+        audioUpload?: T;
+      };
+  title?: T;
+  artist?: T;
+  release?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audio_select".
+ */
+export interface AudioSelect<T extends boolean = true> {
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  content?: T;
+  layout?:
+    | T
+    | {
+        newsletterEmbed?: T | NewsletterEmbedBlockSelect<T>;
+      };
+  showEventsFirst?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterEmbedBlock_select".
+ */
+export interface NewsletterEmbedBlockSelect<T extends boolean = true> {
+  heading?: T;
+  iframeSrc?: T;
+  height?: T;
+  mobileHeight?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents_select".
+ */
+export interface DocumentsSelect<T extends boolean = true> {
+  title?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  roles?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  resetPasswordRequestedAt?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv_select".
+ */
+export interface PayloadKvSelect<T extends boolean = true> {
+  key?: T;
+  data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-locked-documents_select".
+ */
+export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
+  document?: T;
+  globalSlug?: T;
+  user?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-preferences_select".
+ */
+export interface PayloadPreferencesSelect<T extends boolean = true> {
+  user?: T;
+  key?: T;
+  value?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-migrations_select".
+ */
+export interface PayloadMigrationsSelect<T extends boolean = true> {
+  name?: T;
+  batch?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "socials".
  */
 export interface Social {
@@ -555,7 +1510,60 @@ export interface Social {
  */
 export interface Setting {
   id: string;
+  /**
+   * Last successful Bandcamp sync timestamp
+   */
   lastBandcampSync?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "socials_select".
+ */
+export interface SocialsSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              label?: T;
+            };
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings_select".
+ */
+export interface SettingsSelect<T extends boolean = true> {
+  lastBandcampSync?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "auth".
+ */
+export interface Auth {
+  [k: string]: unknown;
 }

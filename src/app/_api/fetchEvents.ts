@@ -1,18 +1,15 @@
 import type { Event } from '../../payload/payload-types';
 
-export const fetchEvents = async (): Promise<Event[]> => {
-  const eventsRes: {
-    docs: Event[];
-  } = await fetch(
-    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/events?depth=2&limit=0`,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
-      },
-      next: { revalidate: 1 },
-    },
-  ).then((res) => res.json());
+import { getLocalPayload } from './localPayload';
 
-  return eventsRes?.docs ?? [];
+export const fetchEvents = async (): Promise<Event[]> => {
+  const payload = await getLocalPayload();
+  const eventsRes = await payload.find({
+    collection: 'events',
+    depth: 2,
+    limit: 0,
+    pagination: false,
+  });
+
+  return (eventsRes.docs ?? []) as Event[];
 };

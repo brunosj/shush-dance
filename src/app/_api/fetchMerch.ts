@@ -1,19 +1,15 @@
 import type { Merch } from '../../payload/payload-types';
 
+import { getLocalPayload } from './localPayload';
+
 export const fetchMerch = async (): Promise<Merch[]> => {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/merch?depth=2&limit=0`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
-      },
-      next: { revalidate: 1 },
-    },
-  );
+  const payload = await getLocalPayload();
+  const merchRes = await payload.find({
+    collection: 'merch',
+    depth: 2,
+    limit: 0,
+    pagination: false,
+  });
 
-  const merchRes = await response.json();
-
-  return merchRes?.docs ?? [];
+  return (merchRes.docs ?? []) as Merch[];
 };

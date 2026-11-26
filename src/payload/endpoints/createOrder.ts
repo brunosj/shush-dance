@@ -1,4 +1,4 @@
-import { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 
 import {
   DEFAULT_TICKET_VAT_RATE,
@@ -12,8 +12,9 @@ import {
 export const createOrderEndpoint: Endpoint = {
   path: '/create-order',
   method: 'post',
-  handler: async (req, res) => {
+  handler: async (req) => {
     try {
+      const body = (await req.json()) as any;
       const {
         orderNumber,
         customerData,
@@ -22,14 +23,14 @@ export const createOrderEndpoint: Endpoint = {
         shippingRegion,
         paymentMethod = 'paypal',
         transactionId,
-      } = req.body;
+      } = body;
 
       // Validate required fields
       if (!orderNumber || !customerData || !cartItems || !totals) {
         console.error('Missing required fields');
-        return res.status(400).json({
+        return Response.json({
           error: 'Missing required order data',
-        });
+        }, { status: 400 });
       }
 
       // Separate ticket items from physical items
@@ -384,7 +385,7 @@ Transaction ID: ${transactionId}
         }
       }
 
-      return res.status(200).json({
+      return Response.json({
         success: true,
         order: order?.id || null,
         saleRecords: saleRecords,
@@ -395,11 +396,11 @@ Transaction ID: ${transactionId}
       });
     } catch (error: any) {
       console.error('Create order error:', error);
-      return res.status(500).json({
+      return Response.json({
         success: false,
         error: 'Failed to create order',
         details: error.message,
-      });
+      }, { status: 500 });
     }
   },
 };

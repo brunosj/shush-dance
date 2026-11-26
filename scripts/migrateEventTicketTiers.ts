@@ -6,7 +6,6 @@ async function run() {
   const dryRun = process.argv.includes('--dry-run');
   const payload = await getPayload({
     config,
-    secret: process.env.PAYLOAD_SECRET,
   });
 
   let page = 1;

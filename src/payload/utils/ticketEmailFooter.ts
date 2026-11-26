@@ -1,7 +1,15 @@
+import {
+  convertLexicalToHTML,
+  LinkHTMLConverter,
+} from '@payloadcms/richtext-lexical/html';
 import escapeHTML from 'escape-html';
-import { Text } from 'slate';
 
+import { lexicalInternalDocToHref } from '../../utilities/lexicalInternalDocToHref';
 import { resolveRichTextHref } from '../../utilities/resolveRichTextHref';
+
+const { link: renderLexicalLinkHTML } = LinkHTMLConverter({
+  internalDocToHref: lexicalInternalDocToHref,
+});
 
 type SlateNode = {
   type?: string;
@@ -21,7 +29,7 @@ function isEmptyBlock(node: SlateNode): boolean {
   if (!node.children?.length) return true;
 
   return node.children.every((child) => {
-    if (Text.isText(child)) {
+    if (isTextNode(child)) {
       return !(child.text || '').trim();
     }
 
@@ -52,6 +60,14 @@ const blockStyles: Record<string, string> = {
     'margin: 0 0 14px; padding: 8px 16px; border-left: 3px solid #ccc; font-size: 14px; line-height: 1.5; color: #444; display: block;',
 };
 
+function isTextNode(node: SlateNode): boolean {
+  return (
+    typeof node.text === 'string' &&
+    node.type === undefined &&
+    !Array.isArray(node.children)
+  );
+}
+
 function serializeNodes(children: SlateNode[] | null | undefined): string {
   if (!children || children.length === 0) {
     return '';
@@ -59,7 +75,7 @@ function serializeNodes(children: SlateNode[] | null | undefined): string {
 
   return children
     .map((node) => {
-      if (Text.isText(node)) {
+      if (isTextNode(node)) {
         let text = escapeAndFormatText(node.text || '');
 
         if (node.bold) {
@@ -128,10 +144,58 @@ function serializeNodes(children: SlateNode[] | null | undefined): string {
     .join('');
 }
 
-export function serializeRichTextToHtml(
-  content: SlateNode[] | null | undefined,
-): string {
-  if (!content || content.length === 0) {
+type RichTextData =
+  | SlateNode[]
+  | { root: unknown }
+  | null
+  | undefined;
+
+export function serializeRichTextToHtml(content: RichTextData): string {
+  if (!content) {
+    return '';
+  }
+
+  if (!Array.isArray(content) && typeof content === 'object' && 'root' in content) {
+    return convertLexicalToHTML({
+      data: content as Parameters<typeof convertLexicalToHTML>[0]['data'],
+      converters: ({ defaultConverters }) => ({
+        ...defaultConverters,
+        ...LinkHTMLConverter({
+          internalDocToHref: lexicalInternalDocToHref,
+        }),
+        link: (args) => {
+          if (args.node.fields?.appearance === 'button') {
+            const { href, newTab } = resolveRichTextHref({
+              linkType: args.node.fields.linkType,
+              url: args.node.fields.url,
+              newTab: args.node.fields.newTab,
+              doc: args.node.fields.doc
+                ? {
+                    relationTo: args.node.fields.doc.relationTo,
+                    value: args.node.fields.doc.value,
+                  }
+                : null,
+            });
+            const children = args.nodesToHTML({ nodes: args.node.children }).join('');
+            const label = children.trim() || 'Button';
+            if (!href) {
+              return `<p style="margin: 0 0 14px;">${escapeHTML(label)}</p>`;
+            }
+            const target = newTab
+              ? ' target="_blank" rel="noopener noreferrer"'
+              : '';
+            return `<p style="margin: 0 0 14px;"><a href="${escapeHTML(href)}" style="display: inline-block; padding: 10px 16px; border: 1px solid #000; color: #000; text-decoration: none;"${target}>${escapeHTML(label)}</a></p>`;
+          }
+          if (typeof renderLexicalLinkHTML === 'function') {
+            return renderLexicalLinkHTML(args);
+          }
+          return '';
+        },
+      }),
+    }).trim();
+  }
+
+  if (!Array.isArray(content) || content.length === 0) {
     return '';
   }
 
@@ -163,7 +227,7 @@ export async function fetchEventFooterHtml(
       collection: 'events',
       id: eventId,
       depth: 0,
-    })) as { ticket_email_footer?: SlateNode[] | null };
+    })) as { ticket_email_footer?: RichTextData };
 
     if (!event?.ticket_email_footer) {
       return '';

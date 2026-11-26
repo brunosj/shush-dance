@@ -1,14 +1,18 @@
 import type { Page } from '../../payload/payload-types';
 
-export const fetchPages = async (): Promise<Page[]> => {
-  const pageRes: {
-    docs: Page[];
-  } = await fetch(
-    `${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/pages?depth=0&limit=100`,
-    {
-      next: { revalidate: 1 },
-    },
-  ).then((res) => res.json());
+import { getLocalPayload } from './localPayload';
 
-  return pageRes?.docs ?? [];
+export const fetchPages = async (): Promise<Page[]> => {
+  const payload = await getLocalPayload();
+  const pageRes = await payload.find({
+    collection: 'pages',
+    depth: 0,
+    limit: 100,
+    pagination: false,
+    where: {
+      _status: { equals: 'published' },
+    },
+  });
+
+  return (pageRes.docs ?? []) as Page[];
 };

@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload/types';
+import type { CollectionConfig } from 'payload';
 
 import { admins } from '../../access/admins';
 import { anyone } from '../../access/anyone';
@@ -49,9 +49,9 @@ const Users: CollectionConfig = {
         beforeChange: [ensureFirstUserIsAdmin],
       },
       access: {
-        read: admins,
-        create: admins,
-        update: admins,
+        read: ({ req: { user } }) => checkRole(['admin'], user),
+        create: ({ req: { user } }) => checkRole(['admin'], user),
+        update: ({ req: { user } }) => checkRole(['admin'], user),
       },
     },
   ],

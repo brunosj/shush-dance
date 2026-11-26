@@ -1,4 +1,4 @@
-import type { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 
 import {
   type CheckoutCurrency,
@@ -20,17 +20,14 @@ function allowedSlugs(): Set<string> {
 }
 
 function trackerKeyOk(req: {
-  headers?: Record<string, unknown>;
-  query?: Record<string, unknown>;
+  headers: Headers;
+  searchParams: URLSearchParams;
 }): boolean {
   const expected = process.env.PUBLIC_EVENT_TRACKER_KEY?.trim();
   if (!expected) return true;
-  const fromHeader = req.headers?.['x-tracker-key'];
-  const fromQuery = req.query?.key;
-  const provided =
-    (typeof fromHeader === 'string' && fromHeader) ||
-    (typeof fromQuery === 'string' && fromQuery) ||
-    '';
+  const fromHeader = req.headers.get('x-tracker-key');
+  const fromQuery = req.searchParams.get('key');
+  const provided = fromHeader || fromQuery || '';
   return provided === expected;
 }
 
@@ -48,21 +45,21 @@ type TierAgg = {
 export const publicEventTicketStatsEndpoint: Endpoint = {
   path: '/public-event-ticket-stats',
   method: 'get',
-  handler: async (req, res) => {
+  handler: async (req) => {
     try {
       if (!trackerKeyOk(req)) {
-        return res.status(401).json({ ok: false, error: 'Unauthorized' });
+        return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
       }
 
-      const slugRaw = req.query?.slug;
+      const slugRaw = req.searchParams.get('slug');
       const slug =
         typeof slugRaw === 'string' ? slugRaw.trim().toLowerCase() : '';
       if (!slug) {
-        return res.status(400).json({ ok: false, error: 'Missing slug' });
+        return Response.json({ ok: false, error: 'Missing slug' }, { status: 400 });
       }
 
       if (!allowedSlugs().has(slug)) {
-        return res.status(404).json({ ok: false, error: 'Not found' });
+        return Response.json({ ok: false, error: 'Not found' }, { status: 404 });
       }
 
       const eventRes = await req.payload.find({
@@ -84,7 +81,7 @@ export const publicEventTicketStatsEndpoint: Endpoint = {
         | undefined;
 
       if (!event?.id) {
-        return res.status(404).json({ ok: false, error: 'Event not found' });
+        return Response.json({ ok: false, error: 'Event not found' }, { status: 404 });
       }
 
       const salesRes = await req.payload.find({
@@ -172,7 +169,7 @@ export const publicEventTicketStatsEndpoint: Endpoint = {
         }
       }
 
-      return res.status(200).json({
+      return Response.json({
         ok: true,
         generatedAt: new Date().toISOString(),
         event: {
@@ -191,10 +188,10 @@ export const publicEventTicketStatsEndpoint: Endpoint = {
         tiers: tierList,
       });
     } catch (error) {
-      return res.status(500).json({
+      return Response.json({
         ok: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      }, { status: 500 });
     }
   },
 };

@@ -1,6 +1,7 @@
-import { slateEditor } from '@payloadcms/richtext-slate';
-import path from 'path';
-import type { CollectionConfig } from 'payload/types';
+import type { CollectionConfig } from 'payload';
+
+import { shushLexicalEditor } from '../fields/shushLexicalEditor';
+import { getMediaRoot } from '../paths';
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -8,8 +9,7 @@ export const Media: CollectionConfig = {
     group: 'Content',
   },
   upload: {
-    staticURL: '/media',
-    staticDir: process.env.MEDIA_DIR || path.resolve(process.cwd(), 'media'),
+    staticDir: getMediaRoot(),
   },
   access: {
     read: () => true,
@@ -23,11 +23,7 @@ export const Media: CollectionConfig = {
     {
       name: 'caption',
       type: 'richText',
-      editor: slateEditor({
-        admin: {
-          elements: ['link'],
-        },
-      }),
+      editor: shushLexicalEditor,
     },
   ],
 };

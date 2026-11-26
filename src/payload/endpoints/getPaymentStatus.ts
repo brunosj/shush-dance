@@ -1,4 +1,4 @@
-import type { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 import Stripe from 'stripe';
 
 let stripeInstance: Stripe | null = null;
@@ -19,38 +19,38 @@ const PAYMENT_INTENT_ID_PATTERN = /^pi_[a-zA-Z0-9]+$/;
 export const getPaymentStatusEndpoint: Endpoint = {
   path: '/payment-status',
   method: 'get',
-  handler: async (req, res) => {
+  handler: async (req) => {
     try {
-      const paymentIntentId = req.query.payment_intent;
+      const paymentIntentId = req.searchParams.get('payment_intent');
 
       if (
         typeof paymentIntentId !== 'string' ||
         !PAYMENT_INTENT_ID_PATTERN.test(paymentIntentId)
       ) {
-        return res.status(400).json({
+        return Response.json({
           error: 'Invalid or missing payment_intent parameter',
-        });
+        }, { status: 400 });
       }
 
       if (!process.env.STRIPE_SECRET_KEY) {
-        return res.status(500).json({
+        return Response.json({
           error: 'Payment verification is not configured',
-        });
+        }, { status: 500 });
       }
 
       const stripe = getStripeInstance();
       const paymentIntent =
         await stripe.paymentIntents.retrieve(paymentIntentId);
 
-      return res.status(200).json({
+      return Response.json({
         status: paymentIntent.status,
         succeeded: paymentIntent.status === 'succeeded',
       });
     } catch (error) {
       console.error('❌ Failed to retrieve payment status:', error);
-      return res.status(500).json({
+      return Response.json({
         error: 'Failed to verify payment status',
-      });
+      }, { status: 500 });
     }
   },
 };

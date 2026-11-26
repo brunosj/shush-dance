@@ -1,4 +1,4 @@
-import { Endpoint } from 'payload/config';
+import type { Endpoint } from 'payload';
 import Stripe from 'stripe';
 
 import { validateAndNormalizeOrderData } from '../utils/validateOrderData';
@@ -176,19 +176,24 @@ const createPaymentIntentWithRetry = async (
 export const createPaymentIntentEndpoint: Endpoint = {
   path: '/create-payment-intent',
   method: 'post',
-  handler: async (req, res) => {
+  handler: async (req) => {
     const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+    const clientIp =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      null;
+
     console.log(`[${requestId}] 🚀 Payment intent request started`, {
-      userAgent: req.headers['user-agent'],
-      ip: req.ip || req.connection?.remoteAddress,
-      origin: req.headers.origin,
-      referer: req.headers.referer,
-      contentType: req.headers['content-type'],
-      contentLength: req.headers['content-length'],
-      xForwardedFor: req.headers['x-forwarded-for'],
-      xRealIp: req.headers['x-real-ip'],
-      isMonitor: req.headers['user-agent']?.includes('SHUSH-Monitor'),
+      userAgent: req.headers.get('user-agent'),
+      ip: clientIp,
+      origin: req.headers.get('origin'),
+      referer: req.headers.get('referer'),
+      contentType: req.headers.get('content-type'),
+      contentLength: req.headers.get('content-length'),
+      xForwardedFor: req.headers.get('x-forwarded-for'),
+      xRealIp: req.headers.get('x-real-ip'),
+      isMonitor: req.headers.get('user-agent')?.includes('SHUSH-Monitor'),
       timestamp: new Date().toISOString(),
     });
 
@@ -198,14 +203,31 @@ export const createPaymentIntentEndpoint: Endpoint = {
         console.error(
           `[${requestId}] ❌ STRIPE_SECRET_KEY not found in environment`,
         );
-        return res.status(500).json({
+        return Response.json({
           error: 'Stripe configuration missing',
           requestId,
           timestamp: new Date().toISOString(),
-        });
+        }, { status: 500 });
       }
 
-      const { amount, customerData, orderData } = req.body;
+      let requestBody: {
+        amount?: unknown;
+        customerData?: { email?: string };
+        orderData?: { cartItems?: unknown[] };
+      };
+      try {
+        requestBody = (await req.json()) as typeof requestBody;
+      } catch {
+        return Response.json(
+          {
+            error: 'Invalid JSON body',
+            requestId,
+            timestamp: new Date().toISOString(),
+          },
+          { status: 400 },
+        );
+      }
+      const { amount, customerData, orderData } = requestBody;
 
       console.log(`[${requestId}] 📋 Request payload:`, {
         amount,
@@ -218,31 +240,31 @@ export const createPaymentIntentEndpoint: Endpoint = {
       });
 
       if (!orderData?.cartItems?.length) {
-        return res.status(400).json({
+        return Response.json({
           error: 'Order data with cart items is required',
           code: 'missing_cart_items',
           requestId,
           timestamp: new Date().toISOString(),
-        });
+        }, { status: 400 });
       }
 
       let validatedOrderData;
       try {
         validatedOrderData = await validateAndNormalizeOrderData(
           req.payload,
-          orderData,
+          orderData as any,
         );
       } catch (validationError: any) {
         console.error(
           `[${requestId}] ❌ Order validation failed:`,
           validationError,
         );
-        return res.status(400).json({
+        return Response.json({
           error: validationError.message || 'Invalid order data',
           code: 'cart_validation_failed',
           requestId,
           timestamp: new Date().toISOString(),
-        });
+        }, { status: 400 });
       }
 
       const validatedAmount = validatedOrderData.totals.total;
@@ -251,12 +273,12 @@ export const createPaymentIntentEndpoint: Endpoint = {
         !Number.isFinite(submittedAmount) ||
         Math.abs(submittedAmount - validatedAmount) > 0.02
       ) {
-        return res.status(400).json({
+        return Response.json({
           error: 'Cart total is out of date. Please refresh your cart.',
           code: 'cart_validation_failed',
           requestId,
           timestamp: new Date().toISOString(),
-        });
+        }, { status: 400 });
       }
 
       // Validate required fields
@@ -266,11 +288,11 @@ export const createPaymentIntentEndpoint: Endpoint = {
         validatedAmount <= 0
       ) {
         console.error(`[${requestId}] ❌ Invalid amount:`, validatedAmount);
-        return res.status(400).json({
+        return Response.json({
           error: 'Valid amount is required',
           requestId,
           timestamp: new Date().toISOString(),
-        });
+        }, { status: 400 });
       }
 
       if (
@@ -281,11 +303,11 @@ export const createPaymentIntentEndpoint: Endpoint = {
           hasCustomerData: !!customerData,
           hasEmail: !!customerData?.email,
         });
-        return res.status(400).json({
+        return Response.json({
           error: 'Valid customer data is required',
           requestId,
           timestamp: new Date().toISOString(),
-        });
+        }, { status: 400 });
       }
 
       // Convert amount to cents and ensure it's an integer
@@ -329,11 +351,11 @@ export const createPaymentIntentEndpoint: Endpoint = {
             chunks.push(orderDataString.substring(i, i + chunkSize));
           }
           if (chunks.length > 44) {
-            return res.status(400).json({
+            return Response.json({
               error: 'Cart contains too much data. Please reduce its size.',
               code: 'cart_too_large',
               requestId,
-            });
+            }, { status: 400 });
           }
 
           // Store chunks in separate metadata keys
@@ -366,16 +388,14 @@ export const createPaymentIntentEndpoint: Endpoint = {
         paymentIntentData,
         3,
         requestId,
-        typeof req.headers['idempotency-key'] === 'string'
-          ? req.headers['idempotency-key'].slice(0, 255)
-          : undefined,
+        req.headers.get('idempotency-key')?.slice(0, 255) ?? undefined,
       );
 
       console.log(
         `[${requestId}] ✅ Payment intent created successfully: ${paymentIntent.id}`,
       );
 
-      return res.status(200).json({
+      return Response.json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
         requestId,
@@ -404,14 +424,17 @@ export const createPaymentIntentEndpoint: Endpoint = {
         statusCode = 400;
       }
 
-      return res.status(statusCode).json({
-        error: 'Failed to create payment intent',
-        details: error.message,
-        type: error.type || 'unknown',
-        code: error.code || 'unknown',
-        requestId,
-        timestamp: new Date().toISOString(),
-      });
+      return Response.json(
+        {
+          error: 'Failed to create payment intent',
+          details: error.message,
+          type: error.type || 'unknown',
+          code: error.code || 'unknown',
+          requestId,
+          timestamp: new Date().toISOString(),
+        },
+        { status: statusCode },
+      );
     } finally {
       console.log(`[${requestId}] 🏁 Payment intent request completed`);
     }

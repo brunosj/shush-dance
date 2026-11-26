@@ -39,6 +39,10 @@ export function resolveMediaUrl(
     return filename ? mediaUrlFromFilename(filename) : '';
   }
 
+  if (value.includes('/api/media/file/') && filename) {
+    return mediaUrlFromFilename(filename);
+  }
+
   // Unexpanded Payload media relationship id — use filename if available
   if (!value.includes('/') && !value.startsWith('http')) {
     return filename ? mediaUrlFromFilename(filename) : value;
